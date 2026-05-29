@@ -1,0 +1,8 @@
+html { font-size: 16px; }
+
+h1, h2, h3 { font-family: var(--font-display, "Outfit", sans-serif); }
+
+section { margin-bottom: 2rem; }
+
+.text-danger { color: #f87171; font-size: 0.85rem; }
+.validation-summary-errors { color: #f87171; margin-bottom: 1rem; }

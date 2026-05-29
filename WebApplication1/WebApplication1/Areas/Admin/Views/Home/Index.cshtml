@@ -1,0 +1,40 @@
+@model WebApplication1.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1>Store Dashboard</h1>
+
+<div class="stats-grid">
+    <div class="stat-card glass-panel">
+        <h3>Total Revenue</h3>
+        <p>@Model.TotalRevenue.ToString("N0") ₫</p>
+    </div>
+    <div class="stat-card glass-panel">
+        <h3>Orders</h3>
+        <p>@Model.OrderCount</p>
+    </div>
+    <div class="stat-card glass-panel">
+        <h3>Customers</h3>
+        <p>@Model.CustomerCount</p>
+    </div>
+    <div class="stat-card glass-panel">
+        <h3>Products</h3>
+        <p>@Model.ProductCount</p>
+    </div>
+</div>
+
+<h2>Low Stock</h2>
+@if (!Model.LowStockProducts.Any())
+{
+    <p class="meta">All products are well stocked.</p>
+}
+else
+{
+    <ul>
+        @foreach (var p in Model.LowStockProducts)
+        {
+            <li>@p.Name — @p.Stock left</li>
+        }
+    </ul>
+}

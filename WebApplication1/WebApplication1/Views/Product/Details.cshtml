@@ -1,0 +1,29 @@
+@model WebApplication1.Models.Product
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="detail-layout">
+    <div class="glass-panel" style="padding:1.5rem;">
+        <img src="@Model.ImageUrl" alt="@Model.Name" style="width:100%; max-height:400px; object-fit:contain;" />
+    </div>
+    <div>
+        <p class="meta">@Model.Brand.Name · @Model.Category.Name</p>
+        <h1>@Model.Name</h1>
+        <p class="price" style="font-size:1.5rem;">@Model.Price.ToString("N0") ₫</p>
+        <p>@(Model.Stock > 0 ? $"In stock ({Model.Stock})" : "Out of stock")</p>
+        <p>@Model.Description</p>
+
+        <ul class="spec-list glass-panel" style="padding:1rem;">
+            @foreach (var spec in Model.Specifications)
+            {
+                <li><span>@spec.Key</span><span>@spec.Value</span></li>
+            }
+        </ul>
+
+        @if (Model.Stock > 0)
+        {
+            <button class="btn btn-primary" data-add-cart data-product-id="@Model.Id">Add to Cart</button>
+        }
+    </div>
+</div>

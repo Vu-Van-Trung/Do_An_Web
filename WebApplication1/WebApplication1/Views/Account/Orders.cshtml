@@ -1,0 +1,32 @@
+@model IEnumerable<WebApplication1.Models.Order>
+@{
+    ViewData["Title"] = "Order History";
+}
+
+<h1>Order History</h1>
+
+@if (!Model.Any())
+{
+    <p class="meta">You have no orders yet.</p>
+}
+else
+{
+    <div class="glass-panel" style="padding:1rem;">
+        <table class="cart-table">
+            <thead>
+                <tr><th>ID</th><th>Date</th><th>Status</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    <tr>
+                        <td>#@order.Id</td>
+                        <td>@order.OrderDate.ToLocalTime().ToString("g")</td>
+                        <td>@order.Status</td>
+                        <td>@order.Total.ToString("N0") ₫</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

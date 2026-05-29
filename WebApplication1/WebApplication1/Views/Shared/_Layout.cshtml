@@ -1,0 +1,65 @@
+﻿@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NexusGear</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/gaming-theme.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="bg-glow bg-glow--green"></div>
+    <div class="bg-glow bg-glow--violet"></div>
+    <header class="site-header glass-panel">
+        <nav class="nav container">
+            <a class="brand" asp-controller="Home" asp-action="Index">Nexus<span>Gear</span></a>
+            <div class="nav-links">
+                <a asp-controller="Product" asp-action="Index">Shop</a>
+                <a asp-controller="Cart" asp-action="Index">Cart <span id="cart-badge" class="badge">0</span></a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-controller="Account" asp-action="Orders">Orders</a>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-area="Admin" asp-controller="Home" asp-action="Index">Admin</a>
+                    }
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-ghost">Logout</button>
+                    </form>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login">Login</a>
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm">Register</a>
+                }
+            </div>
+        </nav>
+    </header>
+
+    <main class="container main-content">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-error">@TempData["Error"]</div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer glass-panel">
+        <div class="container">
+            <p>&copy; @DateTime.Now.Year NexusGear — Premium Gaming Gear E-Commerce</p>
+        </div>
+    </footer>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,72 @@
+@model WebApplication1.ViewModels.CheckoutViewModel
+@{
+    ViewData["Title"] = "Checkout";
+}
+
+<h1>Checkout — Step @Model.Step of 2</h1>
+
+<div class="detail-layout">
+    <div class="glass-panel" style="padding:1.25rem;">
+        @if (Model.Step == 1)
+        {
+            <h2>Shipping Details</h2>
+            <form asp-action="Shipping" method="post">
+                <div asp-validation-summary="All"></div>
+                <div style="margin-bottom:0.75rem;">
+                    <label asp-for="Shipping.FullName"></label>
+                    <input asp-for="Shipping.FullName" class="form-control" />
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label asp-for="Shipping.Phone"></label>
+                    <input asp-for="Shipping.Phone" class="form-control" />
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label asp-for="Shipping.ShippingAddress"></label>
+                    <textarea asp-for="Shipping.ShippingAddress" class="form-control" rows="3"></textarea>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label asp-for="Shipping.Notes"></label>
+                    <input asp-for="Shipping.Notes" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-primary">Continue to Payment</button>
+            </form>
+        }
+        else
+        {
+            <h2>Payment</h2>
+            <form asp-action="PlaceOrder" method="post">
+                <div asp-validation-summary="All"></div>
+                <div style="margin-bottom:0.75rem;">
+                    <label>
+                        <input type="radio" name="PaymentMethod" value="COD" checked /> Cash on Delivery (COD)
+                    </label>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label>
+                        <input type="radio" name="PaymentMethod" value="Card" /> Mock Credit Card
+                    </label>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label>Card Number (mock)</label>
+                    <input name="CardNumber" class="form-control" placeholder="4111 1111 1111 1111" />
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label>Cardholder Name</label>
+                    <input name="CardName" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-primary">Place Order</button>
+            </form>
+        }
+    </div>
+    <div class="glass-panel" style="padding:1.25rem;">
+        <h3>Order Summary</h3>
+        @foreach (var item in Model.Cart.Items)
+        {
+            <p>@item.Name × @item.Quantity — @item.LineTotal.ToString("N0") ₫</p>
+        }
+        <hr />
+        <p>Subtotal: @Model.Cart.Subtotal.ToString("N0") ₫</p>
+        <p>Shipping: 50,000 ₫</p>
+        <p class="price">Total: @((Model.Cart.Subtotal + 50000).ToString("N0")) ₫</p>
+    </div>
+</div>

@@ -1,0 +1,7 @@
+@model WebApplication1.Models.Brand
+@{ ViewData["Title"] = "Add Brand"; }
+<h1>Add Brand</h1>
+<form asp-action="Create" method="post" class="glass-panel" style="padding:1rem;">
+    <input asp-for="Name" class="form-control" placeholder="Brand name" />
+    <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Save</button>
+</form>

@@ -1,0 +1,29 @@
+﻿@model IEnumerable<WebApplication1.Models.Product>
+@{
+    ViewData["Title"] = "Home";
+}
+
+<section class="hero glass-panel">
+    <h1>Level Up Your Setup</h1>
+    <p>Premium gaming gear from Razer, Logitech, Corsair, and Keychron — built for speed, precision, and style.</p>
+    <a asp-controller="Product" asp-action="Index" class="btn btn-primary">Browse Catalog</a>
+</section>
+
+<section>
+    <h2>Featured Gear</h2>
+    <div class="product-grid">
+        @foreach (var product in Model)
+        {
+            <article class="product-card glass-panel">
+                <a asp-controller="Product" asp-action="Details" asp-route-id="@product.Id">
+                    <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
+                    <div class="body">
+                        <h3>@product.Name</h3>
+                        <p class="meta">@product.Brand.Name · @product.Category.Name</p>
+                        <p class="price">@product.Price.ToString("N0") ₫</p>
+                    </div>
+                </a>
+            </article>
+        }
+    </div>
+</section>

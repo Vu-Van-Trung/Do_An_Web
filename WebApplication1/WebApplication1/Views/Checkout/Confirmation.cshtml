@@ -1,0 +1,24 @@
+@model WebApplication1.ViewModels.OrderConfirmationViewModel
+@{
+    ViewData["Title"] = "Order Confirmed";
+    var order = Model.Order;
+}
+
+<section class="hero glass-panel">
+    <h1>Order Placed Successfully</h1>
+    <p>Order #@order.Id · @order.OrderDate.ToLocalTime().ToString("g") · @order.Status</p>
+    <p>Payment: @order.PaymentMethod · Total: <strong class="price">@order.Total.ToString("N0") ₫</strong></p>
+    <p>Ship to: @order.FullName, @order.Phone — @order.ShippingAddress</p>
+</section>
+
+<div class="glass-panel" style="padding:1rem;">
+    <h3>Items</h3>
+    <ul>
+        @foreach (var item in order.Items)
+        {
+            <li>@item.ProductName × @item.Quantity — @item.LineTotal.ToString("N0") ₫</li>
+        }
+    </ul>
+</div>
+
+<a asp-controller="Account" asp-action="Orders" class="btn btn-secondary">View Order History</a>

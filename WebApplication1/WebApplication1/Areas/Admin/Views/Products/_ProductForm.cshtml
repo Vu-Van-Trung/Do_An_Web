@@ -1,0 +1,30 @@
+@model WebApplication1.ViewModels.ProductFormViewModel
+
+<form asp-action="@(Model.Id == 0 ? "Create" : "Edit")" method="post" enctype="multipart/form-data" class="glass-panel" style="padding:1.25rem;">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="All"></div>
+    <div style="margin-bottom:0.75rem;"><label asp-for="Name"></label><input asp-for="Name" class="form-control" /></div>
+    <div style="margin-bottom:0.75rem;"><label asp-for="Description"></label><textarea asp-for="Description" class="form-control" rows="3"></textarea></div>
+    <div style="margin-bottom:0.75rem;"><label asp-for="Price"></label><input asp-for="Price" class="form-control" /></div>
+    <div style="margin-bottom:0.75rem;"><label asp-for="Stock"></label><input asp-for="Stock" class="form-control" /></div>
+    <div style="margin-bottom:0.75rem;">
+        <label asp-for="CategoryId">Category</label>
+        <select asp-for="CategoryId" asp-items="ViewBag.Categories" class="form-control"></select>
+    </div>
+    <div style="margin-bottom:0.75rem;">
+        <label asp-for="BrandId">Brand</label>
+        <select asp-for="BrandId" asp-items="ViewBag.Brands" class="form-control"></select>
+    </div>
+    <div style="margin-bottom:0.75rem;"><label asp-for="ImageUrl">Image URL</label><input asp-for="ImageUrl" class="form-control" /></div>
+    <div style="margin-bottom:0.75rem;"><label asp-for="ImageFile">Upload Image</label><input asp-for="ImageFile" type="file" class="form-control" /></div>
+    <div style="margin-bottom:0.75rem;"><label><input asp-for="IsActive" /> Active</label></div>
+    <h3>Specifications</h3>
+    @for (var i = 0; i < Model.Specifications.Count; i++)
+    {
+        <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+            <input asp-for="Specifications[i].Key" placeholder="Key" class="form-control" />
+            <input asp-for="Specifications[i].Value" placeholder="Value" class="form-control" />
+        </div>
+    }
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>

@@ -1,0 +1,21 @@
+@model IEnumerable<WebApplication1.Models.Brand>
+@{
+    ViewData["Title"] = "Brands";
+}
+
+<h1>Brands <a asp-action="Create" class="btn btn-primary btn-sm">Add</a></h1>
+<table class="admin-table glass-panel" style="padding:1rem; display:block;">
+    @foreach (var b in Model)
+    {
+        <tr>
+            <td>@b.Name</td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@b.Id">Edit</a>
+                <form asp-action="Delete" method="post" style="display:inline;">
+                    <input type="hidden" name="id" value="@b.Id" />
+                    <button type="submit" class="btn btn-ghost btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+    }
+</table>

@@ -1,0 +1,10 @@
+@model WebApplication1.Models.Category
+@{ ViewData["Title"] = "Edit Category"; }
+<h1>Edit Category</h1>
+<form asp-action="Edit" method="post" class="glass-panel" style="padding:1rem;">
+    <input type="hidden" asp-for="Id" />
+    <input asp-for="Name" class="form-control" />
+    <input asp-for="Slug" class="form-control" style="margin-top:0.5rem;" />
+    <textarea asp-for="Description" class="form-control" style="margin-top:0.5rem;"></textarea>
+    <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Save</button>
+</form>

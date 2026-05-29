@@ -1,0 +1,114 @@
+@model WebApplication1.ViewModels.CatalogViewModel
+@{
+    ViewData["Title"] = "Shop";
+    var f = Model.Filter;
+}
+
+<section class="filters glass-panel">
+    <form method="get" asp-action="Index">
+        <div>
+            <label>Search</label>
+            <input type="text" name="Search" value="@f.Search" placeholder="DeathAdder, keyboard..." />
+        </div>
+        <div>
+            <label>Category</label>
+            <select name="CategoryId">
+                <option value="">All</option>
+                @foreach (var c in Model.Categories)
+                {
+                    <option value="@c.Id" selected="@(f.CategoryId == c.Id)">@c.Name</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>Brand</label>
+            <select name="BrandId">
+                <option value="">All</option>
+                @foreach (var b in Model.Brands)
+                {
+                    <option value="@b.Id" selected="@(f.BrandId == b.Id)">@b.Name</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>Connection</label>
+            <select name="Connection">
+                <option value="">All</option>
+                @foreach (var v in Model.Connections)
+                {
+                    <option value="@v" selected="@(f.Connection == v)">@v</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>Switch Type</label>
+            <select name="SwitchType">
+                <option value="">All</option>
+                @foreach (var v in Model.SwitchTypes)
+                {
+                    <option value="@v" selected="@(f.SwitchType == v)">@v</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>DPI</label>
+            <select name="Dpi">
+                <option value="">All</option>
+                @foreach (var v in Model.DpiOptions)
+                {
+                    <option value="@v" selected="@(f.Dpi == v)">@v</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>Min Price</label>
+            <input type="number" name="MinPrice" value="@f.MinPrice" />
+        </div>
+        <div>
+            <label>Max Price</label>
+            <input type="number" name="MaxPrice" value="@f.MaxPrice" />
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+</section>
+
+<div class="product-grid">
+    @foreach (var product in Model.Products.Items)
+    {
+        <article class="product-card glass-panel">
+            <a asp-action="Details" asp-route-id="@product.Id">
+                <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
+                <div class="body">
+                    <h3>@product.Name</h3>
+                    <p class="meta">@product.Brand.Name · @product.Category.Name</p>
+                    <p class="price">@product.Price.ToString("N0") ₫</p>
+                </div>
+            </a>
+        </article>
+    }
+</div>
+
+@if (!Model.Products.Items.Any())
+{
+    <p class="meta">No products match your filters.</p>
+}
+
+<nav class="pagination">
+    @for (var p = 1; p <= Model.Products.TotalPages; p++)
+    {
+        if (p == Model.Products.Page)
+        {
+            <span class="active">@p</span>
+        }
+        else
+        {
+            <a asp-action="Index" asp-all-route-data="@(new Dictionary<string, string?> {
+                ["Search"] = f.Search, ["CategoryId"] = f.CategoryId?.ToString(), ["BrandId"] = f.BrandId?.ToString(),
+                ["Connection"] = f.Connection, ["SwitchType"] = f.SwitchType, ["Dpi"] = f.Dpi,
+                ["MinPrice"] = f.MinPrice?.ToString(), ["MaxPrice"] = f.MaxPrice?.ToString(), ["Page"] = p.ToString()
+            })">@p</a>
+        }
+    }
+</nav>

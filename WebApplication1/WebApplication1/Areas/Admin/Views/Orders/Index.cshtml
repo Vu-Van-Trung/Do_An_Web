@@ -1,0 +1,22 @@
+@model IEnumerable<WebApplication1.Models.Order>
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<h1>Orders</h1>
+<table class="admin-table glass-panel" style="padding:1rem; display:block;">
+    <thead><tr><th>ID</th><th>Customer</th><th>Date</th><th>Status</th><th>Total</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var o in Model)
+        {
+            <tr>
+                <td>#@o.Id</td>
+                <td>@o.User.FullName</td>
+                <td>@o.OrderDate.ToLocalTime().ToString("g")</td>
+                <td>@o.Status</td>
+                <td>@o.Total.ToString("N0") ₫</td>
+                <td><a asp-action="Details" asp-route-id="@o.Id">Details</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
