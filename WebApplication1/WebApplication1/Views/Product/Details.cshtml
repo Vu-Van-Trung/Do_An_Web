@@ -11,7 +11,7 @@
         <p class="meta">@Model.Brand.Name · @Model.Category.Name</p>
         <h1>@Model.Name</h1>
         <p class="price" style="font-size:1.5rem;">@Model.Price.ToString("N0") ₫</p>
-        <p>@(Model.Stock > 0 ? $"In stock ({Model.Stock})" : "Out of stock")</p>
+        <p>@(Model.Stock > 0 ? $"Còn hàng ({Model.Stock})" : "Hết hàng")</p>
         <p>@Model.Description</p>
 
         <ul class="spec-list glass-panel" style="padding:1rem;">
@@ -23,7 +23,7 @@
 
         @if (Model.Stock > 0)
         {
-            <button class="btn btn-primary" data-add-cart data-product-id="@Model.Id">Add to Cart</button>
+            <button class="btn btn-primary" data-add-cart data-product-id="@Model.Id">&#x1F6D2; Thêm vào giỏ</button>
         }
     </div>
 </div>

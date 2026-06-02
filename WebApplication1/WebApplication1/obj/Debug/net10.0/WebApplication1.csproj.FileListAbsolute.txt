@@ -376,11 +376,8 @@ C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebAppl
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\scopedcss\bundle\WebApplication1.styles.css
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\scopedcss\projectbundle\WebApplication1.bundle.scp.css
-C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\0gar3b3fq6-{0}-0opr2fnnds-0opr2fnnds.gz
-C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\556miamfr6-{0}-jjn2u91br6-jjn2u91br6.gz
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\u3m5yo2x8f-{0}-61n19gt1b8-61n19gt1b8.gz
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\uktivzu8np-{0}-h5hgey1boq-h5hgey1boq.gz
-C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\w3u7ibosd4-{0}-23d37n22py-23d37n22py.gz
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\8yqr3kw3fy-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\sloa8893dl-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\1w70pd2vj5-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -447,10 +444,13 @@ C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebAppl
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\staticwebassets.development.json
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\swae.build.ex.cache
-C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\WebAppli.7D14BD69.Up2Date
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\WebApplication1.dll
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\refint\WebApplication1.dll
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\WebApplication1.pdb
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\WebApplication1.genruntimeconfig.cache
 C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\ref\WebApplication1.dll
+C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\WebApplication1.sourcelink.json
+C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\w3u7ibosd4-{0}-zx1som8z7v-zx1som8z7v.gz
+C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\0gar3b3fq6-{0}-sp0qp5zeq8-sp0qp5zeq8.gz
+C:\Users\vuvan\Downloads\DoAnLapTrinhWeb\DoAnLapTrinhWeb\WebApplication1\WebApplication1\obj\Debug\net10.0\compressed\556miamfr6-{0}-4mtaqcl6if-4mtaqcl6if.gz

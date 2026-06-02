@@ -1,9 +1,9 @@
 @model WebApplication1.Models.Category
-@{ ViewData["Title"] = "Add Category"; }
-<h1>Add Category</h1>
+@{ ViewData["Title"] = "Thêm danh mục"; }
+<h1>Thêm danh mục</h1>
 <form asp-action="Create" method="post" class="glass-panel" style="padding:1rem;">
-    <input asp-for="Name" class="form-control" placeholder="Name" />
+    <input asp-for="Name" class="form-control" placeholder="Tên danh mục" />
     <input asp-for="Slug" class="form-control" placeholder="Slug" style="margin-top:0.5rem;" />
-    <textarea asp-for="Description" class="form-control" placeholder="Description" style="margin-top:0.5rem;"></textarea>
-    <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Save</button>
+    <textarea asp-for="Description" class="form-control" placeholder="Mô tả" style="margin-top:0.5rem;"></textarea>
+    <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Lưu</button>
 </form>

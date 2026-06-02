@@ -1,6 +1,12 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
+@{
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    string NavClass(string c, string a = "Index") =>
+        (ctrl == c && action == a) ? "nav-active" : string.Empty;
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi" style="scroll-behavior:smooth;">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,30 +18,37 @@
     <link rel="stylesheet" href="~/css/gaming-theme.css" asp-append-version="true" />
 </head>
 <body>
-    <div class="bg-glow bg-glow--green"></div>
-    <div class="bg-glow bg-glow--violet"></div>
-    <header class="site-header glass-panel">
+    <header class="site-header">
         <nav class="nav container">
             <a class="brand" asp-controller="Home" asp-action="Index">Nexus<span>Gear</span></a>
-            <div class="nav-links">
-                <a asp-controller="Product" asp-action="Index">Shop</a>
-                <a asp-controller="Cart" asp-action="Index">Cart <span id="cart-badge" class="badge">0</span></a>
+            <button class="nav-toggle" id="nav-toggle" aria-label="Mở menu" aria-expanded="false">&#9776;</button>
+            <div class="nav-links" id="nav-links">
+                <a asp-controller="Home" asp-action="Index" class="@NavClass("Home")">Trang chủ</a>
+                <a asp-controller="Product" asp-action="Index" class="@NavClass("Product")">Cửa hàng</a>
+                <a asp-controller="Category" asp-action="Index" class="@NavClass("Category")">Danh mục</a>
+                <a asp-controller="Product" asp-action="Deals" class="@NavClass("Product", "Deals")">Khuyến mãi</a>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <a asp-controller="Account" asp-action="Orders">Orders</a>
+                    <a asp-controller="Account" asp-action="Orders" class="@NavClass("Account", "Orders")">Tài khoản</a>
                     @if (User.IsInRole("Admin"))
                     {
-                        <a asp-area="Admin" asp-controller="Home" asp-action="Index">Admin</a>
+                        <a asp-area="Admin" asp-controller="Home" asp-action="Index">Quản trị</a>
                     }
+                    <a asp-controller="Cart" asp-action="Index" class="@NavClass("Cart")">
+                        &#x1F6D2; Giỏ hàng <span id="cart-badge" class="badge">0</span>
+                    </a>
                     <form asp-controller="Account" asp-action="Logout" method="post" class="inline-form">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-ghost">Logout</button>
+                        <button type="submit" class="btn btn-ghost btn-sm">Đăng xuất</button>
                     </form>
                 }
                 else
                 {
-                    <a asp-controller="Account" asp-action="Login">Login</a>
-                    <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm">Register</a>
+                    <a asp-controller="Cart" asp-action="Index" class="@NavClass("Cart")">
+                        &#x1F6D2; Giỏ hàng <span id="cart-badge" class="badge">0</span>
+                    </a>
+                    <a asp-controller="Account" asp-action="Login" class="@NavClass("Account", "Login")">Tài khoản</a>
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm">Đăng ký</a>
                 }
             </div>
         </nav>
@@ -53,9 +66,9 @@
         @RenderBody()
     </main>
 
-    <footer class="site-footer glass-panel">
+    <footer class="site-footer">
         <div class="container">
-            <p>&copy; @DateTime.Now.Year NexusGear — Premium Gaming Gear E-Commerce</p>
+            <p>&copy; @DateTime.Now.Year NexusGear — Thiết Bị Gaming Cao Cấp</p>
         </div>
     </footer>
 

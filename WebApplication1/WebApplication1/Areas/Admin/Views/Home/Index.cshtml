@@ -1,40 +1,40 @@
 @model WebApplication1.ViewModels.AdminDashboardViewModel
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Tổng quan";
 }
 
-<h1>Store Dashboard</h1>
+<h1>Bảng điều khiển</h1>
 
 <div class="stats-grid">
     <div class="stat-card glass-panel">
-        <h3>Total Revenue</h3>
+        <h3>Doanh thu</h3>
         <p>@Model.TotalRevenue.ToString("N0") ₫</p>
     </div>
     <div class="stat-card glass-panel">
-        <h3>Orders</h3>
+        <h3>Đơn hàng</h3>
         <p>@Model.OrderCount</p>
     </div>
     <div class="stat-card glass-panel">
-        <h3>Customers</h3>
+        <h3>Khách hàng</h3>
         <p>@Model.CustomerCount</p>
     </div>
     <div class="stat-card glass-panel">
-        <h3>Products</h3>
+        <h3>Sản phẩm</h3>
         <p>@Model.ProductCount</p>
     </div>
 </div>
 
-<h2>Low Stock</h2>
+<h2>Sắp hết hàng</h2>
 @if (!Model.LowStockProducts.Any())
 {
-    <p class="meta">All products are well stocked.</p>
+    <p class="meta">Tất cả sản phẩm đều còn hàng.</p>
 }
 else
 {
     <ul>
         @foreach (var p in Model.LowStockProducts)
         {
-            <li>@p.Name — @p.Stock left</li>
+            <li>@p.Name — còn @p.Stock sản phẩm</li>
         }
     </ul>
 }

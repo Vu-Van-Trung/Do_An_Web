@@ -1,10 +1,10 @@
 @model WebApplication1.ViewModels.LoginViewModel
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Đăng nhập";
 }
 
 <div class="glass-panel" style="max-width:420px; margin:2rem auto; padding:1.5rem;">
-    <h1>Login</h1>
+    <h1>Đăng nhập</h1>
     <form asp-action="Login" method="post">
         <input type="hidden" asp-for="ReturnUrl" />
         <div asp-validation-summary="All" class="text-danger"></div>
@@ -16,8 +16,8 @@
             <label asp-for="Password"></label>
             <input asp-for="Password" class="form-control" />
         </div>
-        <label><input asp-for="RememberMe" /> Remember me</label>
-        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Sign In</button>
+        <label><input asp-for="RememberMe" /> Ghi nhớ đăng nhập</label>
+        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Đăng nhập</button>
     </form>
-    <p class="meta" style="margin-top:1rem;">No account? <a asp-action="Register">Register</a></p>
+    <p class="meta" style="margin-top:1rem;">Chưa có tài khoản? <a asp-action="Register">Đăng ký</a></p>
 </div>

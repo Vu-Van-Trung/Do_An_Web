@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,14 +12,14 @@
     <div class="container" style="padding-top:2rem;">
         <div class="admin-layout">
             <aside class="admin-sidebar glass-panel">
-                <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="brand" style="display:block; margin-bottom:1rem;">Admin</a>
-                <a asp-area="Admin" asp-controller="Home" asp-action="Index">Dashboard</a>
-                <a asp-area="Admin" asp-controller="Products" asp-action="Index">Products</a>
-                <a asp-area="Admin" asp-controller="Categories" asp-action="Index">Categories</a>
-                <a asp-area="Admin" asp-controller="Brands" asp-action="Index">Brands</a>
-                <a asp-area="Admin" asp-controller="Orders" asp-action="Index">Orders</a>
+                <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="brand" style="display:block; margin-bottom:1rem;">Quản trị</a>
+                <a asp-area="Admin" asp-controller="Home" asp-action="Index">Tổng quan</a>
+                <a asp-area="Admin" asp-controller="Products" asp-action="Index">Sản phẩm</a>
+                <a asp-area="Admin" asp-controller="Categories" asp-action="Index">Danh mục</a>
+                <a asp-area="Admin" asp-controller="Brands" asp-action="Index">Thương hiệu</a>
+                <a asp-area="Admin" asp-controller="Orders" asp-action="Index">Đơn hàng</a>
                 <hr style="border-color:var(--border);" />
-                <a asp-area="" asp-controller="Home" asp-action="Index">← Storefront</a>
+                <a asp-area="" asp-controller="Home" asp-action="Index">← Cửa hàng</a>
             </aside>
             <main>@RenderBody()</main>
         </div>

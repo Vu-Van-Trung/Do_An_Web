@@ -1,13 +1,14 @@
 @model IEnumerable<WebApplication1.Models.Product>
 @{
-    ViewData["Title"] = "Products";
+    ViewData["Title"] = "Sản phẩm";
 }
 
-<h1>Products <a asp-action="Create" class="btn btn-primary btn-sm">Add Product</a></h1>
+<h1>Sản phẩm <a asp-action="Create" class="btn btn-primary btn-sm">Thêm sản phẩm</a></h1>
 
-<table class="admin-table glass-panel" style="padding:1rem; display:block;">
+<div class="table-scroll glass-panel" style="padding:1rem;">
+<table class="admin-table">
     <thead>
-        <tr><th>Name</th><th>Brand</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr>
+        <tr><th>Tên</th><th>Thương hiệu</th><th>Danh mục</th><th>Giá</th><th>Tồn kho</th><th></th></tr>
     </thead>
     <tbody>
         @foreach (var p in Model)
@@ -19,13 +20,14 @@
                 <td>@p.Price.ToString("N0")</td>
                 <td>@p.Stock</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@p.Id">Edit</a>
+                    <a asp-action="Edit" asp-route-id="@p.Id">Sửa</a>
                     <form asp-action="Delete" method="post" style="display:inline;">
                         <input type="hidden" name="id" value="@p.Id" />
-                        <button type="submit" class="btn btn-ghost btn-sm" onclick="return confirm('Delete?')">Delete</button>
+                        <button type="submit" class="btn btn-ghost btn-sm" onclick="return confirm('Xác nhận xóa sản phẩm này?')">Xóa</button>
                     </form>
                 </td>
             </tr>
         }
     </tbody>
 </table>
+</div>

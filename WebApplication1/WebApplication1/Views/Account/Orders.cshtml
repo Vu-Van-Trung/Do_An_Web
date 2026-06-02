@@ -1,20 +1,20 @@
 @model IEnumerable<WebApplication1.Models.Order>
 @{
-    ViewData["Title"] = "Order History";
+    ViewData["Title"] = "Lịch sử đơn hàng";
 }
 
-<h1>Order History</h1>
+<h1>Lịch sử đơn hàng</h1>
 
 @if (!Model.Any())
 {
-    <p class="meta">You have no orders yet.</p>
+    <p class="meta">Bạn chưa có đơn hàng nào.</p>
 }
 else
 {
     <div class="glass-panel" style="padding:1rem;">
         <table class="cart-table">
             <thead>
-                <tr><th>ID</th><th>Date</th><th>Status</th><th>Total</th></tr>
+                <tr><th>Mã đơn</th><th>Ngày đặt</th><th>Trạng thái</th><th>Tổng tiền</th></tr>
             </thead>
             <tbody>
                 @foreach (var order in Model)

@@ -1,11 +1,11 @@
 @model WebApplication1.Models.Order
 @{
-    ViewData["Title"] = $"Order #{Model.Id}";
+    ViewData["Title"] = $"Đơn hàng #{Model.Id}";
 }
 
-<h1>Order #@Model.Id</h1>
+<h1>Đơn hàng #@Model.Id</h1>
 <p>@Model.User.FullName · @Model.Phone · @Model.ShippingAddress</p>
-<p>Status: <strong>@Model.Status</strong> · Total: @Model.Total.ToString("N0") ₫</p>
+<p>Trạng thái: <strong>@Model.Status</strong> · Tổng cộng: @Model.Total.ToString("N0") ₫</p>
 
 <ul>
     @foreach (var item in Model.Items)
@@ -16,12 +16,12 @@
 
 <form asp-action="UpdateStatus" method="post" class="glass-panel" style="padding:1rem; margin-top:1rem;">
     <input type="hidden" name="id" value="@Model.Id" />
-    <label>Update status</label>
+    <label>Cập nhật trạng thái</label>
     <select name="status" class="form-control">
         @foreach (WebApplication1.Models.OrderStatus s in Enum.GetValues(typeof(WebApplication1.Models.OrderStatus)))
         {
             <option value="@s" selected="@(Model.Status == s)">@s</option>
         }
     </select>
-    <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Save</button>
+    <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Lưu</button>
 </form>

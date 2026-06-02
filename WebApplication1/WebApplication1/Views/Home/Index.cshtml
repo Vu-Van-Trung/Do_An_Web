@@ -1,29 +1,109 @@
-﻿@model IEnumerable<WebApplication1.Models.Product>
+@model IEnumerable<WebApplication1.Models.Product>
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "Trang chủ";
 }
 
-<section class="hero glass-panel">
-    <h1>Level Up Your Setup</h1>
-    <p>Premium gaming gear from Razer, Logitech, Corsair, and Keychron — built for speed, precision, and style.</p>
-    <a asp-controller="Product" asp-action="Index" class="btn btn-primary">Browse Catalog</a>
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-left">
+        <span class="hero-badge">&#x1F7E2; Hàng mới về hàng tuần</span>
+        <h1>Nâng Tầm<br><span>Góc Gaming</span></h1>
+        <p>Thiết bị gaming cao cấp từ Razer, Logitech, Corsair và Keychron — được tạo ra cho tốc độ, độ chính xác và phong cách.</p>
+        <div class="hero-btns">
+            <a asp-controller="Product" asp-action="Index" class="btn btn-dark">Khám phá sản phẩm</a>
+            <a asp-controller="Product" asp-action="Deals" class="btn btn-dark">Xem khuyến mãi</a>
+        </div>
+    </div>
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <span class="stat-num">500+</span>
+            <span class="stat-label">Sản phẩm có sẵn</span>
+        </div>
+        <div class="hero-stat">
+            <span class="stat-num">4.9 &#x2605;</span>
+            <span class="stat-label">Đánh giá trung bình</span>
+        </div>
+        <div class="hero-stat">
+            <span class="stat-num" style="color:#16a34a;">Miễn phí</span>
+            <span class="stat-label">Giao hàng trên 1M VNĐ</span>
+        </div>
+    </div>
 </section>
 
+<!-- FEATURED GEAR -->
 <section>
-    <h2>Featured Gear</h2>
-    <div class="product-grid">
+    <div class="section-header">
+        <h2>Sản phẩm nổi bật</h2>
+        <a asp-controller="Product" asp-action="Index">Xem tất cả &#x2192;</a>
+    </div>
+    <div class="category-pills">
+        <button class="category-pill active" data-filter="all">Tất cả</button>
+        <button class="category-pill" data-filter="Keyboards">Bàn phím</button>
+        <button class="category-pill" data-filter="Headsets">Tai nghe</button>
+        <button class="category-pill" data-filter="Chairs">Ghế</button>
+        <button class="category-pill" data-filter="Mice">Chuột</button>
+    </div>
+    <div class="product-grid" id="featured-grid">
         @foreach (var product in Model)
         {
-            <article class="product-card glass-panel">
+            <article class="product-card" data-category="@product.Category.Name">
                 <a asp-controller="Product" asp-action="Details" asp-route-id="@product.Id">
+                    <span class="product-card-brand-chip">@product.Brand.Name</span>
                     <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
                     <div class="body">
                         <h3>@product.Name</h3>
-                        <p class="meta">@product.Brand.Name · @product.Category.Name</p>
-                        <p class="price">@product.Price.ToString("N0") ₫</p>
+                        <p class="meta">@product.Brand.Name &middot; @product.Category.Name</p>
                     </div>
                 </a>
+                <div class="card-footer">
+                    <span class="price">@product.Price.ToString("N0") &#x111;</span>
+                    <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@product.Id" />
+                        <input type="hidden" name="quantity" value="1" />
+                        <button type="submit" class="btn-add" title="Thêm vào giỏ">+</button>
+                    </form>
+                </div>
             </article>
         }
     </div>
 </section>
+
+<!-- FLASH SALE -->
+<div class="flash-sale">
+    <div class="flash-sale-text">
+        <h3>&#x1F525; Flash Sale &#x2014; Giảm đến 30%</h3>
+        <p>Chỉ còn hôm nay &middot; Hàng có hạn, nhanh tay kẻo lỡ!</p>
+    </div>
+    <a asp-controller="Product" asp-action="Deals" class="btn">Xem ngay &#x2192;</a>
+</div>
+
+<!-- SHOP BY BRAND -->
+<section>
+    <div class="section-header">
+        <h2>Mua theo thương hiệu</h2>
+    </div>
+    <div class="brand-pills">
+        <a asp-controller="Product" asp-action="Index" class="brand-pill">Razer</a>
+        <a asp-controller="Product" asp-action="Index" class="brand-pill">Logitech</a>
+        <a asp-controller="Product" asp-action="Index" class="brand-pill">Corsair</a>
+        <a asp-controller="Product" asp-action="Index" class="brand-pill">Keychron</a>
+        <a asp-controller="Product" asp-action="Index" class="brand-pill">SteelSeries</a>
+        <a asp-controller="Product" asp-action="Index" class="brand-pill">HyperX</a>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.category-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const filter = pill.dataset.filter;
+            document.querySelectorAll('#featured-grid .product-card').forEach(card => {
+                card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
+            });
+        });
+    });
+</script>
+}

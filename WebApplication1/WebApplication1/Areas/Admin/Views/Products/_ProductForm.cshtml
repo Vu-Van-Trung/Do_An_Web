@@ -8,23 +8,23 @@
     <div style="margin-bottom:0.75rem;"><label asp-for="Price"></label><input asp-for="Price" class="form-control" /></div>
     <div style="margin-bottom:0.75rem;"><label asp-for="Stock"></label><input asp-for="Stock" class="form-control" /></div>
     <div style="margin-bottom:0.75rem;">
-        <label asp-for="CategoryId">Category</label>
+        <label asp-for="CategoryId">Danh mục</label>
         <select asp-for="CategoryId" asp-items="ViewBag.Categories" class="form-control"></select>
     </div>
     <div style="margin-bottom:0.75rem;">
-        <label asp-for="BrandId">Brand</label>
+        <label asp-for="BrandId">Thương hiệu</label>
         <select asp-for="BrandId" asp-items="ViewBag.Brands" class="form-control"></select>
     </div>
-    <div style="margin-bottom:0.75rem;"><label asp-for="ImageUrl">Image URL</label><input asp-for="ImageUrl" class="form-control" /></div>
-    <div style="margin-bottom:0.75rem;"><label asp-for="ImageFile">Upload Image</label><input asp-for="ImageFile" type="file" class="form-control" /></div>
-    <div style="margin-bottom:0.75rem;"><label><input asp-for="IsActive" /> Active</label></div>
-    <h3>Specifications</h3>
+    <div style="margin-bottom:0.75rem;"><label asp-for="ImageUrl">Đường dẫn ảnh</label><input asp-for="ImageUrl" class="form-control" /></div>
+    <div style="margin-bottom:0.75rem;"><label asp-for="ImageFile">Tải ảnh lên</label><input asp-for="ImageFile" type="file" class="form-control" /></div>
+    <div style="margin-bottom:0.75rem;"><label><input asp-for="IsActive" /> Hiển thị</label></div>
+    <h3>Thông số kỹ thuật</h3>
     @for (var i = 0; i < Model.Specifications.Count; i++)
     {
         <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
-            <input asp-for="Specifications[i].Key" placeholder="Key" class="form-control" />
-            <input asp-for="Specifications[i].Value" placeholder="Value" class="form-control" />
+            <input asp-for="Specifications[i].Key" placeholder="Thuộc tính" class="form-control" />
+            <input asp-for="Specifications[i].Value" placeholder="Giá trị" class="form-control" />
         </div>
     }
-    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="submit" class="btn btn-primary">Lưu</button>
 </form>

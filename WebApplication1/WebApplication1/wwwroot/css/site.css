@@ -4,5 +4,5 @@ h1, h2, h3 { font-family: var(--font-display, "Outfit", sans-serif); }
 
 section { margin-bottom: 2rem; }
 
-.text-danger { color: #f87171; font-size: 0.85rem; }
-.validation-summary-errors { color: #f87171; margin-bottom: 1rem; }
+.text-danger { color: #dc2626; font-size: 0.85rem; }
+.validation-summary-errors { color: #dc2626; margin-bottom: 1rem; font-size: 0.875rem; }

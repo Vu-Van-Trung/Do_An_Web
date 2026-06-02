@@ -1,19 +1,19 @@
 @model WebApplication1.ViewModels.CatalogViewModel
 @{
-    ViewData["Title"] = "Shop";
+    ViewData["Title"] = "Cửa hàng";
     var f = Model.Filter;
 }
 
 <section class="filters glass-panel">
     <form method="get" asp-action="Index">
         <div>
-            <label>Search</label>
-            <input type="text" name="Search" value="@f.Search" placeholder="DeathAdder, keyboard..." />
+            <label>Tìm kiếm</label>
+            <input type="text" name="Search" value="@f.Search" placeholder="DeathAdder, bàn phím..." />
         </div>
         <div>
-            <label>Category</label>
+            <label>Danh mục</label>
             <select name="CategoryId">
-                <option value="">All</option>
+                <option value="">Tất cả</option>
                 @foreach (var c in Model.Categories)
                 {
                     <option value="@c.Id" selected="@(f.CategoryId == c.Id)">@c.Name</option>
@@ -21,9 +21,9 @@
             </select>
         </div>
         <div>
-            <label>Brand</label>
+            <label>Thương hiệu</label>
             <select name="BrandId">
-                <option value="">All</option>
+                <option value="">Tất cả</option>
                 @foreach (var b in Model.Brands)
                 {
                     <option value="@b.Id" selected="@(f.BrandId == b.Id)">@b.Name</option>
@@ -31,9 +31,9 @@
             </select>
         </div>
         <div>
-            <label>Connection</label>
+            <label>Kết nối</label>
             <select name="Connection">
-                <option value="">All</option>
+                <option value="">Tất cả</option>
                 @foreach (var v in Model.Connections)
                 {
                     <option value="@v" selected="@(f.Connection == v)">@v</option>
@@ -41,9 +41,9 @@
             </select>
         </div>
         <div>
-            <label>Switch Type</label>
+            <label>Loại Switch</label>
             <select name="SwitchType">
-                <option value="">All</option>
+                <option value="">Tất cả</option>
                 @foreach (var v in Model.SwitchTypes)
                 {
                     <option value="@v" selected="@(f.SwitchType == v)">@v</option>
@@ -53,7 +53,7 @@
         <div>
             <label>DPI</label>
             <select name="Dpi">
-                <option value="">All</option>
+                <option value="">Tất cả</option>
                 @foreach (var v in Model.DpiOptions)
                 {
                     <option value="@v" selected="@(f.Dpi == v)">@v</option>
@@ -61,15 +61,15 @@
             </select>
         </div>
         <div>
-            <label>Min Price</label>
+            <label>Giá từ</label>
             <input type="number" name="MinPrice" value="@f.MinPrice" />
         </div>
         <div>
-            <label>Max Price</label>
+            <label>Giá đến</label>
             <input type="number" name="MaxPrice" value="@f.MaxPrice" />
         </div>
         <div>
-            <button type="submit" class="btn btn-primary">Filter</button>
+            <button type="submit" class="btn btn-primary">Lọc</button>
         </div>
     </form>
 </section>
@@ -82,7 +82,7 @@
                 <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
                 <div class="body">
                     <h3>@product.Name</h3>
-                    <p class="meta">@product.Brand.Name · @product.Category.Name</p>
+                    <p class="meta">@product.Category.Name &bull; @product.Brand.Name</p>
                     <p class="price">@product.Price.ToString("N0") ₫</p>
                 </div>
             </a>
@@ -92,7 +92,7 @@
 
 @if (!Model.Products.Items.Any())
 {
-    <p class="meta">No products match your filters.</p>
+    <p class="meta">Không có sản phẩm nào phù hợp với bộ lọc.</p>
 }
 
 <nav class="pagination">

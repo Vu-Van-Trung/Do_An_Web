@@ -1,11 +1,12 @@
 @model IEnumerable<WebApplication1.Models.Order>
 @{
-    ViewData["Title"] = "Orders";
+    ViewData["Title"] = "Đơn hàng";
 }
 
-<h1>Orders</h1>
-<table class="admin-table glass-panel" style="padding:1rem; display:block;">
-    <thead><tr><th>ID</th><th>Customer</th><th>Date</th><th>Status</th><th>Total</th><th></th></tr></thead>
+<h1>Đơn hàng</h1>
+<div class="table-scroll glass-panel" style="padding:1rem;">
+<table class="admin-table">
+    <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày đặt</th><th>Trạng thái</th><th>Tổng tiền</th><th></th></tr></thead>
     <tbody>
         @foreach (var o in Model)
         {
@@ -15,8 +16,9 @@
                 <td>@o.OrderDate.ToLocalTime().ToString("g")</td>
                 <td>@o.Status</td>
                 <td>@o.Total.ToString("N0") ₫</td>
-                <td><a asp-action="Details" asp-route-id="@o.Id">Details</a></td>
+                <td><a asp-action="Details" asp-route-id="@o.Id">Chi tiết</a></td>
             </tr>
         }
     </tbody>
 </table>
+</div>

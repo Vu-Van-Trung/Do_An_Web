@@ -1,20 +1,21 @@
 @model WebApplication1.ViewModels.CartViewModel
 @{
-    ViewData["Title"] = "Shopping Cart";
+    ViewData["Title"] = "Giỏ hàng";
 }
 
-<h1>Shopping Cart</h1>
+<h1>Giỏ hàng</h1>
 
 @if (!Model.Items.Any())
 {
-    <p class="meta">Your cart is empty. <a asp-controller="Product" asp-action="Index">Browse products</a></p>
+    <p class="meta">Giỏ hàng của bạn đang trống. <a asp-controller="Product" asp-action="Index">Xem sản phẩm</a></p>
 }
 else
 {
     <div class="glass-panel" style="padding:1rem;">
+        <div class="table-scroll">
         <table class="cart-table">
             <thead>
-                <tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th></th></tr>
+                <tr><th>Sản phẩm</th><th>Đơn giá</th><th>SL</th><th>Thành tiền</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var item in Model.Items)
@@ -32,19 +33,20 @@ else
                         <td>
                             <form asp-action="Remove" method="post">
                                 <input type="hidden" name="cartItemId" value="@item.CartItemId" />
-                                <button type="submit" class="btn btn-ghost btn-sm">Remove</button>
+                                <button type="submit" class="btn btn-ghost btn-sm">Xóa</button>
                             </form>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-        <p style="text-align:right; font-size:1.2rem;">
-            Total: <strong data-cart-subtotal>@Model.Subtotal.ToString("N0") ₫</strong>
+        </div>
+        <p style="text-align:right; font-size:1.2rem; margin-top:1rem;">
+            Tổng cộng: <strong data-cart-subtotal>@Model.Subtotal.ToString("N0") ₫</strong>
         </p>
-        <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1rem;">
-            <a asp-controller="Product" asp-action="Index" class="btn btn-ghost">Continue Shopping</a>
-            <a asp-controller="Checkout" asp-action="Index" class="btn btn-primary">Checkout</a>
+        <div class="cart-actions">
+            <a asp-controller="Product" asp-action="Index" class="btn btn-ghost">Tiếp tục mua</a>
+            <a asp-controller="Checkout" asp-action="Index" class="btn btn-primary">Thanh toán</a>
         </div>
     </div>
 }

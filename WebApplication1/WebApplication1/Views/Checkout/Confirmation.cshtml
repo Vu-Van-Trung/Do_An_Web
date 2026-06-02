@@ -1,18 +1,18 @@
 @model WebApplication1.ViewModels.OrderConfirmationViewModel
 @{
-    ViewData["Title"] = "Order Confirmed";
+    ViewData["Title"] = "Đặt hàng thành công";
     var order = Model.Order;
 }
 
 <section class="hero glass-panel">
-    <h1>Order Placed Successfully</h1>
-    <p>Order #@order.Id · @order.OrderDate.ToLocalTime().ToString("g") · @order.Status</p>
-    <p>Payment: @order.PaymentMethod · Total: <strong class="price">@order.Total.ToString("N0") ₫</strong></p>
-    <p>Ship to: @order.FullName, @order.Phone — @order.ShippingAddress</p>
+    <h1>Đặt hàng thành công!</h1>
+    <p>Đơn hàng #@order.Id · @order.OrderDate.ToLocalTime().ToString("g") · @order.Status</p>
+    <p>Thanh toán: @order.PaymentMethod · Tổng: <strong class="price">@order.Total.ToString("N0") ₫</strong></p>
+    <p>Giao đến: @order.FullName, @order.Phone — @order.ShippingAddress</p>
 </section>
 
 <div class="glass-panel" style="padding:1rem;">
-    <h3>Items</h3>
+    <h3>Sản phẩm đã đặt</h3>
     <ul>
         @foreach (var item in order.Items)
         {
@@ -21,4 +21,4 @@
     </ul>
 </div>
 
-<a asp-controller="Account" asp-action="Orders" class="btn btn-secondary">View Order History</a>
+<a asp-controller="Account" asp-action="Orders" class="btn btn-secondary">Xem lịch sử đơn hàng</a>
