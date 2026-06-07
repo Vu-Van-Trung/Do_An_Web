@@ -41,6 +41,7 @@ builder.Services.AddScoped<IBrandRepository, BrandRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICartService, CartService>();
 
+builder.Services.AddHttpClient();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 

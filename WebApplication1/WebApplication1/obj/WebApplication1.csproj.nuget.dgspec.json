@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\vuvan\\Downloads\\DoAnLapTrinhWeb\\DoAnLapTrinhWeb\\WebApplication1\\WebApplication1\\WebApplication1.csproj": {}
+    "E:\\Do_An_Web\\WebApplication1\\WebApplication1\\WebApplication1.csproj": {}
   },
   "projects": {
-    "C:\\Users\\vuvan\\Downloads\\DoAnLapTrinhWeb\\DoAnLapTrinhWeb\\WebApplication1\\WebApplication1\\WebApplication1.csproj": {
+    "E:\\Do_An_Web\\WebApplication1\\WebApplication1\\WebApplication1.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\vuvan\\Downloads\\DoAnLapTrinhWeb\\DoAnLapTrinhWeb\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
+        "projectUniqueName": "E:\\Do_An_Web\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
         "projectName": "WebApplication1",
-        "projectPath": "C:\\Users\\vuvan\\Downloads\\DoAnLapTrinhWeb\\DoAnLapTrinhWeb\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
+        "projectPath": "E:\\Do_An_Web\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
         "packagesPath": "C:\\Users\\vuvan\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\vuvan\\Downloads\\DoAnLapTrinhWeb\\DoAnLapTrinhWeb\\WebApplication1\\WebApplication1\\obj\\",
+        "outputPath": "E:\\Do_An_Web\\WebApplication1\\WebApplication1\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -30,6 +30,7 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {}
           }
@@ -44,10 +45,11 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
@@ -90,7 +92,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

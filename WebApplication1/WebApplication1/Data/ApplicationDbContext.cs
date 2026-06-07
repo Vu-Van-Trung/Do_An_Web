@@ -53,5 +53,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         builder.Entity<ProductSpecification>()
             .HasIndex(s => new { s.Key, s.Value });
+
+        builder.Entity<Category>()
+            .HasOne(c => c.ParentCategory)
+            .WithMany(c => c.SubCategories)
+            .HasForeignKey(c => c.ParentCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

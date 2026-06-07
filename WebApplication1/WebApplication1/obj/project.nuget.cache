@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Od7bun8Ru48=",
+  "dgSpecHash": "I50649KE7Qs=",
   "success": true,
-  "projectFilePath": "C:\\Users\\vuvan\\Downloads\\DoAnLapTrinhWeb\\DoAnLapTrinhWeb\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
+  "projectFilePath": "E:\\Do_An_Web\\WebApplication1\\WebApplication1\\WebApplication1.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\vuvan\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\vuvan\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
