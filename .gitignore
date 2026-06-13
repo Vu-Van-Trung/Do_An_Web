@@ -9,6 +9,14 @@
 [Ll]og/
 [Ll]ogs/
 
+# Explicit paths (force ignore even if previously tracked)
+WebApplication1/**/.vs/
+WebApplication1/**/bin/
+WebApplication1/**/obj/
+
+# Sensitive config — never commit real secrets
+# appsettings.json is kept tracked but bin copy is excluded above
+
 # NuGet
 *.nupkg
 packages/

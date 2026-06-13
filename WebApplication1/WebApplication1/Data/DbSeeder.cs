@@ -411,7 +411,7 @@ public static class DbSeeder
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
     {
-        foreach (var role in new[] { "Admin", "Customer" })
+        foreach (var role in new[] { "Admin", "Manager", "Staff", "Customer" })
         {
             if (!await roleManager.RoleExistsAsync(role))
                 await roleManager.CreateAsync(new IdentityRole(role));
@@ -420,19 +420,24 @@ public static class DbSeeder
 
     private static async Task SeedAdminAsync(UserManager<ApplicationUser> userManager)
     {
-        const string email = "admin@nexusgear.local";
-        if (await userManager.FindByEmailAsync(email) != null)
-            return;
+        await EnsureUser(userManager, "admin@nexusgear.local", "Store Administrator", "Admin@123", "Admin");
+        await EnsureUser(userManager, "manager@nexusgear.local", "Nguyễn Quản Lý", "Manager@123", "Manager");
+        await EnsureUser(userManager, "staff@nexusgear.local", "Trần Nhân Viên", "Staff@123", "Staff");
+    }
 
-        var admin = new ApplicationUser
+    private static async Task EnsureUser(UserManager<ApplicationUser> userManager,
+        string email, string fullName, string password, string role)
+    {
+        if (await userManager.FindByEmailAsync(email) != null) return;
+        var user = new ApplicationUser
         {
             UserName = email,
             Email = email,
             EmailConfirmed = true,
-            FullName = "Store Administrator"
+            FullName = fullName
         };
-        await userManager.CreateAsync(admin, "Admin@123");
-        await userManager.AddToRoleAsync(admin, "Admin");
+        await userManager.CreateAsync(user, password);
+        await userManager.AddToRoleAsync(user, role);
     }
 
     private static Product CreateProduct(string name, string description, decimal price, int stock,

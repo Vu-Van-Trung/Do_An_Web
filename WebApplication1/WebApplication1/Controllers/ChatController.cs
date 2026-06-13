@@ -23,10 +23,17 @@ public class ChatController : Controller
         Response.Headers["Cache-Control"] = "no-cache";
         Response.Headers["X-Accel-Buffering"] = "no";
 
-        var baseUrl = _config["Ollama:BaseUrl"] ?? "http://localhost:11434";
-        var model = _config["Ollama:Model"] ?? "qwen2.5:3b";
-        var systemPrompt = _config["Ollama:SystemPrompt"]
+        var apiKey       = _config["OpenAI:ApiKey"] ?? "";
+        var baseUrl      = _config["OpenAI:BaseUrl"] ?? "https://api.openai.com/v1/chat/completions";
+        var model        = _config["OpenAI:Model"] ?? "gpt-4o-mini";
+        var systemPrompt = _config["OpenAI:SystemPrompt"]
             ?? "Bạn là trợ lý AI của NexusGear. Tư vấn thiết bị gaming bằng tiếng Việt, ngắn gọn và thân thiện.";
+
+        if (string.IsNullOrWhiteSpace(apiKey) || apiKey.StartsWith("ĐẶT_"))
+        {
+            await WriteErrAsync("OpenAI API Key chưa được cấu hình.", ct);
+            return;
+        }
 
         var messages = new List<object>
         {
@@ -34,40 +41,64 @@ public class ChatController : Controller
         };
         messages.AddRange(request.Messages.Select(m => (object)new { role = m.Role, content = m.Content }));
 
-        var payload = JsonSerializer.Serialize(new { model, messages, stream = true });
+        var payload = JsonSerializer.Serialize(new
+        {
+            model,
+            messages,
+            stream     = true,
+            max_tokens = 1024
+        });
 
         try
         {
             var client = _http.CreateClient();
-            using var httpReq = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/api/chat")
+            using var httpReq = new HttpRequestMessage(HttpMethod.Post, baseUrl)
             {
                 Content = new StringContent(payload, Encoding.UTF8, "application/json")
             };
+            httpReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
-            using var ollamaRes = await client.SendAsync(httpReq, HttpCompletionOption.ResponseHeadersRead, ct);
+            using var openAiRes = await client.SendAsync(httpReq, HttpCompletionOption.ResponseHeadersRead, ct);
 
-            if (!ollamaRes.IsSuccessStatusCode)
+            if (!openAiRes.IsSuccessStatusCode)
             {
-                await WriteErrAsync($"Ollama trả về lỗi {(int)ollamaRes.StatusCode}. Model \"{model}\" có thể chưa được tải.", ct);
+                var errBody = await openAiRes.Content.ReadAsStringAsync(ct);
+                var msg = $"OpenAI lỗi {(int)openAiRes.StatusCode}";
+                try
+                {
+                    using var errDoc = JsonDocument.Parse(errBody);
+                    if (errDoc.RootElement.TryGetProperty("error", out var errEl) &&
+                        errEl.TryGetProperty("message", out var msgEl))
+                        msg += $": {msgEl.GetString()}";
+                }
+                catch { }
+                await WriteErrAsync(msg, ct);
                 return;
             }
 
-            using var stream = await ollamaRes.Content.ReadAsStreamAsync(ct);
+            using var stream = await openAiRes.Content.ReadAsStreamAsync(ct);
             using var reader = new StreamReader(stream);
 
             while (!ct.IsCancellationRequested)
             {
                 var line = await reader.ReadLineAsync(ct);
                 if (line == null) break;
-                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (!line.StartsWith("data: ")) continue;
+
+                var json = line[6..].Trim();
+                if (json == "[DONE]")
+                {
+                    await Response.WriteAsync("data: [DONE]\n\n", ct);
+                    break;
+                }
 
                 try
                 {
-                    using var doc = JsonDocument.Parse(line);
-                    var root = doc.RootElement;
-
-                    if (root.TryGetProperty("message", out var msgEl) &&
-                        msgEl.TryGetProperty("content", out var contentEl))
+                    using var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("choices", out var choices) &&
+                        choices.GetArrayLength() > 0 &&
+                        choices[0].TryGetProperty("delta", out var delta) &&
+                        delta.TryGetProperty("content", out var contentEl))
                     {
                         var token = contentEl.GetString();
                         if (!string.IsNullOrEmpty(token))
@@ -76,20 +107,14 @@ public class ChatController : Controller
                             await Response.Body.FlushAsync(ct);
                         }
                     }
-
-                    if (root.TryGetProperty("done", out var doneEl) && doneEl.GetBoolean())
-                    {
-                        await Response.WriteAsync("data: [DONE]\n\n", ct);
-                        break;
-                    }
                 }
                 catch { }
             }
         }
         catch (OperationCanceledException) { }
-        catch
+        catch (Exception ex)
         {
-            await WriteErrAsync($"Không thể kết nối Ollama tại {baseUrl}. Hãy đảm bảo Ollama đang chạy.", ct);
+            await WriteErrAsync($"Lỗi kết nối OpenAI: {ex.Message}", ct);
         }
     }
 
@@ -97,8 +122,7 @@ public class ChatController : Controller
     {
         try
         {
-            var json = JsonSerializer.Serialize(new { error = msg });
-            await Response.WriteAsync($"data: {json}\n\n", ct);
+            await Response.WriteAsync($"data: {JsonSerializer.Serialize(new { error = msg })}\n\n", ct);
         }
         catch { }
     }
@@ -111,6 +135,6 @@ public class ChatRequestDto
 
 public class ChatMessageDto
 {
-    public string Role { get; set; } = "user";
+    public string Role    { get; set; } = "user";
     public string Content { get; set; } = "";
 }

@@ -1,24 +1,182 @@
 @model WebApplication1.ViewModels.OrderConfirmationViewModel
+@using WebApplication1.Models
 @{
-    ViewData["Title"] = "Đặt hàng thành công";
-    var order = Model.Order;
+    ViewData["Title"] = "Xác nhận đơn hàng";
+    var order   = Model.Order;
+    var isPaid  = order.PaymentStatus == PaymentStatus.Paid;
+    var isCOD   = order.PaymentStatus == PaymentStatus.COD;
+    var isFailed= order.PaymentStatus == PaymentStatus.Failed;
+    var isPending = order.PaymentStatus == PaymentStatus.Pending;
 }
 
-<section class="hero glass-panel">
-    <h1>Đặt hàng thành công!</h1>
-    <p>Đơn hàng #@order.Id · @order.OrderDate.ToLocalTime().ToString("g") · @order.Status</p>
-    <p>Thanh toán: @order.PaymentMethod · Tổng: <strong class="price">@order.Total.ToString("N0") ₫</strong></p>
-    <p>Giao đến: @order.FullName, @order.Phone — @order.ShippingAddress</p>
-</section>
+<style>
+    .confirm-hero {
+        border-radius: 18px; padding: 2rem 2.5rem; margin-bottom: 1.5rem;
+        display: flex; align-items: flex-start; gap: 1.25rem;
+    }
+    .confirm-hero.success { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+    .confirm-hero.failed  { background: #fff1f2; border: 1.5px solid #fecdd3; }
+    .confirm-hero.pending { background: #fffbeb; border: 1.5px solid #fde68a; }
 
-<div class="glass-panel" style="padding:1rem;">
-    <h3>Sản phẩm đã đặt</h3>
-    <ul>
-        @foreach (var item in order.Items)
-        {
-            <li>@item.ProductName × @item.Quantity — @item.LineTotal.ToString("N0") ₫</li>
-        }
-    </ul>
-</div>
+    .confirm-icon { font-size: 2.5rem; flex-shrink: 0; line-height: 1; margin-top: .15rem; }
+    .confirm-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; margin: 0 0 .35rem; }
+    .confirm-sub   { color: var(--text-muted); font-size: .9rem; margin: 0 0 .75rem; }
+    .confirm-meta  { display: flex; flex-wrap: wrap; gap: .5rem .75rem; font-size: .85rem; }
+    .confirm-tag {
+        background: #fff; border: 1px solid var(--border);
+        border-radius: 8px; padding: .3rem .75rem;
+        display: inline-flex; align-items: center; gap: .35rem;
+    }
 
-<a asp-controller="Account" asp-action="Orders" class="btn btn-secondary">Xem lịch sử đơn hàng</a>
+    .order-detail-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+    .detail-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.25rem; }
+    .detail-card h4 { font-size: .85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 .6rem; }
+    .detail-card p  { margin: .25rem 0; font-size: .9rem; }
+
+    .items-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    .items-table th { text-align: left; padding: .6rem .75rem; font-size: .8rem; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+    .items-table td { padding: .7rem .75rem; border-bottom: 1px solid #f3f4f6; }
+    .items-table tr:last-child td { border-bottom: none; }
+    .items-table .text-right { text-align: right; }
+
+    .total-row { display: flex; justify-content: space-between; padding: .4rem 0; font-size: .9rem; }
+    .total-row.grand { font-weight: 700; font-size: 1.05rem; border-top: 2px solid var(--border); margin-top: .5rem; padding-top: .75rem; }
+    .total-row.grand .price { color: var(--accent); font-size: 1.1rem; }
+
+    @@media (max-width: 640px) {
+        .order-detail-grid { grid-template-columns: 1fr; }
+        .confirm-hero { flex-direction: column; }
+    }
+</style>
+
+<!-- ── Hero Banner ── -->
+@if (isPaid || isCOD)
+{
+    <div class="confirm-hero success">
+        <div class="confirm-icon">✅</div>
+        <div>
+            <div class="confirm-title">@(isPaid ? "Thanh toán thành công!" : "Đặt hàng thành công!")</div>
+            <div class="confirm-sub">
+                @if (isPaid)
+                {
+                    <span>Giao dịch VNPay đã được xác nhận. Đơn hàng đang được xử lý.</span>
+                }
+                else
+                {
+                    <span>Đơn hàng của bạn đã được ghi nhận. Vui lòng chuẩn bị tiền mặt khi nhận hàng.</span>
+                }
+            </div>
+            <div class="confirm-meta">
+                <span class="confirm-tag">🧾 Đơn #@order.Id</span>
+                <span class="confirm-tag">📅 @order.OrderDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                <span class="confirm-tag" style="color: @(isCOD ? "#b45309" : "#16a34a")">
+                    @(isCOD ? "💵 COD" : "💳 VNPay — Đã thanh toán")
+                </span>
+                @if (!string.IsNullOrEmpty(order.VnPayTransactionId))
+                {
+                    <span class="confirm-tag">🔖 TXN: @order.VnPayTransactionId</span>
+                }
+            </div>
+        </div>
+    </div>
+}
+else if (isFailed)
+{
+    <div class="confirm-hero failed">
+        <div class="confirm-icon">❌</div>
+        <div>
+            <div class="confirm-title">Thanh toán thất bại</div>
+            <div class="confirm-sub">Giao dịch VNPay không thành công. Tồn kho đã được hoàn lại.</div>
+            <div style="margin-top:.75rem; display:flex; gap:.75rem; flex-wrap:wrap;">
+                <a asp-controller="Cart" asp-action="Index" class="btn btn-primary btn-sm">🛒 Quay lại giỏ hàng</a>
+                <a asp-controller="Product" asp-action="Index" class="btn btn-ghost btn-sm">Tiếp tục mua sắm</a>
+            </div>
+        </div>
+    </div>
+}
+else if (isPending)
+{
+    <div class="confirm-hero pending">
+        <div class="confirm-icon">⏳</div>
+        <div>
+            <div class="confirm-title">Đang chờ xác nhận thanh toán</div>
+            <div class="confirm-sub">Hệ thống đang chờ xác nhận từ VNPay. Đơn #@order.Id sẽ được xử lý khi thanh toán hoàn tất.</div>
+        </div>
+    </div>
+}
+
+@if (!isFailed)
+{
+    <!-- ── Order detail cards ── -->
+    <div class="order-detail-grid">
+        <div class="detail-card">
+            <h4>📦 Thông tin giao hàng</h4>
+            <p><strong>@order.FullName</strong></p>
+            <p>📞 @order.Phone</p>
+            <p>📍 @order.ShippingAddress</p>
+            @if (!string.IsNullOrEmpty(order.Notes))
+            {
+                <p style="color:var(--text-muted);">📝 @order.Notes</p>
+            }
+        </div>
+        <div class="detail-card">
+            <h4>🏷️ Trạng thái đơn hàng</h4>
+            <p>Trạng thái: <strong>@order.Status</strong></p>
+            <p>Thanh toán:
+                <strong style="color: @(isPaid ? "#16a34a" : isCOD ? "#b45309" : "#6b7280")">
+                    @(isPaid ? "Đã thanh toán (VNPay)" : isCOD ? "Thanh toán khi nhận" : order.PaymentStatus.ToString())
+                </strong>
+            </p>
+            <p>Phí ship: 50.000 ₫</p>
+            <p>Tổng: <strong class="price">@order.Total.ToString("N0") ₫</strong></p>
+        </div>
+    </div>
+
+    <!-- ── Items table ── -->
+    <div class="glass-panel" style="padding:1.25rem; margin-bottom:1.25rem;">
+        <h3 style="margin:0 0 1rem; font-size:1rem; font-weight:700;">Sản phẩm đã đặt</h3>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th class="text-right">Đơn giá</th>
+                    <th class="text-right">SL</th>
+                    <th class="text-right">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in order.Items)
+                {
+                    <tr>
+                        <td>@item.ProductName</td>
+                        <td class="text-right">@item.UnitPrice.ToString("N0") ₫</td>
+                        <td class="text-right">@item.Quantity</td>
+                        <td class="text-right" style="font-weight:600;">@item.LineTotal.ToString("N0") ₫</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div style="max-width:280px; margin-left:auto; margin-top:.75rem; padding-top:.75rem; border-top:1px solid var(--border);">
+            <div class="total-row"><span>Tạm tính</span><span>@order.Subtotal.ToString("N0") ₫</span></div>
+            @if (order.DiscountAmount > 0)
+            {
+                <div class="total-row" style="color:#16a34a;">
+                    <span>Giảm giá @(!string.IsNullOrEmpty(order.DiscountCode) ? $"({order.DiscountCode})" : "")</span>
+                    <span>-@order.DiscountAmount.ToString("N0") ₫</span>
+                </div>
+            }
+            <div class="total-row"><span>Phí vận chuyển</span><span>@order.ShippingFee.ToString("N0") ₫</span></div>
+            <div class="total-row grand"><span>Tổng cộng</span><span class="price">@order.Total.ToString("N0") ₫</span></div>
+        </div>
+    </div>
+
+    <!-- ── Actions ── -->
+    <div style="display:flex; gap:.75rem; flex-wrap:wrap;">
+        <a asp-controller="Account" asp-action="Orders" class="btn btn-secondary">📋 Xem lịch sử đơn hàng</a>
+        <a asp-controller="Product" asp-action="Index" class="btn btn-ghost">Tiếp tục mua sắm</a>
+    </div>
+}

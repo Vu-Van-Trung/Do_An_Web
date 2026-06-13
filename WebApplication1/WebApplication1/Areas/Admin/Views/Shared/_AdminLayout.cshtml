@@ -3,27 +3,132 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - NexusGear Admin</title>
+    <title>@ViewData["Title"] — NexusGear Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/gaming-theme.css" asp-append-version="true" />
 </head>
 <body>
-    <div class="container" style="padding-top:2rem;">
-        <div class="admin-layout">
-            <aside class="admin-sidebar glass-panel">
-                <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="brand" style="display:block; margin-bottom:1rem;">Quản trị</a>
-                <a asp-area="Admin" asp-controller="Home" asp-action="Index">Tổng quan</a>
-                <a asp-area="Admin" asp-controller="Products" asp-action="Index">Sản phẩm</a>
-                <a asp-area="Admin" asp-controller="Categories" asp-action="Index">Danh mục</a>
-                <a asp-area="Admin" asp-controller="Brands" asp-action="Index">Thương hiệu</a>
-                <a asp-area="Admin" asp-controller="Orders" asp-action="Index">Đơn hàng</a>
-                <hr style="border-color:var(--border);" />
-                <a asp-area="" asp-controller="Home" asp-action="Index">← Cửa hàng</a>
-            </aside>
-            <main>@RenderBody()</main>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="admin-brand">
+                <a asp-area="Admin" asp-controller="Home" asp-action="Index">
+                    <span class="brand-icon">⚡</span>
+                    <span>NexusGear</span>
+                </a>
+                <span class="brand-sub">
+                    @if (User.IsInRole("Admin")) { <text>Admin Panel</text> }
+                    else if (User.IsInRole("Manager")) { <text>Manager</text> }
+                    else { <text>Staff</text> }
+                </span>
+            </div>
+
+            <nav class="admin-nav">
+                @{
+                    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString();
+                    var isAdmin = User.IsInRole("Admin");
+                    var isManager = User.IsInRole("Manager");
+                    var isStaff = User.IsInRole("Staff");
+                }
+
+                @if (isAdmin || isManager)
+                {
+                    <div class="nav-section">
+                        <span class="nav-section-label">CỬA HÀNG</span>
+                        <a asp-area="Admin" asp-controller="Home" asp-action="Index"
+                           class="@(ctrl == "Home" ? "active" : "")">
+                            <span class="nav-icon">📊</span> Tổng quan
+                        </a>
+                        <a asp-area="Admin" asp-controller="Products" asp-action="Index"
+                           class="@(ctrl == "Products" ? "active" : "")">
+                            <span class="nav-icon">📦</span> Sản phẩm
+                        </a>
+                        <a asp-area="Admin" asp-controller="Categories" asp-action="Index"
+                           class="@(ctrl == "Categories" ? "active" : "")">
+                            <span class="nav-icon">🏷️</span> Danh mục
+                        </a>
+                        <a asp-area="Admin" asp-controller="Brands" asp-action="Index"
+                           class="@(ctrl == "Brands" ? "active" : "")">
+                            <span class="nav-icon">🏭</span> Thương hiệu
+                        </a>
+                    </div>
+                }
+
+                <div class="nav-section">
+                    <span class="nav-section-label">BÁN HÀNG</span>
+                    <a asp-area="Admin" asp-controller="Orders" asp-action="Index"
+                       class="@(ctrl == "Orders" ? "active" : "")">
+                        <span class="nav-icon">🛒</span> Đơn hàng
+                    </a>
+                    @if (isAdmin)
+                    {
+                        <a asp-area="Admin" asp-controller="Users" asp-action="Index"
+                           class="@(ctrl == "Users" ? "active" : "")">
+                            <span class="nav-icon">👥</span> Khách hàng
+                        </a>
+                    }
+                </div>
+
+                @if (isAdmin || isManager)
+                {
+                    <div class="nav-section">
+                        <span class="nav-section-label">TIẾP THỊ</span>
+                        <a asp-area="Admin" asp-controller="Discounts" asp-action="Index"
+                           class="@(ctrl == "Discounts" ? "active" : "")">
+                            <span class="nav-icon">🎁</span> Khuyến mãi
+                        </a>
+                    </div>
+
+                    <div class="nav-section">
+                        <span class="nav-section-label">PHÂN TÍCH</span>
+                        <a asp-area="Admin" asp-controller="Reports" asp-action="Index"
+                           class="@(ctrl == "Reports" ? "active" : "")">
+                            <span class="nav-icon">📈</span> Báo cáo
+                        </a>
+                    </div>
+                }
+
+                @if (isAdmin)
+                {
+                    <div class="nav-section">
+                        <span class="nav-section-label">HỆ THỐNG</span>
+                        <a asp-area="Admin" asp-controller="Roles" asp-action="Index"
+                           class="@(ctrl == "Roles" ? "active" : "")">
+                            <span class="nav-icon">🔐</span> Phân quyền
+                        </a>
+                    </div>
+                }
+
+                <div class="nav-section nav-bottom">
+                    <a asp-area="" asp-controller="Home" asp-action="Index" class="nav-store-link">
+                        <span class="nav-icon">←</span> Về cửa hàng
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="admin-content">
+            <header class="admin-topbar">
+                <span class="topbar-title">@ViewData["Title"]</span>
+                <div class="topbar-user">
+                    @{
+                        var roleLabel = isAdmin ? "Admin" : isManager ? "Manager" : "Staff";
+                        var roleBadge = isAdmin ? "badge-accent" : isManager ? "badge-info" : "badge-warning";
+                    }
+                    <span class="badge @roleBadge">@roleLabel</span>
+                    <span style="font-size:.85rem;color:var(--text-muted);">@User.Identity?.Name</span>
+                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-ghost btn-sm">Đăng xuất</button>
+                    </form>
+                </div>
+            </header>
+            <main class="admin-main">
+                @RenderBody()
+            </main>
         </div>
     </div>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

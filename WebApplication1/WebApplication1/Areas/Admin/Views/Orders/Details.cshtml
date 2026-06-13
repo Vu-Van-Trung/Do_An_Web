@@ -3,25 +3,84 @@
     ViewData["Title"] = $"Đơn hàng #{Model.Id}";
 }
 
-<h1>Đơn hàng #@Model.Id</h1>
-<p>@Model.User.FullName · @Model.Phone · @Model.ShippingAddress</p>
-<p>Trạng thái: <strong>@Model.Status</strong> · Tổng cộng: @Model.Total.ToString("N0") ₫</p>
+<div class="page-header">
+    <a asp-action="Index" class="btn btn-ghost btn-sm">← Danh sách</a>
+    <h1>Đơn hàng #@Model.Id</h1>
+    <span class="status-badge status-@Model.Status.ToString().ToLower()">@Model.Status</span>
+</div>
 
-<ul>
-    @foreach (var item in Model.Items)
-    {
-        <li>@item.ProductName × @item.Quantity — @item.LineTotal.ToString("N0") ₫</li>
-    }
-</ul>
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
 
-<form asp-action="UpdateStatus" method="post" class="glass-panel" style="padding:1rem; margin-top:1rem;">
-    <input type="hidden" name="id" value="@Model.Id" />
-    <label>Cập nhật trạng thái</label>
-    <select name="status" class="form-control">
-        @foreach (WebApplication1.Models.OrderStatus s in Enum.GetValues(typeof(WebApplication1.Models.OrderStatus)))
-        {
-            <option value="@s" selected="@(Model.Status == s)">@s</option>
-        }
-    </select>
-    <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Lưu</button>
-</form>
+<div class="detail-layout" style="margin-bottom:2rem;">
+    <div class="glass-panel" style="padding:1.5rem;">
+        <h2 style="margin-top:0;font-size:1rem;">Thông tin giao hàng</h2>
+        <table class="info-table">
+            <tr><td>Khách hàng</td><td><strong>@Model.FullName</strong></td></tr>
+            <tr><td>Điện thoại</td><td>@Model.Phone</td></tr>
+            <tr><td>Địa chỉ</td><td>@Model.ShippingAddress</td></tr>
+            @if (!string.IsNullOrEmpty(Model.Notes))
+            {
+                <tr><td>Ghi chú</td><td>@Model.Notes</td></tr>
+            }
+            <tr><td>Ngày đặt</td><td>@Model.OrderDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td></tr>
+        </table>
+    </div>
+
+    <div class="glass-panel" style="padding:1.5rem;">
+        <h2 style="margin-top:0;font-size:1rem;">Thanh toán & Trạng thái</h2>
+        <table class="info-table">
+            <tr><td>Phương thức</td><td><strong>@Model.PaymentMethod</strong></td></tr>
+            <tr><td>TT thanh toán</td><td><span class="badge badge-muted">@Model.PaymentStatus</span></td></tr>
+            @if (!string.IsNullOrEmpty(Model.VnPayTransactionId))
+            {
+                <tr><td>Mã VNPay</td><td><code>@Model.VnPayTransactionId</code></td></tr>
+            }
+            @if (!string.IsNullOrEmpty(Model.DiscountCode))
+            {
+                <tr><td>Mã giảm giá</td><td><span class="badge badge-success">@Model.DiscountCode</span></td></tr>
+                <tr><td>Giảm giá</td><td style="color:#22c55e;">-@Model.DiscountAmount.ToString("N0") ₫</td></tr>
+            }
+            <tr><td>Tạm tính</td><td>@Model.Subtotal.ToString("N0") ₫</td></tr>
+            <tr><td>Phí vận chuyển</td><td>@Model.ShippingFee.ToString("N0") ₫</td></tr>
+            <tr><td><strong>Tổng cộng</strong></td><td><strong>@Model.Total.ToString("N0") ₫</strong></td></tr>
+        </table>
+    </div>
+</div>
+
+<h2 style="font-size:1rem;font-weight:600;margin-bottom:0.75rem;">Sản phẩm (@Model.Items.Count)</h2>
+<div class="table-scroll glass-panel" style="padding:1rem;margin-bottom:2rem;">
+    <table class="admin-table">
+        <thead><tr><th>Sản phẩm</th><th>Đơn giá</th><th>Số lượng</th><th>Thành tiền</th></tr></thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.UnitPrice.ToString("N0") ₫</td>
+                    <td>×@item.Quantity</td>
+                    <td><strong>@item.LineTotal.ToString("N0") ₫</strong></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="glass-panel" style="padding:1.5rem;max-width:360px;">
+    <h2 style="margin-top:0;font-size:1rem;">Cập nhật trạng thái</h2>
+    <form asp-action="UpdateStatus" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="form-group">
+            <select name="status" class="form-control">
+                @foreach (WebApplication1.Models.OrderStatus s in Enum.GetValues(typeof(WebApplication1.Models.OrderStatus)))
+                {
+                    <option value="@s" selected="@(Model.Status == s)">@s</option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" style="width:100%;">Lưu trạng thái</button>
+    </form>
+</div>

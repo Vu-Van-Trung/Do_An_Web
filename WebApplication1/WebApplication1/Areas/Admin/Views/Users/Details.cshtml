@@ -1,0 +1,116 @@
+@model WebApplication1.ViewModels.UserDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết người dùng";
+}
+
+<div class="page-header">
+    <a asp-action="Index" class="btn btn-ghost btn-sm">← Danh sách</a>
+    <h1>@Model.User.FullName</h1>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="detail-layout" style="margin-bottom:2rem;">
+    <div class="glass-panel" style="padding:1.5rem;">
+        <h2 style="margin-top:0;">Thông tin tài khoản</h2>
+        <table class="info-table">
+            <tr><td>Email</td><td><strong>@Model.User.Email</strong></td></tr>
+            <tr><td>Họ tên</td><td>@Model.User.FullName</td></tr>
+            <tr><td>Điện thoại</td><td>@(Model.User.PhoneNumber ?? "—")</td></tr>
+            <tr><td>Địa chỉ</td><td>@(Model.User.Address ?? "—")</td></tr>
+            <tr><td>Ngày tạo</td><td>@Model.User.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td></tr>
+            <tr>
+                <td>Vai trò</td>
+                <td><span class="badge @(Model.Role == "Admin" ? "badge-accent" : "badge-info")">@Model.Role</span></td>
+            </tr>
+            <tr>
+                <td>Trạng thái</td>
+                <td>
+                    @if (Model.IsLocked)
+                    {
+                        <span class="badge badge-error">Bị khóa</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-success">Hoạt động</span>
+                    }
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="glass-panel" style="padding:1.5rem;">
+        <h2 style="margin-top:0;">Thao tác</h2>
+
+        <form asp-action="ToggleLock" method="post" style="margin-bottom:1rem;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.User.Id" />
+            <button type="submit" class="btn @(Model.IsLocked ? "btn-primary" : "btn-ghost") btn-sm"
+                    onclick="return confirm('@(Model.IsLocked ? "Mở khóa" : "Khóa") tài khoản này?')" style="width:100%">
+                @(Model.IsLocked ? "✓ Mở khóa tài khoản" : "⊘ Khóa tài khoản")
+            </button>
+        </form>
+
+        @if (Model.Role != "Admin")
+        {
+            <form asp-action="ChangeRole" method="post" style="margin-bottom:1rem;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.User.Id" />
+                <label class="form-label">Thay đổi vai trò</label>
+                <div style="display:flex;gap:0.5rem;">
+                    <select name="role" class="form-control" style="flex:1;">
+                        <option value="Admin"    selected="@(Model.Role == "Admin")">👑 Admin</option>
+                        <option value="Manager"  selected="@(Model.Role == "Manager")">📋 Manager</option>
+                        <option value="Staff"    selected="@(Model.Role == "Staff")">🛠️ Staff</option>
+                        <option value="Customer" selected="@(Model.Role == "Customer")">🛒 Customer</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
+                </div>
+            </form>
+
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.User.Id" />
+                <button type="submit" class="btn btn-ghost btn-sm" style="width:100%;color:#ef4444;border-color:#ef4444;"
+                        onclick="return confirm('Xóa vĩnh viễn tài khoản này?')">
+                    Xóa tài khoản
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+<h2>Lịch sử đơn hàng (@Model.Orders.Count())</h2>
+@if (!Model.Orders.Any())
+{
+    <p class="meta">Chưa có đơn hàng nào.</p>
+}
+else
+{
+    <div class="table-scroll glass-panel" style="padding:1rem;">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Mã đơn</th><th>Ngày đặt</th><th>Trạng thái</th><th>Thanh toán</th><th>Tổng tiền</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model.Orders)
+                {
+                    <tr>
+                        <td>#@o.Id</td>
+                        <td>@o.OrderDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td><span class="status-badge status-@o.Status.ToString().ToLower()">@o.Status</span></td>
+                        <td>@o.PaymentMethod</td>
+                        <td>@o.Total.ToString("N0") ₫</td>
+                        <td>
+                            <a asp-area="Admin" asp-controller="Orders" asp-action="Details" asp-route-id="@o.Id"
+                               class="btn btn-ghost btn-sm">Xem</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

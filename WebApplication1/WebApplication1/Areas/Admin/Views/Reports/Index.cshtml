@@ -1,0 +1,98 @@
+@model WebApplication1.ViewModels.ReportViewModel
+@{
+    ViewData["Title"] = "Báo cáo & Thống kê";
+    var labels = string.Join(",", Model.MonthlyRevenues.Select(m => $"\"{m.Month}\""));
+    var revenues = string.Join(",", Model.MonthlyRevenues.Select(m => m.Revenue));
+}
+
+<div class="page-header">
+    <h1>Báo cáo & Thống kê</h1>
+</div>
+
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(175px,1fr));">
+    <div class="stat-card glass-panel">
+        <h3>Tổng doanh thu</h3>
+        <p>@Model.TotalRevenue.ToString("N0") ₫</p>
+    </div>
+    <div class="stat-card glass-panel">
+        <h3>Tổng đơn hàng</h3>
+        <p>@Model.TotalOrders</p>
+    </div>
+    <div class="stat-card glass-panel">
+        <h3>Đơn hoàn thành</h3>
+        <p style="color:#22c55e;">@Model.CompletedOrders</p>
+    </div>
+    <div class="stat-card glass-panel">
+        <h3>Đơn hủy</h3>
+        <p style="color:#ef4444;">@Model.CancelledOrders</p>
+    </div>
+    <div class="stat-card glass-panel">
+        <h3>KH mới tháng này</h3>
+        <p>@Model.NewCustomersThisMonth</p>
+    </div>
+</div>
+
+<div class="glass-panel" style="padding:1.5rem;margin-bottom:2rem;">
+    <h2 style="margin-top:0;">Doanh thu 12 tháng gần nhất</h2>
+    <canvas id="revenueChart" height="80"></canvas>
+</div>
+
+<h2>Top sản phẩm bán chạy</h2>
+<div class="table-scroll glass-panel" style="padding:1rem;">
+    <table class="admin-table">
+        <thead>
+            <tr><th>#</th><th>Sản phẩm</th><th>Số lượng đã bán</th><th>Doanh thu</th></tr>
+        </thead>
+        <tbody>
+            @{
+                int rank = 1;
+            }
+            @foreach (var p in Model.TopProducts)
+            {
+                <tr>
+                    <td><strong>#@rank</strong></td>
+                    <td>@p.Name</td>
+                    <td>@p.TotalSold</td>
+                    <td>@p.TotalRevenue.ToString("N0") ₫</td>
+                </tr>
+                rank++;
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [@Html.Raw(labels)],
+                datasets: [{
+                    label: 'Doanh thu (₫)',
+                    data: [@revenues],
+                    backgroundColor: 'rgba(79,70,229,0.15)',
+                    borderColor: 'rgba(79,70,229,0.9)',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    hoverBackgroundColor: 'rgba(79,70,229,0.3)'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: v => new Intl.NumberFormat('vi-VN').format(v) + ' ₫'
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+}

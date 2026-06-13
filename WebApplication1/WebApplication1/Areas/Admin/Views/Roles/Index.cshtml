@@ -1,0 +1,124 @@
+@model WebApplication1.ViewModels.RoleManagementViewModel
+@{
+    ViewData["Title"] = "Quản lý vai trò";
+}
+
+<div class="page-header">
+    <h1>Phân quyền & Vai trò</h1>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<!-- ── Permission Matrix ── -->
+<h2 style="font-size:1rem;font-weight:600;margin-bottom:0.75rem;">Ma trận quyền hạn</h2>
+<div class="table-scroll glass-panel" style="padding:1rem;margin-bottom:2rem;">
+    <table class="admin-table" style="min-width:560px;">
+        <thead>
+            <tr>
+                <th style="min-width:220px;">Chức năng</th>
+                <th style="text-align:center;"><span class="badge badge-accent">Admin</span></th>
+                <th style="text-align:center;"><span class="badge badge-info">Manager</span></th>
+                <th style="text-align:center;"><span class="badge badge-warning">Staff</span></th>
+                <th style="text-align:center;"><span class="badge badge-muted">Customer</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.Permissions)
+            {
+                <tr>
+                    <td>@row.Name</td>
+                    <td style="text-align:center;">@(row.Admin    ? "✅" : "—")</td>
+                    <td style="text-align:center;">@(row.Manager  ? "✅" : "—")</td>
+                    <td style="text-align:center;">@(row.Staff    ? "✅" : "—")</td>
+                    <td style="text-align:center;">@(row.Customer ? "✅" : "—")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- ── Role Descriptions ── -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:2rem;">
+    @{
+        var roleInfo = new[]
+        {
+            new { Role = "Admin", Badge = "badge-accent", Icon = "👑",
+                  Desc = "Toàn quyền hệ thống: quản lý tất cả module, phân quyền, cấu hình." },
+            new { Role = "Manager", Badge = "badge-info", Icon = "📋",
+                  Desc = "Quản lý nghiệp vụ: sản phẩm, đơn hàng, báo cáo, khuyến mãi. Không phân quyền." },
+            new { Role = "Staff", Badge = "badge-warning", Icon = "🛠️",
+                  Desc = "Xử lý đơn hàng, cập nhật trạng thái. Quyền giới hạn theo nghiệp vụ." },
+            new { Role = "Customer", Badge = "badge-muted", Icon = "🛒",
+                  Desc = "Chỉ thao tác trên dữ liệu của mình: đặt hàng, xem lịch sử." },
+        };
+    }
+    @foreach (var info in roleInfo)
+    {
+        var count = Model.UsersByRole.ContainsKey(info.Role) ? Model.UsersByRole[info.Role].Count : 0;
+        <div class="glass-panel" style="padding:1.25rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <span style="font-size:1.5rem;">@info.Icon</span>
+                <span class="badge @info.Badge">@count tài khoản</span>
+            </div>
+            <h3 style="margin:0 0 .4rem;font-size:.95rem;">@info.Role</h3>
+            <p style="margin:0;font-size:.82rem;color:var(--text-muted);line-height:1.5;">@info.Desc</p>
+        </div>
+    }
+</div>
+
+<!-- ── Users by Role + Assign Role ── -->
+<h2 style="font-size:1rem;font-weight:600;margin-bottom:0.75rem;">Danh sách tài khoản theo vai trò</h2>
+<div class="table-scroll glass-panel" style="padding:1rem;">
+    <table class="admin-table">
+        <thead>
+            <tr><th>Email</th><th>Họ tên</th><th>Vai trò hiện tại</th><th>Thay đổi vai trò</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var roleGroup in Model.UsersByRole)
+            {
+                foreach (var user in roleGroup.Value)
+                {
+                    <tr>
+                        <td>@user.Email</td>
+                        <td>@user.FullName</td>
+                        <td>
+                            @{
+                                var badgeClass = roleGroup.Key switch {
+                                    "Admin"    => "badge-accent",
+                                    "Manager"  => "badge-info",
+                                    "Staff"    => "badge-warning",
+                                    _          => "badge-muted"
+                                };
+                            }
+                            <span class="badge @badgeClass">@roleGroup.Key</span>
+                        </td>
+                        <td>
+                            @if (roleGroup.Key != "Admin" || Model.UsersByRole["Admin"].Count > 1)
+                            {
+                                <form asp-action="AssignRole" method="post" style="display:flex;gap:.4rem;align-items:center;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <select name="newRole" class="form-control" style="width:auto;padding:.3rem .6rem;font-size:.82rem;">
+                                        @foreach (var r in new[] { "Admin", "Manager", "Staff", "Customer" })
+                                        {
+                                            <option value="@r" selected="@(r == roleGroup.Key)">@r</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-ghost btn-sm"
+                                            onclick="return confirm('Thay đổi vai trò tài khoản này?')">Lưu</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span style="font-size:.82rem;color:var(--text-muted);">Admin duy nhất</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

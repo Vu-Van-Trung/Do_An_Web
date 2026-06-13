@@ -18,6 +18,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<Discount> Discounts => Set<Discount>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -40,6 +41,20 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<OrderItem>()
             .Property(oi => oi.UnitPrice)
             .HasPrecision(18, 2);
+
+        builder.Entity<Order>()
+            .Property(o => o.DiscountAmount)
+            .HasPrecision(18, 2);
+
+        builder.Entity<Discount>()
+            .Property(d => d.Value)
+            .HasPrecision(18, 2);
+        builder.Entity<Discount>()
+            .Property(d => d.MinOrderAmount)
+            .HasPrecision(18, 2);
+        builder.Entity<Discount>()
+            .HasIndex(d => d.Code)
+            .IsUnique();
 
         builder.Entity<CartItem>()
             .HasIndex(c => new { c.UserId, c.ProductId })

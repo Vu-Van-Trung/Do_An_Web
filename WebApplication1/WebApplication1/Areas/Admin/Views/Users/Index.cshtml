@@ -1,0 +1,85 @@
+@model IEnumerable<WebApplication1.ViewModels.UserListViewModel>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<div class="page-header">
+    <h1>Người dùng</h1>
+    <span class="badge badge-info">@Model.Count() tài khoản</span>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-error">@TempData["Error"]</div>
+}
+
+<div class="table-scroll glass-panel" style="padding:1rem;">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>Điện thoại</th>
+                <th>Vai trò</th>
+                <th>Đơn hàng</th>
+                <th>Ngày tạo</th>
+                <th>Trạng thái</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td><strong>@u.FullName</strong></td>
+                    <td>@u.Email</td>
+                    <td>@(u.PhoneNumber ?? "—")</td>
+                    <td>
+                        @{
+                            var rb = u.Role switch {
+                                "Admin"    => "badge-accent",
+                                "Manager"  => "badge-info",
+                                "Staff"    => "badge-warning",
+                                _          => "badge-muted"
+                            };
+                            var ri = u.Role switch {
+                                "Admin"   => "👑",
+                                "Manager" => "📋",
+                                "Staff"   => "🛠️",
+                                _         => "🛒"
+                            };
+                        }
+                        <span class="badge @rb">@ri @u.Role</span>
+                    </td>
+                    <td>@u.OrderCount</td>
+                    <td>@u.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        @if (u.IsLocked)
+                        {
+                            <span class="badge badge-error">Bị khóa</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-success">Hoạt động</span>
+                        }
+                    </td>
+                    <td class="actions-cell">
+                        <a asp-action="Details" asp-route-id="@u.Id" class="btn btn-ghost btn-sm">Chi tiết</a>
+                        <form asp-action="ToggleLock" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@u.Id" />
+                            <button type="submit" class="btn btn-ghost btn-sm"
+                                    onclick="return confirm('@(u.IsLocked ? "Mở khóa" : "Khóa") tài khoản này?')">
+                                @(u.IsLocked ? "Mở khóa" : "Khóa")
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

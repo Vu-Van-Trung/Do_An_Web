@@ -93,6 +93,80 @@ public class AccountController : Controller
         return RedirectToLocal(model.ReturnUrl ?? Url.Action("Index", "Home")!);
     }
 
+    // ── Google OAuth ──────────────────────────────────────────────────────────
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ExternalLogin(string provider, string? returnUrl = null)
+    {
+        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
+        var props = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        return Challenge(props, provider);
+    }
+
+    public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null, string? remoteError = null)
+    {
+        if (remoteError != null)
+        {
+            ModelState.AddModelError(string.Empty, $"Lỗi từ Google: {remoteError}");
+            return View("Login", new LoginViewModel());
+        }
+
+        var info = await _signInManager.GetExternalLoginInfoAsync();
+        if (info == null)
+            return RedirectToAction(nameof(Login));
+
+        var result = await _signInManager.ExternalLoginSignInAsync(
+            info.LoginProvider, info.ProviderKey, isPersistent: false);
+
+        if (result.Succeeded)
+        {
+            var u = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            if (u != null) await _cartService.MergeSessionCartAsync(u.Id);
+            return RedirectToLocal(returnUrl ?? Url.Action("Index", "Home")!);
+        }
+
+        var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+        var name  = info.Principal.FindFirstValue(ClaimTypes.Name);
+
+        if (email == null)
+        {
+            ModelState.AddModelError(string.Empty, "Không lấy được email từ Google.");
+            return View("Login", new LoginViewModel());
+        }
+
+        // Liên kết với tài khoản cũ nếu email đã tồn tại
+        var existing = await _userManager.FindByEmailAsync(email);
+        if (existing != null)
+        {
+            await _userManager.AddLoginAsync(existing, info);
+            await _signInManager.SignInAsync(existing, isPersistent: false);
+            await _cartService.MergeSessionCartAsync(existing.Id);
+            return RedirectToLocal(returnUrl ?? Url.Action("Index", "Home")!);
+        }
+
+        // Tạo tài khoản mới từ Google
+        var newUser = new ApplicationUser
+        {
+            UserName       = email,
+            Email          = email,
+            FullName       = name ?? email,
+            EmailConfirmed = true
+        };
+        var createResult = await _userManager.CreateAsync(newUser);
+        if (createResult.Succeeded)
+        {
+            await _userManager.AddLoginAsync(newUser, info);
+            await _userManager.AddToRoleAsync(newUser, "Customer");
+            await _signInManager.SignInAsync(newUser, isPersistent: false);
+            await _cartService.MergeSessionCartAsync(newUser.Id);
+            return RedirectToLocal(returnUrl ?? Url.Action("Index", "Home")!);
+        }
+
+        foreach (var err in createResult.Errors)
+            ModelState.AddModelError(string.Empty, err.Description);
+        return View("Login", new LoginViewModel());
+    }
+
     [Authorize]
     public async Task<IActionResult> Orders()
     {

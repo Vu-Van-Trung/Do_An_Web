@@ -1,0 +1,18 @@
+@model WebApplication1.ViewModels.DiscountFormViewModel
+@{
+    ViewData["Title"] = $"Sửa mã {Model.Code}";
+}
+
+<div class="page-header">
+    <a asp-action="Index" class="btn btn-ghost btn-sm">← Danh sách</a>
+    <h1>Sửa mã @Model.Code</h1>
+</div>
+
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+    @Html.AntiForgeryToken()
+    @await Html.PartialAsync("_DiscountForm", Model)
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

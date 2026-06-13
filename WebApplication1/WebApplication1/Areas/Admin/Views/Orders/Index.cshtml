@@ -3,22 +3,44 @@
     ViewData["Title"] = "Đơn hàng";
 }
 
-<h1>Đơn hàng</h1>
+<div class="page-header">
+    <h1>Đơn hàng</h1>
+    <span class="badge badge-info">@Model.Count() đơn</span>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
 <div class="table-scroll glass-panel" style="padding:1rem;">
-<table class="admin-table">
-    <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày đặt</th><th>Trạng thái</th><th>Tổng tiền</th><th></th></tr></thead>
-    <tbody>
-        @foreach (var o in Model)
-        {
+    <table class="admin-table">
+        <thead>
             <tr>
-                <td>#@o.Id</td>
-                <td>@o.User.FullName</td>
-                <td>@o.OrderDate.ToLocalTime().ToString("g")</td>
-                <td>@o.Status</td>
-                <td>@o.Total.ToString("N0") ₫</td>
-                <td><a asp-action="Details" asp-route-id="@o.Id">Chi tiết</a></td>
+                <th>Mã đơn</th>
+                <th>Khách hàng</th>
+                <th>Ngày đặt</th>
+                <th>Thanh toán</th>
+                <th>Trạng thái</th>
+                <th>Tổng tiền</th>
+                <th></th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var o in Model)
+            {
+                <tr>
+                    <td><strong>#@o.Id</strong></td>
+                    <td>@o.User.FullName</td>
+                    <td>@o.OrderDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td><span class="badge badge-muted" style="font-size:0.75rem;">@o.PaymentMethod</span></td>
+                    <td><span class="status-badge status-@o.Status.ToString().ToLower()">@o.Status</span></td>
+                    <td>@o.Total.ToString("N0") ₫</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@o.Id" class="btn btn-ghost btn-sm">Chi tiết</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>

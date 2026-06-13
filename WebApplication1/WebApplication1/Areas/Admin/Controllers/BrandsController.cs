@@ -6,7 +6,7 @@ using WebApplication1.Repositories;
 namespace WebApplication1.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Manager")]
 public class BrandsController : Controller
 {
     private readonly IBrandRepository _brands;

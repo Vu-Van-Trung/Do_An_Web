@@ -1,18 +1,22 @@
 @model WebApplication1.ViewModels.AdminDashboardViewModel
 @{
     ViewData["Title"] = "Tổng quan";
+    var labels = string.Join(",", Model.MonthlyRevenues.Select(m => $"\"{m.Month}\""));
+    var revenues = string.Join(",", Model.MonthlyRevenues.Select(m => m.Revenue));
 }
 
-<h1>Bảng điều khiển</h1>
-
-<div class="stats-grid">
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));">
     <div class="stat-card glass-panel">
-        <h3>Doanh thu</h3>
+        <h3>Tổng doanh thu</h3>
         <p>@Model.TotalRevenue.ToString("N0") ₫</p>
     </div>
     <div class="stat-card glass-panel">
-        <h3>Đơn hàng</h3>
+        <h3>Tổng đơn hàng</h3>
         <p>@Model.OrderCount</p>
+    </div>
+    <div class="stat-card glass-panel">
+        <h3>Chờ xử lý</h3>
+        <p style="color:#f59e0b;">@Model.PendingOrderCount</p>
     </div>
     <div class="stat-card glass-panel">
         <h3>Khách hàng</h3>
@@ -24,17 +28,93 @@
     </div>
 </div>
 
-<h2>Sắp hết hàng</h2>
-@if (!Model.LowStockProducts.Any())
-{
-    <p class="meta">Tất cả sản phẩm đều còn hàng.</p>
-}
-else
-{
-    <ul>
-        @foreach (var p in Model.LowStockProducts)
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+    <div class="glass-panel" style="padding:1.5rem;">
+        <h2 style="margin-top:0;font-size:1rem;font-weight:600;">Doanh thu 6 tháng gần nhất</h2>
+        <canvas id="revenueChart" height="110"></canvas>
+    </div>
+    <div class="glass-panel" style="padding:1.5rem;">
+        <h2 style="margin-top:0;font-size:1rem;font-weight:600;">Sắp hết hàng</h2>
+        @if (!Model.LowStockProducts.Any())
         {
-            <li>@p.Name — còn @p.Stock sản phẩm</li>
+            <p class="meta" style="font-size:0.875rem;">Tất cả sản phẩm đều còn hàng.</p>
         }
-    </ul>
+        else
+        {
+            <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.5rem;">
+                @foreach (var p in Model.LowStockProducts)
+                {
+                    <li style="display:flex;justify-content:space-between;align-items:center;font-size:0.875rem;">
+                        <span>@p.Name</span>
+                        <span class="badge @(p.Stock == 0 ? "badge-error" : "badge-warning")">
+                            @(p.Stock == 0 ? "Hết hàng" : $"Còn {p.Stock}")
+                        </span>
+                    </li>
+                }
+            </ul>
+            <a asp-area="Admin" asp-controller="Products" asp-action="Index"
+               class="btn btn-ghost btn-sm" style="margin-top:1rem;width:100%;justify-content:center;">
+                Xem tất cả sản phẩm →
+            </a>
+        }
+    </div>
+</div>
+
+<h2 style="font-size:1rem;font-weight:600;margin-bottom:0.75rem;">Đơn hàng gần đây</h2>
+<div class="table-scroll glass-panel" style="padding:1rem;">
+    <table class="admin-table">
+        <thead>
+            <tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày đặt</th><th>Thanh toán</th><th>Trạng thái</th><th>Tổng tiền</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var o in Model.RecentOrders)
+            {
+                <tr>
+                    <td><strong>#@o.Id</strong></td>
+                    <td>@o.User.FullName</td>
+                    <td>@o.OrderDate.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                    <td><span class="badge badge-muted" style="font-size:0.75rem;">@o.PaymentMethod</span></td>
+                    <td><span class="status-badge status-@o.Status.ToString().ToLower()">@o.Status</span></td>
+                    <td>@o.Total.ToString("N0") ₫</td>
+                    <td><a asp-area="Admin" asp-controller="Orders" asp-action="Details" asp-route-id="@o.Id" class="btn btn-ghost btn-sm">Chi tiết</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [@Html.Raw(labels)],
+                datasets: [{
+                    label: 'Doanh thu',
+                    data: [@revenues],
+                    fill: true,
+                    backgroundColor: 'rgba(79,70,229,0.08)',
+                    borderColor: 'rgba(79,70,229,0.9)',
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#4f46e5',
+                    tension: 0.35
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => new Intl.NumberFormat('vi-VN').format(v) + ' ₫', maxTicksLimit: 5 },
+                        grid: { color: 'rgba(0,0,0,0.04)' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
 }

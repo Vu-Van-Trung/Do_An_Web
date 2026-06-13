@@ -10,7 +10,7 @@ using WebApplication1.ViewModels;
 namespace WebApplication1.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Manager")]
 public class ProductsController : Controller
 {
     private readonly IProductRepository _products;

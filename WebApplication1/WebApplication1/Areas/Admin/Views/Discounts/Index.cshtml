@@ -1,0 +1,101 @@
+@model IEnumerable<WebApplication1.Models.Discount>
+@{
+    ViewData["Title"] = "Quản lý khuyến mãi";
+    var now = DateTime.Now;
+}
+
+<div class="page-header">
+    <h1>Khuyến mãi</h1>
+    <a asp-action="Create" class="btn btn-primary btn-sm">+ Tạo mã giảm giá</a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="table-scroll glass-panel" style="padding:1rem;">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Mã</th>
+                <th>Tên chương trình</th>
+                <th>Loại giảm</th>
+                <th>Giá trị</th>
+                <th>Đơn tối thiểu</th>
+                <th>Đã dùng</th>
+                <th>Hiệu lực</th>
+                <th>Trạng thái</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var d in Model)
+            {
+                var isExpired = d.EndDate < now;
+                var isNotStarted = d.StartDate > now;
+                <tr>
+                    <td><strong style="font-family:monospace;letter-spacing:1px;">@d.Code</strong></td>
+                    <td>@d.Name</td>
+                    <td>
+                        @if (d.DiscountType == WebApplication1.Models.DiscountType.Percent)
+                        {
+                            <span class="badge badge-info">%</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-accent">₫</span>
+                        }
+                    </td>
+                    <td>
+                        @if (d.DiscountType == WebApplication1.Models.DiscountType.Percent)
+                        {
+                            @($"{d.Value:N0}%")
+                        }
+                        else
+                        {
+                            @($"{d.Value:N0} ₫")
+                        }
+                    </td>
+                    <td>@(d.MinOrderAmount > 0 ? d.MinOrderAmount.ToString("N0") + " ₫" : "—")</td>
+                    <td>@d.UsedCount @(d.MaxUsage.HasValue ? $"/ {d.MaxUsage}" : "")</td>
+                    <td style="font-size:0.8rem;">
+                        @d.StartDate.ToLocalTime().ToString("dd/MM/yy") — @d.EndDate.ToLocalTime().ToString("dd/MM/yy")
+                    </td>
+                    <td>
+                        @if (!d.IsActive)
+                        {
+                            <span class="badge badge-muted">Tắt</span>
+                        }
+                        else if (isExpired)
+                        {
+                            <span class="badge badge-error">Hết hạn</span>
+                        }
+                        else if (isNotStarted)
+                        {
+                            <span class="badge badge-warning">Chưa bắt đầu</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-success">Đang chạy</span>
+                        }
+                    </td>
+                    <td class="actions-cell">
+                        <a asp-action="Edit" asp-route-id="@d.Id" class="btn btn-ghost btn-sm">Sửa</a>
+                        <form asp-action="Toggle" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@d.Id" />
+                            <button class="btn btn-ghost btn-sm">@(d.IsActive ? "Tắt" : "Bật")</button>
+                        </form>
+                        <form asp-action="Delete" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@d.Id" />
+                            <button class="btn btn-ghost btn-sm" style="color:#ef4444;"
+                                    onclick="return confirm('Xóa mã này?')">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

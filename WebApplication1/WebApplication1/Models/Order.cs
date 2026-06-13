@@ -14,6 +14,11 @@ public class Order
     public string ShippingAddress { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public string PaymentMethod { get; set; } = "COD";
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.COD;
+    public string? VnPayTransactionId { get; set; }
+
+    public string? DiscountCode { get; set; }
+    public decimal DiscountAmount { get; set; }
 
     public decimal Subtotal { get; set; }
     public decimal ShippingFee { get; set; }
