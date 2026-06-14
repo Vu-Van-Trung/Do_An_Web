@@ -55,6 +55,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<Discount>()
             .HasIndex(d => d.Code)
             .IsUnique();
+        builder.Entity<Discount>()
+            .Property(d => d.MaxDiscountAmount)
+            .HasPrecision(18, 2);
 
         builder.Entity<CartItem>()
             .HasIndex(c => new { c.UserId, c.ProductId })

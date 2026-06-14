@@ -37,4 +37,7 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .SumAsync(o => o.Total);
 
     public async Task<int> GetOrderCountAsync() => await Context.Orders.CountAsync();
+
+    public async Task<bool> UserHasOrdersAsync(string userId) =>
+        await Context.Orders.AnyAsync(o => o.UserId == userId);
 }

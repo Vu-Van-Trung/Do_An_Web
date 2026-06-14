@@ -9,4 +9,5 @@ public interface IOrderRepository : IRepository<Order>
     Task<IEnumerable<Order>> GetAllWithItemsAsync();
     Task<decimal> GetTotalRevenueAsync();
     Task<int> GetOrderCountAsync();
+    Task<bool> UserHasOrdersAsync(string userId);
 }

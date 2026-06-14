@@ -1,33 +1,53 @@
-﻿// Hamburger menu toggle
+// Hamburger menu toggle
 document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('nav-toggle');
     const links  = document.getElementById('nav-links');
-    if (!toggle || !links) return;
-
-    toggle.addEventListener('click', () => {
-        const open = links.classList.toggle('nav-open');
-        toggle.setAttribute('aria-expanded', open);
-        toggle.textContent = open ? '✕' : '☰';
-    });
-
-    // Đóng menu khi click bên ngoài
-    document.addEventListener('click', (e) => {
-        if (!toggle.contains(e.target) && !links.contains(e.target)) {
-            links.classList.remove('nav-open');
-            toggle.setAttribute('aria-expanded', false);
-            toggle.textContent = '☰';
-        }
-    });
-
-    // Đóng menu khi chọn link
-    links.querySelectorAll('a').forEach(a => {
-        a.addEventListener('click', () => {
-            links.classList.remove('nav-open');
-            toggle.setAttribute('aria-expanded', false);
-            toggle.textContent = '☰';
+    if (toggle && links) {
+        toggle.addEventListener('click', () => {
+            const open = links.classList.toggle('nav-open');
+            toggle.setAttribute('aria-expanded', open);
+            toggle.textContent = open ? '\u2715' : '\u2630';
         });
-    });
+
+        // Đóng menu khi click bên ngoài
+        document.addEventListener('click', (e) => {
+            if (!toggle.contains(e.target) && !links.contains(e.target)) {
+                links.classList.remove('nav-open');
+                toggle.setAttribute('aria-expanded', false);
+                toggle.textContent = '\u2630';
+            }
+        });
+
+        // Đóng menu khi chọn link
+        links.querySelectorAll('a').forEach(a => {
+            a.addEventListener('click', () => {
+                links.classList.remove('nav-open');
+                toggle.setAttribute('aria-expanded', false);
+                toggle.textContent = '\u2630';
+            });
+        });
+    }
+
+    // User dropdown toggle
+    const dropBtn  = document.getElementById('userDropdownBtn');
+    const dropWrap = document.getElementById('userDropdown');
+    if (dropBtn && dropWrap) {
+        dropBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = dropWrap.classList.toggle('open');
+            dropBtn.setAttribute('aria-expanded', isOpen);
+        });
+
+        // Đóng dropdown khi click bên ngoài
+        document.addEventListener('click', (e) => {
+            if (!dropWrap.contains(e.target)) {
+                dropWrap.classList.remove('open');
+                dropBtn.setAttribute('aria-expanded', false);
+            }
+        });
+    }
 });
+
 
 async function refreshCartBadge() {
     const badge = document.getElementById('cart-badge');

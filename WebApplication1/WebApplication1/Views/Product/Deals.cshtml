@@ -1,0 +1,381 @@
+@model IEnumerable<WebApplication1.Models.Discount>
+@using WebApplication1.Models
+@{
+    ViewData["Title"] = "Khuyến mãi & Ưu đãi";
+    var flashSales   = ViewBag.FlashSales   as List<Discount> ?? new();
+    var freeShipping = ViewBag.FreeShipping as List<Discount> ?? new();
+    var firstOrders  = ViewBag.FirstOrders  as List<Discount> ?? new();
+    var coupons      = ViewBag.Coupons      as List<Discount> ?? new();
+    var now          = DateTime.UtcNow;
+}
+
+<style>
+    /* ── DEALS PAGE ── */
+    .deals-hero {
+        background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%);
+        border-radius: 20px;
+        padding: 3rem 2.5rem;
+        margin: 1.5rem 0 2.5rem;
+        color: #fff;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .deals-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='28'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.4;
+    }
+    .deals-hero-content { position: relative; z-index: 1; }
+    .deals-hero h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 0 0 0.5rem; font-weight: 800; }
+    .deals-hero p { opacity: 0.85; margin: 0; font-size: 1rem; }
+    .deals-hero-badges { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
+    .deals-hero-badge {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+        backdrop-filter: blur(8px);
+        border-radius: 999px;
+        padding: 0.35rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .deals-section { margin-bottom: 2.5rem; }
+    .deals-section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-family: var(--font-display);
+    }
+    .deals-section-title .emoji { font-size: 1.4rem; }
+
+    .deals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+
+    .deal-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+    }
+    .deal-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+    .deal-card-flash { border-color: #f59e0b; }
+    .deal-card-freeship { border-color: #3b82f6; }
+    .deal-card-first { border-color: #10b981; }
+    .deal-card-coupon { border-color: #8b5cf6; }
+
+    .deal-card-header {
+        padding: 1.1rem 1.25rem 0.6rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+    .deal-card-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .deal-badge-flash    { background: #fef3c7; color: #92400e; }
+    .deal-badge-freeship { background: #dbeafe; color: #1e40af; }
+    .deal-badge-first    { background: #dcfce7; color: #166534; }
+    .deal-badge-coupon   { background: #ede9fe; color: #5b21b6; }
+
+    .deal-value {
+        font-family: var(--font-display);
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--accent);
+        line-height: 1;
+    }
+    .deal-value-free { color: #2563eb; }
+    .deal-card-body { padding: 0 1.25rem 1rem; }
+    .deal-name { font-weight: 700; margin: 0 0 0.25rem; font-size: 0.95rem; }
+    .deal-desc { font-size: 0.83rem; color: var(--text-muted); margin: 0 0 0.75rem; }
+    .deal-meta { font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    .deal-code-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px dashed var(--border);
+    }
+    .deal-code {
+        flex: 1;
+        background: #f5f3ff;
+        border: 1.5px dashed #8b5cf6;
+        border-radius: 8px;
+        padding: 0.4rem 0.75rem;
+        font-family: monospace;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #5b21b6;
+        letter-spacing: 1.5px;
+    }
+    .deal-copy-btn {
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+        white-space: nowrap;
+    }
+    .deal-copy-btn:hover { background: var(--accent-dark); transform: scale(1.03); }
+    .deal-copy-btn.copied { background: #16a34a; }
+
+    .deal-timer {
+        font-size: 0.78rem;
+        color: #dc2626;
+        font-weight: 600;
+        margin-top: 0.4rem;
+    }
+
+    .empty-deals {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+</style>
+
+@* ── HERO ── *@
+<div class="deals-hero">
+    <div class="deals-hero-content">
+        <h1>🎉 Khuyến mãi & Ưu đãi</h1>
+        <p>Săn deal hot — tiết kiệm chi phí setup gaming của bạn</p>
+        <div class="deals-hero-badges">
+            @if (flashSales.Any())   { <span class="deals-hero-badge">⚡ @flashSales.Count Flash Sale</span> }
+            @if (freeShipping.Any()) { <span class="deals-hero-badge">🚚 @freeShipping.Count Miễn ship</span> }
+            @if (firstOrders.Any())  { <span class="deals-hero-badge">🎁 @firstOrders.Count Đơn đầu</span> }
+            @if (coupons.Any())      { <span class="deals-hero-badge">🎟️ @coupons.Count Coupon</span> }
+            @if (!Model.Any())       { <span class="deals-hero-badge">Chưa có deal nào đang chạy</span> }
+        </div>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-deals">
+        <div style="font-size:3rem;margin-bottom:1rem;">😔</div>
+        <p>Hiện tại chưa có chương trình khuyến mãi nào đang hoạt động.<br />Quay lại sau nhé!</p>
+        <a asp-controller="Product" asp-action="Index" class="btn btn-primary" style="margin-top:1rem;">Xem sản phẩm</a>
+    </div>
+}
+else
+{
+    @* ── FLASH SALE ── *@
+    @if (flashSales.Any())
+    {
+        <div class="deals-section">
+            <div class="deals-section-title">
+                <span class="emoji">⚡</span> Flash Sale — Giới hạn thời gian
+            </div>
+            <div class="deals-grid">
+                @foreach (var d in flashSales)
+                {
+                    <div class="deal-card deal-card-flash">
+                        <div class="deal-card-header">
+                            <span class="deal-card-badge deal-badge-flash">⚡ Flash Sale</span>
+                            <div class="deal-value">
+                                @(d.DiscountType == DiscountType.Percent ? $"{d.Value:N0}%" : $"{d.Value:N0}₫")
+                            </div>
+                        </div>
+                        <div class="deal-card-body">
+                            <div class="deal-name">@d.Name</div>
+                            @if (!string.IsNullOrEmpty(d.Description))
+                            {
+                                <div class="deal-desc">@d.Description</div>
+                            }
+                            <div class="deal-meta">
+                                @if (d.MinOrderAmount > 0) { <span>Đơn từ @($"{d.MinOrderAmount:N0}")₫</span> }
+                                @if (d.MaxDiscountAmount.HasValue) { <span>Giảm tối đa @($"{d.MaxDiscountAmount:N0}")₫</span> }
+                                <span>HSD: @d.EndDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                            <div class="deal-timer" data-end="@d.EndDate.ToString("O")">Đang tính...</div>
+                            <div class="deal-code-row">
+                                <div class="deal-code">@d.Code</div>
+                                <button class="deal-copy-btn" onclick="copyCode(this, '@d.Code')">Sao chép</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* ── FREE SHIPPING ── *@
+    @if (freeShipping.Any())
+    {
+        <div class="deals-section">
+            <div class="deals-section-title">
+                <span class="emoji">🚚</span> Miễn phí vận chuyển
+            </div>
+            <div class="deals-grid">
+                @foreach (var d in freeShipping)
+                {
+                    <div class="deal-card deal-card-freeship">
+                        <div class="deal-card-header">
+                            <span class="deal-card-badge deal-badge-freeship">🚚 Free Ship</span>
+                            <div class="deal-value deal-value-free">FREE</div>
+                        </div>
+                        <div class="deal-card-body">
+                            <div class="deal-name">@d.Name</div>
+                            @if (!string.IsNullOrEmpty(d.Description))
+                            {
+                                <div class="deal-desc">@d.Description</div>
+                            }
+                            <div class="deal-meta">
+                                @if (d.MinOrderAmount > 0) { <span>Đơn từ @($"{d.MinOrderAmount:N0}")₫</span> }
+                                <span>HSD: @d.EndDate.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="deal-code-row">
+                                <div class="deal-code">@d.Code</div>
+                                <button class="deal-copy-btn" onclick="copyCode(this, '@d.Code')">Sao chép</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* ── FIRST ORDER ── *@
+    @if (firstOrders.Any())
+    {
+        <div class="deals-section">
+            <div class="deals-section-title">
+                <span class="emoji">🎁</span> Ưu đãi đơn hàng đầu tiên
+            </div>
+            <div class="deals-grid">
+                @foreach (var d in firstOrders)
+                {
+                    <div class="deal-card deal-card-first">
+                        <div class="deal-card-header">
+                            <span class="deal-card-badge deal-badge-first">🎁 Đơn đầu tiên</span>
+                            <div class="deal-value" style="color:#059669;">
+                                @(d.DiscountType == DiscountType.Percent ? $"{d.Value:N0}%" : $"{d.Value:N0}₫")
+                            </div>
+                        </div>
+                        <div class="deal-card-body">
+                            <div class="deal-name">@d.Name</div>
+                            @if (!string.IsNullOrEmpty(d.Description))
+                            {
+                                <div class="deal-desc">@d.Description</div>
+                            }
+                            <div class="deal-meta">
+                                <span>🎯 Dành cho khách hàng mới</span>
+                                @if (d.MinOrderAmount > 0) { <span>Đơn từ @($"{d.MinOrderAmount:N0}")₫</span> }
+                                <span>HSD: @d.EndDate.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="deal-code-row">
+                                <div class="deal-code">@d.Code</div>
+                                <button class="deal-copy-btn" onclick="copyCode(this, '@d.Code')">Sao chép</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* ── COUPONS ── *@
+    @if (coupons.Any())
+    {
+        <div class="deals-section">
+            <div class="deals-section-title">
+                <span class="emoji">🎟️</span> Mã giảm giá
+            </div>
+            <div class="deals-grid">
+                @foreach (var d in coupons)
+                {
+                    <div class="deal-card deal-card-coupon">
+                        <div class="deal-card-header">
+                            <span class="deal-card-badge deal-badge-coupon">🎟️ Coupon</span>
+                            <div class="deal-value">
+                                @(d.DiscountType == DiscountType.Percent ? $"{d.Value:N0}%" : $"{d.Value:N0}₫")
+                            </div>
+                        </div>
+                        <div class="deal-card-body">
+                            <div class="deal-name">@d.Name</div>
+                            @if (!string.IsNullOrEmpty(d.Description))
+                            {
+                                <div class="deal-desc">@d.Description</div>
+                            }
+                            <div class="deal-meta">
+                                @if (d.MinOrderAmount > 0) { <span>Đơn từ @($"{d.MinOrderAmount:N0}")₫</span> }
+                                @if (d.MaxDiscountAmount.HasValue) { <span>Tối đa @($"{d.MaxDiscountAmount:N0}")₫</span> }
+                                <span>HSD: @d.EndDate.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                                @if (d.MaxUsage.HasValue)
+                                {
+                                    <span>Còn @(d.MaxUsage - d.UsedCount) lượt</span>
+                                }
+                            </div>
+                            <div class="deal-code-row">
+                                <div class="deal-code">@d.Code</div>
+                                <button class="deal-copy-btn" onclick="copyCode(this, '@d.Code')">Sao chép</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+<div style="text-align:center;margin-top:2rem;">
+    <a asp-controller="Product" asp-action="Index" class="btn btn-primary">
+        🛒 Mua ngay với ưu đãi
+    </a>
+</div>
+
+<script>
+function copyCode(btn, code) {
+    navigator.clipboard.writeText(code).then(function () {
+        var orig = btn.textContent;
+        btn.textContent = '✓ Đã copy!';
+        btn.classList.add('copied');
+        setTimeout(function () {
+            btn.textContent = orig;
+            btn.classList.remove('copied');
+        }, 2000);
+    });
+}
+
+// Countdown timers cho Flash Sale
+document.querySelectorAll('.deal-timer[data-end]').forEach(function (el) {
+    var endTime = new Date(el.dataset.end);
+    function update() {
+        var diff = endTime - Date.now();
+        if (diff <= 0) { el.textContent = '⏰ Đã kết thúc'; return; }
+        var h = Math.floor(diff / 3600000);
+        var m = Math.floor((diff % 3600000) / 60000);
+        var s = Math.floor((diff % 60000) / 1000);
+        el.textContent = '⏱ Còn: ' + (h > 0 ? h + 'g ' : '') + m + 'p ' + s + 'g';
+    }
+    update();
+    setInterval(update, 1000);
+});
+</script>

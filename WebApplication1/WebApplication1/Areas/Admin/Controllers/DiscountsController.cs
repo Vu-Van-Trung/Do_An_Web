@@ -17,9 +17,13 @@ public class DiscountsController : Controller
         _discounts = discounts;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? type = null)
     {
         var list = await _discounts.GetAllAsync();
+        if (!string.IsNullOrEmpty(type) && Enum.TryParse<PromotionType>(type, out var pt))
+            list = list.Where(d => d.PromotionType == pt).ToList();
+
+        ViewBag.FilterType = type;
         return View(list.OrderByDescending(d => d.Id));
     }
 
@@ -43,19 +47,23 @@ public class DiscountsController : Controller
 
         await _discounts.AddAsync(new Discount
         {
-            Code = vm.Code.ToUpper().Trim(),
-            Name = vm.Name,
-            DiscountType = vm.DiscountType,
-            Value = vm.Value,
-            MinOrderAmount = vm.MinOrderAmount,
-            MaxUsage = vm.MaxUsage,
-            StartDate = vm.StartDate.ToUniversalTime(),
-            EndDate = vm.EndDate.ToUniversalTime(),
-            IsActive = vm.IsActive
+            Code               = vm.Code.ToUpper().Trim(),
+            Name               = vm.Name,
+            Description        = vm.Description,
+            PromotionType      = vm.PromotionType,
+            DiscountType       = vm.DiscountType,
+            Value              = vm.Value,
+            MaxDiscountAmount  = vm.MaxDiscountAmount,
+            MinOrderAmount     = vm.MinOrderAmount,
+            MaxUsage           = vm.MaxUsage,
+            StartDate          = vm.StartDate.ToUniversalTime(),
+            EndDate            = vm.EndDate.ToUniversalTime(),
+            IsActive           = vm.IsActive,
+            ApplicableCategoryId = vm.ApplicableCategoryId
         });
         await _discounts.SaveChangesAsync();
 
-        TempData["Success"] = $"Đã tạo mã giảm giá {vm.Code.ToUpper()}.";
+        TempData["Success"] = $"Đã tạo khuyến mãi {vm.Code.ToUpper()}.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -66,16 +74,20 @@ public class DiscountsController : Controller
 
         return View(new DiscountFormViewModel
         {
-            Id = d.Id,
-            Code = d.Code,
-            Name = d.Name,
-            DiscountType = d.DiscountType,
-            Value = d.Value,
-            MinOrderAmount = d.MinOrderAmount,
-            MaxUsage = d.MaxUsage,
-            StartDate = d.StartDate.ToLocalTime(),
-            EndDate = d.EndDate.ToLocalTime(),
-            IsActive = d.IsActive
+            Id                 = d.Id,
+            Code               = d.Code,
+            Name               = d.Name,
+            Description        = d.Description,
+            PromotionType      = d.PromotionType,
+            DiscountType       = d.DiscountType,
+            Value              = d.Value,
+            MaxDiscountAmount  = d.MaxDiscountAmount,
+            MinOrderAmount     = d.MinOrderAmount,
+            MaxUsage           = d.MaxUsage,
+            StartDate          = d.StartDate.ToLocalTime(),
+            EndDate            = d.EndDate.ToLocalTime(),
+            IsActive           = d.IsActive,
+            ApplicableCategoryId = d.ApplicableCategoryId
         });
     }
 
@@ -94,20 +106,24 @@ public class DiscountsController : Controller
             return View(vm);
         }
 
-        d.Code = vm.Code.ToUpper().Trim();
-        d.Name = vm.Name;
-        d.DiscountType = vm.DiscountType;
-        d.Value = vm.Value;
-        d.MinOrderAmount = vm.MinOrderAmount;
-        d.MaxUsage = vm.MaxUsage;
-        d.StartDate = vm.StartDate.ToUniversalTime();
-        d.EndDate = vm.EndDate.ToUniversalTime();
-        d.IsActive = vm.IsActive;
+        d.Code               = vm.Code.ToUpper().Trim();
+        d.Name               = vm.Name;
+        d.Description        = vm.Description;
+        d.PromotionType      = vm.PromotionType;
+        d.DiscountType       = vm.DiscountType;
+        d.Value              = vm.Value;
+        d.MaxDiscountAmount  = vm.MaxDiscountAmount;
+        d.MinOrderAmount     = vm.MinOrderAmount;
+        d.MaxUsage           = vm.MaxUsage;
+        d.StartDate          = vm.StartDate.ToUniversalTime();
+        d.EndDate            = vm.EndDate.ToUniversalTime();
+        d.IsActive           = vm.IsActive;
+        d.ApplicableCategoryId = vm.ApplicableCategoryId;
 
         _discounts.Update(d);
         await _discounts.SaveChangesAsync();
 
-        TempData["Success"] = $"Đã cập nhật mã {d.Code}.";
+        TempData["Success"] = $"Đã cập nhật khuyến mãi {d.Code}.";
         return RedirectToAction(nameof(Index));
     }
 

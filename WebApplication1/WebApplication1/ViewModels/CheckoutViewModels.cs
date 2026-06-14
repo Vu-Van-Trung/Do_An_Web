@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using WebApplication1.Models;
 using Microsoft.AspNetCore.Identity;
 
+
 namespace WebApplication1.ViewModels;
 
 public class ShippingViewModel
@@ -67,11 +68,19 @@ public class DiscountFormViewModel
     [Required(ErrorMessage = "Vui lòng nhập tên chương trình")]
     public string Name { get; set; } = string.Empty;
 
+    public string? Description { get; set; }
+
+    [Required]
+    public PromotionType PromotionType { get; set; } = PromotionType.Coupon;
+
     [Required]
     public DiscountType DiscountType { get; set; } = DiscountType.Percent;
 
-    [Required, Range(0.01, double.MaxValue, ErrorMessage = "Giá trị phải lớn hơn 0")]
+    [Range(0, double.MaxValue, ErrorMessage = "Giá trị phải >= 0")]
     public decimal Value { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal? MaxDiscountAmount { get; set; }
 
     [Range(0, double.MaxValue)]
     public decimal MinOrderAmount { get; set; }
@@ -86,6 +95,7 @@ public class DiscountFormViewModel
     public DateTime EndDate { get; set; } = DateTime.Today.AddMonths(1);
 
     public bool IsActive { get; set; } = true;
+    public int? ApplicableCategoryId { get; set; }
 }
 
 public class UserListViewModel

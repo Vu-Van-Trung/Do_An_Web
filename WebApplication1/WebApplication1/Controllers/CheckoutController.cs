@@ -87,17 +87,47 @@ public class CheckoutController : Controller
         // Apply discount
         var discountCode   = TempData["DiscountCode"]?.ToString();
         var discountAmount = 0m;
+        var shippingFee    = ShippingFee;
+
         if (!string.IsNullOrEmpty(discountCode))
         {
             var discount = await _discounts.GetActiveByCodeAsync(discountCode, subtotal);
             if (discount != null)
             {
-                discountAmount = discount.DiscountType == DiscountType.Percent
-                    ? Math.Round(subtotal * discount.Value / 100, 0)
-                    : discount.Value;
-                discountAmount = Math.Min(discountAmount, subtotal);
-                discount.UsedCount++;
-                _discounts.Update(discount);
+                // Kiểm tra FirstOrder: user không được có đơn nào trước đó
+                if (discount.PromotionType == Models.PromotionType.FirstOrder)
+                {
+                    var hasOrders = await _orders.UserHasOrdersAsync(userId);
+                    if (hasOrders)
+                    {
+                        discount = null;
+                        discountCode = null;
+                        TempData["Error"] = "Mã ưu đãi đơn đầu tiên chỉ dành cho khách hàng mới.";
+                    }
+                }
+
+                if (discount != null)
+                {
+                    if (discount.PromotionType == Models.PromotionType.FreeShipping)
+                    {
+                        // Miễn phí vận chuyển
+                        shippingFee = 0m;
+                    }
+                    else
+                    {
+                        discountAmount = discount.DiscountType == DiscountType.Percent
+                            ? Math.Round(subtotal * discount.Value / 100, 0)
+                            : discount.Value;
+
+                        // Áp dụng cap tối đa nếu có
+                        if (discount.MaxDiscountAmount.HasValue)
+                            discountAmount = Math.Min(discountAmount, discount.MaxDiscountAmount.Value);
+
+                        discountAmount = Math.Min(discountAmount, subtotal);
+                    }
+                    discount.UsedCount++;
+                    _discounts.Update(discount);
+                }
             }
             else
             {
@@ -105,7 +135,8 @@ public class CheckoutController : Controller
             }
         }
 
-        var total = subtotal - discountAmount + ShippingFee;
+        var total = subtotal - discountAmount + shippingFee;
+
 
         var order = new Order
         {
@@ -119,7 +150,7 @@ public class CheckoutController : Controller
             DiscountCode    = discountCode,
             DiscountAmount  = discountAmount,
             Subtotal        = subtotal,
-            ShippingFee     = ShippingFee,
+            ShippingFee     = shippingFee,
             Total           = total,
             Status          = OrderStatus.Pending,
             Items = cart.Items.Select(i => new OrderItem

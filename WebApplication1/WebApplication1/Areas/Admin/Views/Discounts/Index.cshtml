@@ -1,12 +1,31 @@
 @model IEnumerable<WebApplication1.Models.Discount>
+@using WebApplication1.Models
 @{
     ViewData["Title"] = "Quản lý khuyến mãi";
     var now = DateTime.Now;
+    var filterType = ViewBag.FilterType as string;
+
+    string PromoLabel(PromotionType t) => t switch
+    {
+        PromotionType.FlashSale    => "⚡ Flash Sale",
+        PromotionType.FreeShipping => "🚚 Free Ship",
+        PromotionType.FirstOrder   => "🎁 Đơn đầu",
+        PromotionType.BuyXGetY     => "🛒 Mua nhiều",
+        _                          => "🎟️ Coupon"
+    };
+    string PromoBadgeClass(PromotionType t) => t switch
+    {
+        PromotionType.FlashSale    => "badge-warning",
+        PromotionType.FreeShipping => "badge-info",
+        PromotionType.FirstOrder   => "badge-success",
+        PromotionType.BuyXGetY     => "badge-accent",
+        _                          => "badge-muted"
+    };
 }
 
 <div class="page-header">
     <h1>Khuyến mãi</h1>
-    <a asp-action="Create" class="btn btn-primary btn-sm">+ Tạo mã giảm giá</a>
+    <a asp-action="Create" class="btn btn-primary btn-sm">+ Tạo khuyến mãi</a>
 </div>
 
 @if (TempData["Success"] != null)
@@ -14,14 +33,27 @@
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
+@* Filter tabs *@
+<div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+    <a asp-action="Index" class="btn btn-sm @(filterType == null ? "btn-primary" : "btn-ghost")">Tất cả (@Model.Count())</a>
+    @foreach (var pt in Enum.GetValues<PromotionType>())
+    {
+        var count = Model.Count(d => d.PromotionType == pt);
+        <a asp-action="Index" asp-route-type="@pt"
+           class="btn btn-sm @(filterType == pt.ToString() ? "btn-primary" : "btn-ghost")">
+            @PromoLabel(pt) (@count)
+        </a>
+    }
+</div>
+
 <div class="table-scroll glass-panel" style="padding:1rem;">
     <table class="admin-table">
         <thead>
             <tr>
                 <th>Mã</th>
                 <th>Tên chương trình</th>
-                <th>Loại giảm</th>
-                <th>Giá trị</th>
+                <th>Loại</th>
+                <th>Giá trị giảm</th>
                 <th>Đơn tối thiểu</th>
                 <th>Đã dùng</th>
                 <th>Hiệu lực</th>
@@ -32,25 +64,30 @@
         <tbody>
             @foreach (var d in Model)
             {
-                var isExpired = d.EndDate < now;
+                var isExpired    = d.EndDate < now;
                 var isNotStarted = d.StartDate > now;
                 <tr>
                     <td><strong style="font-family:monospace;letter-spacing:1px;">@d.Code</strong></td>
-                    <td>@d.Name</td>
                     <td>
-                        @if (d.DiscountType == WebApplication1.Models.DiscountType.Percent)
+                        <div>@d.Name</div>
+                        @if (!string.IsNullOrEmpty(d.Description))
                         {
-                            <span class="badge badge-info">%</span>
-                        }
-                        else
-                        {
-                            <span class="badge badge-accent">₫</span>
+                            <div style="font-size:0.78rem;color:var(--text-muted);">@d.Description</div>
                         }
                     </td>
+                    <td><span class="badge @PromoBadgeClass(d.PromotionType)">@PromoLabel(d.PromotionType)</span></td>
                     <td>
-                        @if (d.DiscountType == WebApplication1.Models.DiscountType.Percent)
+                        @if (d.PromotionType == PromotionType.FreeShipping)
                         {
-                            @($"{d.Value:N0}%")
+                            <span class="badge badge-info">Miễn phí ship</span>
+                        }
+                        else if (d.DiscountType == DiscountType.Percent)
+                        {
+                            <span>@($"{d.Value:N0}%")</span>
+                            @if (d.MaxDiscountAmount.HasValue)
+                            {
+                                <span style="font-size:0.75rem;color:var(--text-muted);"> ≤@($"{d.MaxDiscountAmount:N0}₫")</span>
+                            }
                         }
                         else
                         {
@@ -91,7 +128,7 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@d.Id" />
                             <button class="btn btn-ghost btn-sm" style="color:#ef4444;"
-                                    onclick="return confirm('Xóa mã này?')">Xóa</button>
+                                    onclick="return confirm('Xóa khuyến mãi này?')">Xóa</button>
                         </form>
                     </td>
                 </tr>

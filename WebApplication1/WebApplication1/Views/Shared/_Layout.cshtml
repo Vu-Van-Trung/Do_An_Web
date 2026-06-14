@@ -1,9 +1,11 @@
 @using System.Security.Claims
 @{
-    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString();
+    var ctrl   = ViewContext.RouteData.Values["controller"]?.ToString();
     var action = ViewContext.RouteData.Values["action"]?.ToString();
     string NavClass(string c, string a = "Index") =>
         (ctrl == c && action == a) ? "nav-active" : string.Empty;
+    var userName    = User.Identity?.Name ?? "";
+    var displayName = userName.Contains("@") ? userName.Split("@")[0] : userName;
 }
 <!DOCTYPE html>
 <html lang="vi" style="scroll-behavior:smooth;">
@@ -21,35 +23,73 @@
     <header class="site-header">
         <nav class="nav container">
             <a class="brand" asp-controller="Home" asp-action="Index">Nexus<span>Gear</span></a>
+
             <button class="nav-toggle" id="nav-toggle" aria-label="Mở menu" aria-expanded="false">&#9776;</button>
+
             <div class="nav-links" id="nav-links">
-                <a asp-controller="Home" asp-action="Index" class="@NavClass("Home")">Trang chủ</a>
-                <a asp-controller="Product" asp-action="Index" class="@NavClass("Product")">Cửa hàng</a>
-                <a asp-controller="Category" asp-action="Index" class="@NavClass("Category")">Danh mục</a>
-                <a asp-controller="Product" asp-action="Deals" class="@NavClass("Product", "Deals")">Khuyến mãi</a>
-                @if (User.Identity?.IsAuthenticated == true)
-                {
-                    <a asp-controller="Account" asp-action="Orders" class="@NavClass("Account", "Orders")">Tài khoản</a>
-                    @if (User.IsInRole("Admin"))
+                @* Main navigation links *@
+                <div class="nav-main-links">
+                    <a asp-controller="Home"     asp-action="Index"  class="@NavClass("Home")">Trang chủ</a>
+                    <a asp-controller="Product"  asp-action="Index"  class="@NavClass("Product")">Cửa hàng</a>
+                    <a asp-controller="Category" asp-action="Index"  class="@NavClass("Category")">Danh mục</a>
+                    <a asp-controller="Product"  asp-action="Deals"  class="nav-deals @NavClass("Product", "Deals")">🏷️ Khuyến mãi</a>
+                </div>
+
+                @* Action area (cart + auth) *@
+                <div class="nav-actions">
+                    @if (User.Identity?.IsAuthenticated == true)
                     {
-                        <a asp-area="Admin" asp-controller="Home" asp-action="Index">Quản trị</a>
+                        @* Giỏ hàng *@
+                        <a asp-controller="Cart" asp-action="Index" class="nav-cart-btn @NavClass("Cart")" title="Giỏ hàng">
+                            &#x1F6D2; <span id="cart-badge" class="badge">0</span>
+                        </a>
+
+                        @* User dropdown khi đã đăng nhập *@
+                        <div class="user-dropdown" id="userDropdown">
+                            <button class="user-dropdown-trigger" id="userDropdownBtn" aria-expanded="false">
+                                <span class="user-avatar">@(displayName.Length > 0 ? displayName[0].ToString().ToUpper() : "U")</span>
+                                <span class="user-name-text">@displayName</span>
+                                <span class="dropdown-arrow">&#9660;</span>
+                            </button>
+                            <div class="user-dropdown-menu" id="userDropdownMenu">
+                                <a asp-controller="Account" asp-action="Orders" class="dropdown-item">
+                                    &#128230; Đơn hàng của tôi
+                                </a>
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <div class="dropdown-divider"></div>
+                                    <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="dropdown-item dropdown-item-admin">
+                                        &#9881;&#65039; Quản trị
+                                    </a>
+                                }
+                                <div class="dropdown-divider"></div>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item dropdown-item-danger">
+                                        &#128682; Đăng xuất
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     }
-                    <a asp-controller="Cart" asp-action="Index" class="@NavClass("Cart")">
-                        &#x1F6D2; Giỏ hàng <span id="cart-badge" class="badge">0</span>
-                    </a>
-                    <form asp-controller="Account" asp-action="Logout" method="post" class="inline-form">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-ghost btn-sm">Đăng xuất</button>
-                    </form>
-                }
-                else
-                {
-                    <a asp-controller="Cart" asp-action="Index" class="@NavClass("Cart")">
-                        &#x1F6D2; Giỏ hàng <span id="cart-badge" class="badge">0</span>
-                    </a>
-                    <a asp-controller="Account" asp-action="Login" class="@NavClass("Account", "Login")">Tài khoản</a>
-                    <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm">Đăng ký</a>
-                }
+                    else
+                    {
+                        @* Giỏ hàng khi chưa login *@
+                        <a asp-controller="Cart" asp-action="Index" class="nav-cart-btn @NavClass("Cart")" title="Giỏ hàng">
+                            &#x1F6D2; <span id="cart-badge" class="badge">0</span>
+                        </a>
+
+                        @* Nút Đăng nhập riêng biệt *@
+                        <a asp-controller="Account" asp-action="Login"
+                           class="btn btn-ghost btn-sm @NavClass("Account", "Login")"
+                           id="nav-login-btn">Đăng nhập</a>
+
+                        @* Nút Đăng ký riêng biệt *@
+                        <a asp-controller="Account" asp-action="Register"
+                           class="btn btn-primary btn-sm"
+                           id="nav-register-btn">Đăng ký</a>
+                    }
+                </div>
             </div>
         </nav>
     </header>
@@ -67,8 +107,17 @@
     </main>
 
     <footer class="site-footer">
-        <div class="container">
-            <p>&copy; @DateTime.Now.Year NexusGear — Thiết Bị Gaming Cao Cấp</p>
+        <div class="container footer-inner">
+            <div class="footer-brand">
+                <a class="brand" asp-controller="Home" asp-action="Index" style="font-size:1.1rem;text-decoration:none;">Nexus<span>Gear</span></a>
+                <p>Thiết bị gaming cao cấp — Uy tín &amp; Chất lượng</p>
+            </div>
+            <div class="footer-links">
+                <a asp-controller="Product"  asp-action="Index">Cửa hàng</a>
+                <a asp-controller="Product"  asp-action="Deals">Khuyến mãi</a>
+                <a asp-controller="Category" asp-action="Index">Danh mục</a>
+            </div>
+            <p class="footer-copy">&copy; @DateTime.Now.Year NexusGear. All rights reserved.</p>
         </div>
     </footer>
 
