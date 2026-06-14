@@ -15,7 +15,9 @@ WebApplication1/**/bin/
 WebApplication1/**/obj/
 
 # Sensitive config — never commit real secrets
-# appsettings.json is kept tracked but bin copy is excluded above
+# Dùng appsettings.Development.json hoặc User Secrets cho local dev
+**/appsettings.Development.json
+**/appsettings.Production.json
 
 # NuGet
 *.nupkg
