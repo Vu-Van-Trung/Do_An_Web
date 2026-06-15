@@ -106,3 +106,50 @@ document.querySelectorAll('[data-cart-qty]').forEach(input => {
         }
     });
 });
+
+// ── Dark Mode Toggle ──
+(function() {
+    const toggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const icon = toggle?.querySelector('i');
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('nexusgear-theme') || 'light';
+    html.setAttribute('data-theme', savedTheme);
+    if (icon) {
+        icon.className = savedTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }
+    
+    if (toggle) {
+        toggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('nexusgear-theme', next);
+            if (icon) {
+                icon.className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+            }
+        });
+    }
+})();
+
+// ── Header Scroll Effect ──
+(function() {
+    const header = document.querySelector('.site-header');
+    if (!header) return;
+    
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                if (window.scrollY > 20) {
+                    header.classList.add('header-scrolled');
+                } else {
+                    header.classList.remove('header-scrolled');
+                }
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+})();

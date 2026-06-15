@@ -6,12 +6,12 @@
 <!-- HERO -->
 <section class="hero">
     <div class="hero-left">
-        <span class="hero-badge">&#x1F7E2; Hàng mới về hàng tuần</span>
+        <span class="hero-badge">&#x2728; Hàng mới về hàng tuần</span>
         <h1>Nâng Tầm<br><span>Góc Gaming</span></h1>
         <p>Thiết bị gaming cao cấp từ Razer, Logitech, Corsair và Keychron — được tạo ra cho tốc độ, độ chính xác và phong cách.</p>
         <div class="hero-btns">
-            <a asp-controller="Product" asp-action="Index" class="btn btn-dark">Khám phá sản phẩm</a>
-            <a asp-controller="Product" asp-action="Deals" class="btn btn-dark">Xem khuyến mãi</a>
+            <a asp-controller="Product" asp-action="Index" class="btn btn-glow btn-lg">Khám phá sản phẩm</a>
+            <a asp-controller="Product" asp-action="Deals" class="btn btn-outline-light">Xem khuyến mãi &#x2192;</a>
         </div>
     </div>
     <div class="hero-stats">
@@ -24,7 +24,7 @@
             <span class="stat-label">Đánh giá trung bình</span>
         </div>
         <div class="hero-stat">
-            <span class="stat-num" style="color:#16a34a;">Miễn phí</span>
+            <span class="stat-num" style="color:#34d399;">Miễn phí</span>
             <span class="stat-label">Giao hàng trên 1M VNĐ</span>
         </div>
     </div>
@@ -46,9 +46,10 @@
     <div class="product-grid" id="featured-grid">
         @foreach (var product in Model)
         {
+            var brandSlug = product.Brand.Name.ToLower().Replace(" ", "");
             <article class="product-card" data-category="@product.Category.Name">
                 <a asp-controller="Product" asp-action="Details" asp-route-id="@product.Id">
-                    <span class="product-card-brand-chip">@product.Brand.Name</span>
+                    <span class="product-card-brand-chip brand-chip-@brandSlug">@product.Brand.Name</span>
                     <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
                     <div class="body">
                         <h3>@product.Name</h3>
@@ -57,11 +58,15 @@
                 </a>
                 <div class="card-footer">
                     <span class="price">@product.Price.ToString("N0") &#x111;</span>
+                </div>
+                <div class="card-cart-overlay">
                     <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="productId" value="@product.Id" />
                         <input type="hidden" name="quantity" value="1" />
-                        <button type="submit" class="btn-add" title="Thêm vào giỏ">+</button>
+                        <button type="submit" class="btn-cart" title="Thêm vào giỏ">
+                            <i class="bi bi-cart-plus-fill"></i> Thêm vào giỏ
+                        </button>
                     </form>
                 </div>
             </article>
@@ -74,6 +79,10 @@
     <div class="flash-sale-text">
         <h3>&#x1F525; Flash Sale &#x2014; Giảm đến 30%</h3>
         <p>Chỉ còn hôm nay &middot; Hàng có hạn, nhanh tay kẻo lỡ!</p>
+        <div class="flash-progress">
+            <div class="flash-progress-bar" style="width: 70%;"></div>
+        </div>
+        <span class="flash-sold-text">Đã bán 70% — Chỉ còn vài sản phẩm!</span>
     </div>
     <a asp-controller="Product" asp-action="Deals" class="btn">Xem ngay &#x2192;</a>
 </div>

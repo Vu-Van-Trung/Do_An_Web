@@ -77,15 +77,29 @@
 <div class="product-grid">
     @foreach (var product in Model.Products.Items)
     {
-        <article class="product-card glass-panel">
+        var brandSlug = product.Brand.Name.ToLower().Replace(" ", "");
+        <article class="product-card" data-category="@product.Category.Name">
             <a asp-action="Details" asp-route-id="@product.Id">
+                <span class="product-card-brand-chip brand-chip-@brandSlug">@product.Brand.Name</span>
                 <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
                 <div class="body">
                     <h3>@product.Name</h3>
-                    <p class="meta">@product.Category.Name &bull; @product.Brand.Name</p>
-                    <p class="price">@product.Price.ToString("N0") ₫</p>
+                    <p class="meta">@product.Brand.Name &middot; @product.Category.Name</p>
                 </div>
             </a>
+            <div class="card-footer">
+                <span class="price">@product.Price.ToString("N0") ₫</span>
+            </div>
+            <div class="card-cart-overlay">
+                <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productId" value="@product.Id" />
+                    <input type="hidden" name="quantity" value="1" />
+                    <button type="submit" class="btn-cart" title="Thêm vào giỏ">
+                        <i class="bi bi-cart-plus-fill"></i> Thêm vào giỏ
+                    </button>
+                </form>
+            </div>
         </article>
     }
 </div>
