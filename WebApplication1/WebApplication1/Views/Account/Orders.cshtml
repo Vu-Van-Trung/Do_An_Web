@@ -3,30 +3,74 @@
     ViewData["Title"] = "Lịch sử đơn hàng";
 }
 
-<h1>Lịch sử đơn hàng</h1>
+<h1 style="font-family:var(--font-display); font-size:1.6rem; font-weight:700; margin-top:0; margin-bottom:1.5rem;">📦 Đơn hàng của tôi</h1>
 
 @if (!Model.Any())
 {
-    <p class="meta">Bạn chưa có đơn hàng nào.</p>
+    <p class="meta" style="text-align:center; padding:3rem 0; color:var(--text-muted);">
+        Bạn chưa đặt đơn hàng nào tại NexusGear. <a asp-controller="Product" asp-action="Index" style="color:var(--accent); font-weight:600; text-decoration:none;">Mua sắm ngay</a>
+    </p>
 }
 else
 {
-    <div class="glass-panel" style="padding:1rem;">
-        <table class="cart-table">
-            <thead>
-                <tr><th>Mã đơn</th><th>Ngày đặt</th><th>Trạng thái</th><th>Tổng tiền</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var order in Model)
-                {
+    <div class="glass-panel" style="padding:1rem; border-radius:14px;">
+        <div class="table-scroll">
+            <table class="cart-table" style="vertical-align:middle;">
+                <thead>
                     <tr>
-                        <td>#@order.Id</td>
-                        <td>@order.OrderDate.ToLocalTime().ToString("g")</td>
-                        <td>@order.Status</td>
-                        <td>@order.Total.ToString("N0") ₫</td>
+                        <th>Mã đơn</th>
+                        <th>Ngày đặt</th>
+                        <th>Trạng thái</th>
+                        <th>Thanh toán</th>
+                        <th style="text-align:right;">Tổng tiền</th>
+                        <th style="text-align:center;">Hành động</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model)
+                    {
+                        string statusText = order.Status switch
+                        {
+                            OrderStatus.Pending => "Chờ xử lý",
+                            OrderStatus.Shipping => "Đang giao hàng",
+                            OrderStatus.Completed => "Đã hoàn thành",
+                            OrderStatus.Cancelled => "Đã hủy",
+                            _ => order.Status.ToString()
+                        };
+                        string paymentText = order.PaymentStatus switch
+                        {
+                            PaymentStatus.Paid => "Đã thanh toán",
+                            PaymentStatus.COD => "COD (Thanh toán khi nhận)",
+                            PaymentStatus.Pending => "Chờ thanh toán",
+                            PaymentStatus.Failed => "Thanh toán thất bại",
+                            _ => order.PaymentStatus.ToString()
+                        };
+                        <tr>
+                            <td><strong>#@order.Id</strong></td>
+                            <td>@order.OrderDate.ToLocalTime().ToString("g")</td>
+                            <td>
+                                <span class="status-badge status-@order.Status.ToString().ToLower()">@statusText</span>
+                            </td>
+                            <td>
+                                @if (order.PaymentStatus == PaymentStatus.Paid)
+                                {
+                                    <span class="badge badge-success" style="font-size:0.75rem;">@paymentText</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning" style="font-size:0.75rem;">@paymentText</span>
+                                }
+                            </td>
+                            <td style="text-align:right; font-weight:700; color:var(--accent);">@order.Total.ToString("N0") ₫</td>
+                            <td style="text-align:center;">
+                                <a asp-action="OrderDetails" asp-route-id="@order.Id" class="btn btn-ghost btn-sm" style="padding:0.35rem 0.75rem; border-radius:8px;">
+                                    🔍 Xem chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 }

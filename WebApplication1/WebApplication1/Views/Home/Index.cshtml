@@ -20,7 +20,7 @@
             <span class="stat-label">Sản phẩm có sẵn</span>
         </div>
         <div class="hero-stat">
-            <span class="stat-num">4.9 &#x2605;</span>
+            <span class="stat-num">@ViewBag.AverageRating &#x2605;</span>
             <span class="stat-label">Đánh giá trung bình</span>
         </div>
         <div class="hero-stat">
@@ -48,6 +48,23 @@
         {
             var brandSlug = product.Brand.Name.ToLower().Replace(" ", "");
             <article class="product-card" data-category="@product.Category.Name">
+                <!-- Nút Yêu thích & So sánh nhanh -->
+                <div class="card-actions-overlay">
+                    <form asp-controller="Wishlist" asp-action="Add" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@product.Id" />
+                        <button type="submit" class="card-action-btn" title="Yêu thích">
+                            <i class="bi bi-heart"></i>
+                        </button>
+                    </form>
+                    <form asp-controller="Comparison" asp-action="Add" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@product.Id" />
+                        <button type="submit" class="card-action-btn" title="So sánh">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </button>
+                    </form>
+                </div>
                 <a asp-controller="Product" asp-action="Details" asp-route-id="@product.Id">
                     <span class="product-card-brand-chip brand-chip-@brandSlug">@product.Brand.Name</span>
                     <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
@@ -93,12 +110,13 @@
         <h2>Mua theo thương hiệu</h2>
     </div>
     <div class="brand-pills">
-        <a asp-controller="Product" asp-action="Index" class="brand-pill">Razer</a>
-        <a asp-controller="Product" asp-action="Index" class="brand-pill">Logitech</a>
-        <a asp-controller="Product" asp-action="Index" class="brand-pill">Corsair</a>
-        <a asp-controller="Product" asp-action="Index" class="brand-pill">Keychron</a>
-        <a asp-controller="Product" asp-action="Index" class="brand-pill">SteelSeries</a>
-        <a asp-controller="Product" asp-action="Index" class="brand-pill">HyperX</a>
+        @if (ViewBag.Brands != null)
+        {
+            foreach (var brand in (IEnumerable<WebApplication1.Models.Brand>)ViewBag.Brands)
+            {
+                <a asp-controller="Product" asp-action="Index" asp-route-BrandId="@brand.Id" class="brand-pill">@brand.Name</a>
+            }
+        }
     </div>
 </section>
 

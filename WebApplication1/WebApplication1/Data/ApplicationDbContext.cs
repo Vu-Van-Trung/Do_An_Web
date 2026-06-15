@@ -19,6 +19,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Discount> Discounts => Set<Discount>();
+    public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
+    public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -77,5 +79,35 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(c => c.SubCategories)
             .HasForeignKey(c => c.ParentCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // ProductReview configurations
+        builder.Entity<ProductReview>()
+            .HasOne(r => r.Product)
+            .WithMany()
+            .HasForeignKey(r => r.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<ProductReview>()
+            .HasOne(r => r.User)
+            .WithMany()
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // WishlistItem configurations
+        builder.Entity<WishlistItem>()
+            .HasOne(w => w.Product)
+            .WithMany()
+            .HasForeignKey(w => w.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<WishlistItem>()
+            .HasOne(w => w.User)
+            .WithMany()
+            .HasForeignKey(w => w.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<WishlistItem>()
+            .HasIndex(w => new { w.UserId, w.ProductId })
+            .IsUnique();
     }
 }

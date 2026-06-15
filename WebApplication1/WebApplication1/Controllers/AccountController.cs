@@ -183,6 +183,208 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
+    // ── PROFILE ──────────────────────────────────────────────────────────────
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Profile()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return NotFound();
+
+        var model = new ProfileViewModel
+        {
+            FullName = user.FullName,
+            Email = user.Email ?? string.Empty,
+            PhoneNumber = user.PhoneNumber,
+            Address = user.Address
+        };
+        return View(model);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Profile(ProfileViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return NotFound();
+
+        user.FullName = model.FullName;
+        user.PhoneNumber = model.PhoneNumber;
+        user.Address = model.Address;
+
+        var result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+        {
+            TempData["Success"] = "Cập nhật thông tin cá nhân thành công!";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+        return View(model);
+    }
+
+    // ── CHANGE PASSWORD ──────────────────────────────────────────────────────
+    [Authorize]
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        return View(new ChangePasswordViewModel());
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return NotFound();
+
+        var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+        if (result.Succeeded)
+        {
+            await _signInManager.RefreshSignInAsync(user);
+            TempData["Success"] = "Đổi mật khẩu thành công!";
+            return RedirectToAction(nameof(ChangePassword));
+        }
+
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+        return View(model);
+    }
+
+    // ── FORGOT PASSWORD ──────────────────────────────────────────────────────
+    [HttpGet]
+    public IActionResult ForgotPassword()
+    {
+        return View(new ForgotPasswordViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user == null)
+        {
+            // Don't reveal that the user does not exist
+            return RedirectToAction(nameof(ForgotPasswordConfirmation));
+        }
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var callbackUrl = Url.Action("ResetPassword", "Account", new { token, email = model.Email }, Request.Scheme);
+        
+        // Save the direct reset link to TempData so it can be displayed on the screen for local testing!
+        TempData["DirectResetLink"] = callbackUrl;
+
+        return RedirectToAction(nameof(ForgotPasswordConfirmation));
+    }
+
+    [HttpGet]
+    public IActionResult ForgotPasswordConfirmation()
+    {
+        return View();
+    }
+
+    // ── RESET PASSWORD ────────────────────────────────────────────────────────
+    [HttpGet]
+    public IActionResult ResetPassword(string? token = null, string? email = null)
+    {
+        if (token == null || email == null)
+        {
+            return BadRequest("Token và Email không hợp lệ để reset mật khẩu.");
+        }
+        return View(new ResetPasswordViewModel { Token = token, Email = email });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user == null)
+        {
+            // Don't reveal that the user does not exist
+            return RedirectToAction(nameof(ResetPasswordConfirmation));
+        }
+
+        var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
+        if (result.Succeeded)
+        {
+            return RedirectToAction(nameof(ResetPasswordConfirmation));
+        }
+
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+        return View(model);
+    }
+
+    // ── ORDER DETAILS & CANCELLATION ─────────────────────────────────────────
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> OrderDetails(int id)
+    {
+        var order = await _orders.GetWithItemsAsync(id);
+        if (order == null) return NotFound();
+
+        var userId = _userManager.GetUserId(User);
+        if (order.UserId != userId && !User.IsInRole("Admin"))
+        {
+            return Forbid();
+        }
+
+        return View(order);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelOrder(int id)
+    {
+        var order = await _orders.GetByIdAsync(id);
+        if (order == null) return NotFound();
+
+        var userId = _userManager.GetUserId(User);
+        if (order.UserId != userId)
+        {
+            return Forbid();
+        }
+
+        if (order.Status != OrderStatus.Pending)
+        {
+            TempData["Error"] = "Chỉ có thể hủy đơn hàng ở trạng thái Chờ xử lý!";
+            return RedirectToAction(nameof(OrderDetails), new { id });
+        }
+
+        order.Status = OrderStatus.Cancelled;
+        _orders.Update(order);
+        await _orders.SaveChangesAsync();
+
+        TempData["Success"] = "Đơn hàng đã được hủy thành công.";
+        return RedirectToAction(nameof(OrderDetails), new { id });
+    }
+
+    [HttpGet]
+    public IActionResult ResetPasswordConfirmation()
+    {
+        return View();
+    }
+
     public IActionResult AccessDenied() => View();
 
     private IActionResult RedirectToLocal(string returnUrl)

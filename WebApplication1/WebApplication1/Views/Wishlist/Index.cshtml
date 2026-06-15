@@ -1,0 +1,59 @@
+@model IEnumerable<WebApplication1.Models.WishlistItem>
+@{
+    ViewData["Title"] = "Sản phẩm yêu thích";
+}
+
+<h1 style="font-family:var(--font-display); font-size:1.6rem; font-weight:700; margin-top:0; margin-bottom:1.5rem;">❤️ Sản phẩm yêu thích</h1>
+
+@if (!Model.Any())
+{
+    <p class="meta" style="text-align:center; padding:3rem 0; color:var(--text-muted);">
+        Danh sách yêu thích của bạn đang trống. <a asp-controller="Product" asp-action="Index" style="color:var(--accent); font-weight:600; text-decoration:none;">Xem sản phẩm</a>
+    </p>
+}
+else
+{
+    <div class="product-grid">
+        @foreach (var item in Model)
+        {
+            var p = item.Product;
+            var brandSlug = p.Brand.Name.ToLower().Replace(" ", "");
+            <article class="product-card">
+                <!-- Nút Xóa nhanh khỏi yêu thích -->
+                <div class="card-actions-overlay" style="opacity: 1;">
+                    <form asp-controller="Wishlist" asp-action="Remove" method="post" class="inline-form" onsubmit="return confirm('Xóa sản phẩm này khỏi yêu thích?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@p.Id" />
+                        <button type="submit" class="card-action-btn" title="Xóa khỏi yêu thích" style="color:#ef4444; border-color:rgba(239,68,68,0.2);">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <a asp-controller="Product" asp-action="Details" asp-route-id="@p.Id">
+                    <span class="product-card-brand-chip brand-chip-@brandSlug">@p.Brand.Name</span>
+                    <img src="@p.ImageUrl" alt="@p.Name" loading="lazy" />
+                    <div class="body">
+                        <h3>@p.Name</h3>
+                        <p class="meta">@p.Brand.Name &middot; @p.Category.Name</p>
+                    </div>
+                </a>
+                <div class="card-footer">
+                    <span class="price">@p.Price.ToString("N0") ₫</span>
+                </div>
+                
+                <!-- Hover slide up cart overlay -->
+                <div class="card-cart-overlay">
+                    <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@p.Id" />
+                        <input type="hidden" name="quantity" value="1" />
+                        <button type="submit" class="btn-cart" title="Thêm vào giỏ">
+                            <i class="bi bi-cart-plus-fill"></i> Thêm vào giỏ
+                        </button>
+                    </form>
+                </div>
+            </article>
+        }
+    </div>
+}

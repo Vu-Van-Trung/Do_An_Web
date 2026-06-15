@@ -1,0 +1,106 @@
+@model IEnumerable<WebApplication1.Models.Product>
+@{
+    ViewData["Title"] = "So sánh sản phẩm";
+    var specKeys = Model.SelectMany(p => p.Specifications.Select(s => s.Key)).Distinct().OrderBy(k => k).ToList();
+}
+
+<div style="padding-top:1.5rem; padding-bottom:3rem;">
+    <div style="margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+        <div>
+            <h1 style="font-family:var(--font-display); font-size:1.6rem; font-weight:700; margin:0 0 0.25rem;">🔄 So sánh sản phẩm</h1>
+            <p class="meta" style="margin:0;">So sánh thông số kỹ thuật chi tiết của các thiết bị gaming.</p>
+        </div>
+        @if (Model.Any())
+        {
+            <form asp-action="Clear" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-ghost" style="color:#ef4444; border-color:rgba(239,68,68,0.2);">🗑️ Xóa tất cả</button>
+            </form>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="glass-panel" style="padding:3rem; text-align:center;">
+            <p class="meta" style="font-size:1rem; margin-bottom:1.5rem;">Bạn chưa chọn sản phẩm nào để so sánh.</p>
+            <a asp-controller="Product" asp-action="Index" class="btn btn-primary">Quay lại cửa hàng</a>
+        </div>
+    }
+    else
+    {
+        <div class="glass-panel" style="padding:1.25rem; overflow-x:auto;">
+            <table class="admin-table" style="width:100%; min-width:650px; table-layout:fixed; border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="width:200px; background:transparent; border-bottom:2px solid var(--border); font-size:0.9rem;">Thuộc tính</th>
+                        @foreach (var p in Model)
+                        {
+                            <th style="background:transparent; border-bottom:2px solid var(--border); vertical-align:top; padding-bottom:1rem;">
+                                <div style="display:flex; flex-direction:column; gap:0.5rem; position:relative; align-items:center; text-align:center;">
+                                    <!-- Nút xóa nhanh khỏi bảng -->
+                                    <form asp-action="Remove" method="post" style="position:absolute; top:-5px; right:-5px;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="productId" value="@p.Id" />
+                                        <button type="submit" class="card-action-btn" title="Xóa" style="width:24px; height:24px; font-size:0.75rem; border-color:rgba(239,68,68,0.15); color:#ef4444;">✕</button>
+                                    </form>
+
+                                    <img src="@p.ImageUrl" alt="@p.Name" style="width:90px; height:90px; object-fit:contain; background:#f8f9fc; border-radius:10px; padding:4px;" />
+                                    <strong style="font-size:0.88rem; color:var(--text); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; height:2.8em;">@p.Name</strong>
+                                    <span style="font-size:0.92rem; font-weight:700; color:var(--accent);">@p.Price.ToString("N0") ₫</span>
+                                    
+                                    <!-- Nút thêm vào giỏ nhanh -->
+                                    @if (p.Stock > 0)
+                                    {
+                                        <form asp-controller="Cart" asp-action="Add" method="post" style="width:100%; margin-top:0.25rem;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="productId" value="@p.Id" />
+                                            <input type="hidden" name="quantity" value="1" />
+                                            <button type="submit" class="btn btn-primary btn-sm" style="width:100%; font-size:0.75rem; padding:0.4rem 0.75rem; border-radius:6px;">
+                                                <i class="bi bi-cart-plus-fill"></i> Mua
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-error" style="font-size:0.7rem; padding:0.25rem 0.5rem; margin-top:0.25rem;">Hết hàng</span>
+                                    }
+                                </div>
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Hàng: Thương hiệu -->
+                    <tr>
+                        <td style="font-weight:600; color:var(--text-muted);">Thương hiệu</td>
+                        @foreach (var p in Model)
+                        {
+                            <td>@p.Brand.Name</td>
+                        }
+                    </tr>
+                    <!-- Hàng: Danh mục -->
+                    <tr>
+                        <td style="font-weight:600; color:var(--text-muted);">Danh mục</td>
+                        @foreach (var p in Model)
+                        {
+                            <td>@p.Category.Name</td>
+                        }
+                    </tr>
+                    
+                    <!-- Hàng: Các thông số kỹ thuật động -->
+                    @foreach (var key in specKeys)
+                    {
+                        <tr>
+                            <td style="font-weight:600; color:var(--text-muted);">@key</td>
+                            @foreach (var p in Model)
+                            {
+                                var val = p.Specifications.FirstOrDefault(s => s.Key == key)?.Value;
+                                <td>@(string.IsNullOrEmpty(val) ? "Không có" : val)</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

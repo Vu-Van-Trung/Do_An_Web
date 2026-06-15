@@ -43,6 +43,14 @@
                         <button class="theme-toggle" id="themeToggle" title="Chuyển chế độ sáng/tối">
                             <i class="bi bi-moon-fill"></i>
                         </button>
+                        @* So sánh *@
+                        <a asp-controller="Comparison" asp-action="Index" class="nav-cart-btn @NavClass("Comparison")" title="So sánh sản phẩm">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </a>
+                        @* Yêu thích *@
+                        <a asp-controller="Wishlist" asp-action="Index" class="nav-cart-btn @NavClass("Wishlist")" title="Sản phẩm yêu thích">
+                            <i class="bi bi-heart-fill" style="color:#ef4444;"></i>
+                        </a>
                         @* Giỏ hàng *@
                         <a asp-controller="Cart" asp-action="Index" class="nav-cart-btn @NavClass("Cart")" title="Giỏ hàng">
                             &#x1F6D2; <span id="cart-badge" class="badge">0</span>
@@ -56,21 +64,27 @@
                                 <span class="dropdown-arrow">&#9660;</span>
                             </button>
                             <div class="user-dropdown-menu" id="userDropdownMenu">
+                                <a asp-controller="Account" asp-action="Profile" class="dropdown-item">
+                                    👤 Hồ sơ cá nhân
+                                </a>
                                 <a asp-controller="Account" asp-action="Orders" class="dropdown-item">
-                                    &#128230; Đơn hàng của tôi
+                                    📦 Đơn hàng của tôi
+                                </a>
+                                <a asp-controller="Account" asp-action="ChangePassword" class="dropdown-item">
+                                    🔑 Đổi mật khẩu
                                 </a>
                                 @if (User.IsInRole("Admin"))
                                 {
                                     <div class="dropdown-divider"></div>
                                     <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="dropdown-item dropdown-item-admin">
-                                        &#9881;&#65039; Quản trị
+                                        ⚙️ Quản trị
                                     </a>
                                 }
                                 <div class="dropdown-divider"></div>
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="inline-form">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="dropdown-item dropdown-item-danger">
-                                        &#128682; Đăng xuất
+                                        🚪 Đăng xuất
                                     </button>
                                 </form>
                             </div>
@@ -81,6 +95,10 @@
                         <button class="theme-toggle" id="themeToggle" title="Chuyển chế độ sáng/tối">
                             <i class="bi bi-moon-fill"></i>
                         </button>
+                        @* So sánh *@
+                        <a asp-controller="Comparison" asp-action="Index" class="nav-cart-btn @NavClass("Comparison")" title="So sánh sản phẩm">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </a>
                         @* Giỏ hàng khi chưa login *@
                         <a asp-controller="Cart" asp-action="Index" class="nav-cart-btn @NavClass("Cart")" title="Giỏ hàng">
                             &#x1F6D2; <span id="cart-badge" class="badge">0</span>

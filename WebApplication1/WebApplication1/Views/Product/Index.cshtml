@@ -79,6 +79,23 @@
     {
         var brandSlug = product.Brand.Name.ToLower().Replace(" ", "");
         <article class="product-card" data-category="@product.Category.Name">
+            <!-- Nút Yêu thích & So sánh nhanh -->
+            <div class="card-actions-overlay">
+                <form asp-controller="Wishlist" asp-action="Add" method="post" class="inline-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productId" value="@product.Id" />
+                    <button type="submit" class="card-action-btn" title="Yêu thích">
+                        <i class="bi bi-heart"></i>
+                    </button>
+                </form>
+                <form asp-controller="Comparison" asp-action="Add" method="post" class="inline-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productId" value="@product.Id" />
+                    <button type="submit" class="card-action-btn" title="So sánh">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </button>
+                </form>
+            </div>
             <a asp-action="Details" asp-route-id="@product.Id">
                 <span class="product-card-brand-chip brand-chip-@brandSlug">@product.Brand.Name</span>
                 <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />

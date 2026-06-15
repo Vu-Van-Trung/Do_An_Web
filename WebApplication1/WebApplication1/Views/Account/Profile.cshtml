@@ -1,0 +1,39 @@
+@model WebApplication1.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+
+<div class="glass-panel" style="max-width:550px; margin:2rem auto; padding:2rem;">
+    <h1 style="font-family:var(--font-display); font-size:1.6rem; font-weight:700; margin-top:0; margin-bottom:1.5rem;">👤 Thông tin tài khoản</h1>
+
+    <form asp-action="Profile" method="post">
+        @Html.AntiForgeryToken()
+        
+        <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom:1rem;"></div>
+
+        <div style="margin-bottom:1.25rem;">
+            <label asp-for="Email" style="display:block; font-size:0.82rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Địa chỉ Email (Không thể thay đổi)</label>
+            <input asp-for="Email" class="form-control" style="background:rgba(255,255,255,0.02); opacity:0.65; cursor:not-allowed;" readonly />
+        </div>
+
+        <div style="margin-bottom:1.25rem;">
+            <label asp-for="FullName" style="display:block; font-size:0.82rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Họ và tên *</label>
+            <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" required />
+            <span asp-validation-for="FullName" class="text-danger" style="font-size:0.8rem; margin-top:0.25rem; display:block;"></span>
+        </div>
+
+        <div style="margin-bottom:1.25rem;">
+            <label asp-for="PhoneNumber" style="display:block; font-size:0.82rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Số điện thoại</label>
+            <input asp-for="PhoneNumber" class="form-control" placeholder="09xx xxx xxx" />
+            <span asp-validation-for="PhoneNumber" class="text-danger" style="font-size:0.8rem; margin-top:0.25rem; display:block;"></span>
+        </div>
+
+        <div style="margin-bottom:1.5rem;">
+            <label asp-for="Address" style="display:block; font-size:0.82rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Địa chỉ mặc định</label>
+            <textarea asp-for="Address" class="form-control" rows="3" placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+            <span asp-validation-for="Address" class="text-danger" style="font-size:0.8rem; margin-top:0.25rem; display:block;"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:0.75rem;">Lưu thay đổi</button>
+    </form>
+</div>

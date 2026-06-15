@@ -1,6 +1,8 @@
 @model WebApplication1.Models.Product
 @{
     ViewData["Title"] = Model.Name;
+    var reviewsList = ViewBag.Reviews as List<WebApplication1.Models.ProductReview> ?? new();
+    var averageRating = ViewBag.AverageRating is double avg ? avg : 0.0;
 }
 
 <div class="detail-layout">
@@ -9,21 +11,165 @@
     </div>
     <div>
         <p class="meta">@Model.Brand.Name · @Model.Category.Name</p>
-        <h1>@Model.Name</h1>
-        <p class="price" style="font-size:1.5rem;">@Model.Price.ToString("N0") ₫</p>
-        <p>@(Model.Stock > 0 ? $"Còn hàng ({Model.Stock})" : "Hết hàng")</p>
-        <p>@Model.Description</p>
+        <h1 style="margin-bottom:0.25rem;">@Model.Name</h1>
+        
+        <!-- Điểm đánh giá sao -->
+        <div style="color:#f59e0b; margin-bottom:1rem; font-size:0.95rem; display:flex; align-items:center; gap:0.4rem;">
+            @if (reviewsList.Any())
+            {
+                <span style="font-weight:700; font-size:1.1rem; color:var(--text);">@averageRating.ToString("F1")</span>
+                <span>
+                    @for (var i = 1; i <= 5; i++)
+                    {
+                        if (i <= Math.Round(averageRating))
+                        {
+                            <span>★</span>
+                        }
+                        else
+                        {
+                            <span style="color:#e5e7eb;">★</span>
+                        }
+                    }
+                </span>
+                <span class="meta">(@reviewsList.Count đánh giá)</span>
+            }
+            else
+            {
+                <span style="color:#6b7280; font-size:0.88rem;">Chưa có đánh giá</span>
+            }
+        </div>
 
-        <ul class="spec-list glass-panel" style="padding:1rem;">
+        <p class="price" style="font-size:1.6rem; color:var(--accent); font-weight:800; margin-bottom:0.5rem;">@Model.Price.ToString("N0") ₫</p>
+        <p class="meta" style="font-size:0.9rem; margin-bottom:1.5rem;">
+            Trạng thái: 
+            @if (Model.Stock > 0)
+            {
+                <span class="badge badge-success" style="font-size:0.78rem;">Còn hàng (@Model.Stock)</span>
+            }
+            else
+            {
+                <span class="badge badge-error" style="font-size:0.78rem;">Hết hàng</span>
+            }
+        </p>
+        <p style="line-height:1.6; margin-bottom:2rem;">@Model.Description</p>
+
+        <ul class="spec-list glass-panel" style="padding:1.25rem; margin-bottom:2rem;">
+            <li style="font-weight:700; border-bottom:1.5px solid var(--border); padding-bottom:0.5rem; margin-bottom:0.25rem;">
+                <span>Thông số kỹ thuật</span>
+                <span>Chi tiết</span>
+            </li>
             @foreach (var spec in Model.Specifications)
             {
                 <li><span>@spec.Key</span><span>@spec.Value</span></li>
             }
         </ul>
 
-        @if (Model.Stock > 0)
-        {
-            <button class="btn btn-primary" data-add-cart data-product-id="@Model.Id">&#x1F6D2; Thêm vào giỏ</button>
-        }
+        <!-- Bộ nút hành động -->
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+            @if (Model.Stock > 0)
+            {
+                <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    <input type="hidden" name="quantity" value="1" />
+                    <button type="submit" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 20px rgba(139,92,246,0.3); padding:0.75rem 2rem;">
+                        &#x1F6D2; Thêm vào giỏ hàng
+                    </button>
+                </form>
+            }
+            <form asp-controller="Wishlist" asp-action="Add" method="post" class="inline-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="productId" value="@Model.Id" />
+                <button type="submit" class="btn btn-ghost" style="padding:0.75rem 1.25rem;" title="Thêm vào danh sách yêu thích">
+                    <i class="bi bi-heart-fill" style="color:#ef4444;"></i> Yêu thích
+                </button>
+            </form>
+            <form asp-controller="Comparison" asp-action="Add" method="post" class="inline-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="productId" value="@Model.Id" />
+                <button type="submit" class="btn btn-ghost" style="padding:0.75rem 1.25rem;" title="Thêm vào danh sách so sánh">
+                    <i class="bi bi-arrow-left-right"></i> So sánh
+                </button>
+            </form>
+        </div>
     </div>
 </div>
+
+<hr style="border:none; border-top:1px solid var(--border); margin:3.5rem 0 2.5rem;" />
+
+<!-- REVIEW SECTION -->
+<section class="reviews-section" style="max-width:850px; margin:0 auto;">
+    <h2 style="font-family:var(--font-display); margin-bottom:1.5rem; font-size:1.4rem; font-weight:700;">Đánh giá & Nhận xét</h2>
+    
+    <!-- Form gửi đánh giá -->
+    <div class="glass-panel" style="padding:1.5rem; margin-bottom:2.5rem;">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <h3 style="font-size:1.05rem; font-family:var(--font-display); font-weight:600; margin-top:0; margin-bottom:1rem;">Để lại ý kiến của bạn</h3>
+            <form asp-action="AddReview" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="productId" value="@Model.Id" />
+                
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Điểm số đánh giá</label>
+                    <select name="rating" class="form-control" style="width:160px; border-radius:8px;" required>
+                        <option value="5">5 ★ (Rất tốt)</option>
+                        <option value="4">4 ★ (Tốt)</option>
+                        <option value="3">3 ★ (Bình thường)</option>
+                        <option value="2">2 ★ (Tạm ổn)</option>
+                        <option value="1">1 ★ (Tệ)</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Nội dung nhận xét</label>
+                    <textarea name="comment" class="form-control" rows="3" placeholder="Hãy viết cảm nghĩ thực tế của bạn về chất lượng hoàn thiện, cảm giác bấm/nghe..." style="border-radius:10px;" required></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-sm" style="padding:0.6rem 1.5rem;">Gửi nhận xét</button>
+            </form>
+        }
+        else
+        {
+            <p class="meta" style="margin:0; font-size:0.88rem;">
+                Bạn cần <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" style="color:var(--accent); font-weight:600; text-decoration:none;">Đăng nhập</a> để gửi đánh giá sản phẩm.
+            </p>
+        }
+    </div>
+
+    <!-- Danh sách đánh giá khác -->
+    <div class="reviews-list">
+        @if (!reviewsList.Any())
+        {
+            <p class="meta" style="text-align:center; padding:2rem 0; color:var(--text-muted);">Sản phẩm này chưa có đánh giá nào. Hãy mua và để lại nhận xét đầu tiên!</p>
+        }
+        else
+        {
+            foreach (var r in reviewsList)
+            {
+                <div class="glass-panel" style="padding:1.25rem; margin-bottom:1rem; border-radius:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.6rem; flex-wrap:wrap; gap:0.5rem;">
+                        <div>
+                            <strong style="font-size:0.92rem;">@r.User.FullName</strong>
+                            <span style="color:#f59e0b; margin-left:0.6rem; font-size:0.88rem;">
+                                @for (var i = 1; i <= 5; i++)
+                                {
+                                    if (i <= r.Rating)
+                                    {
+                                        <span>★</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:#e5e7eb;">★</span>
+                                    }
+                                }
+                            </span>
+                        </div>
+                        <span class="meta" style="font-size:0.78rem;">@r.CreatedAt.ToLocalTime().ToString("g")</span>
+                    </div>
+                    <p style="margin:0; font-size:0.9rem; line-height:1.55; color:var(--text);">@r.Comment</p>
+                </div>
+            }
+        }
+    </div>
+</section>

@@ -157,6 +157,24 @@ html[data-theme="dark"] #vnpay-note {
 html[data-theme="dark"] .summary-product {
     border-color: rgba(255,255,255,0.06) !important;
 }
+html[data-theme="dark"] .cat-hero {
+    background: linear-gradient(135deg, #16122b 0%, #0d091e 100%) !important;
+    border-color: rgba(255,255,255,0.06) !important;
+}
+html[data-theme="dark"] .cat-group {
+    background: var(--bg-card) !important;
+    border-color: var(--border) !important;
+}
+html[data-theme="dark"] .cat-group-header {
+    background: rgba(255,255,255,0.02) !important;
+    border-bottom-color: var(--border) !important;
+}
+html[data-theme="dark"] .cat-sub-card {
+    background: var(--bg-card) !important;
+}
+html[data-theme="dark"] .cat-sub-card:hover {
+    background: var(--accent-light) !important;
+}
 
 * { box-sizing: border-box; }
 
@@ -596,6 +614,44 @@ body {
 .product-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+}
+.card-actions-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.product-card:hover .card-actions-overlay {
+    opacity: 1;
+}
+.card-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    padding: 0;
+}
+.card-action-btn:hover {
+    background: var(--accent);
+    color: #fff !important;
+    border-color: var(--accent);
+    transform: scale(1.1);
+}
+html[data-theme="dark"] .card-action-btn {
+    background: rgba(21,21,37,0.92);
+    border-color: var(--border);
 }
 .product-card a { text-decoration: none; color: inherit; display: block; }
 .product-card a:hover h3 { color: var(--accent-dark); }

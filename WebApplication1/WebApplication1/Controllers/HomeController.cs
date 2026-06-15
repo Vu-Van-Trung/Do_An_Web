@@ -24,6 +24,17 @@ public class HomeController : Controller
             .OrderByDescending(p => p.CreatedAt)
             .Take(4)
             .ToListAsync();
+
+        ViewBag.Brands = await _context.Brands.OrderBy(b => b.Name).ToListAsync();
+
+        // Calculate average rating dynamically
+        double avgRating = 4.9;
+        if (await _context.ProductReviews.AnyAsync())
+        {
+            avgRating = await _context.ProductReviews.AverageAsync(r => r.Rating);
+        }
+        ViewBag.AverageRating = avgRating.ToString("F1");
+
         return View(featured);
     }
 

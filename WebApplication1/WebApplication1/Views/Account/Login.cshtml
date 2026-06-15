@@ -60,7 +60,10 @@
             <input asp-for="Email" class="form-control" placeholder="you@example.com" />
         </div>
         <div style="margin-bottom:0.75rem;">
-            <label asp-for="Password">Mật khẩu</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                <label asp-for="Password" style="margin-bottom:0;">Mật khẩu</label>
+                <a asp-action="ForgotPassword" style="font-size:0.8rem; text-decoration:none; color:var(--accent); font-weight:500;">Quên mật khẩu?</a>
+            </div>
             <input asp-for="Password" class="form-control" placeholder="••••••" />
         </div>
         <label style="font-size:.875rem;"><input asp-for="RememberMe" /> Ghi nhớ đăng nhập</label>

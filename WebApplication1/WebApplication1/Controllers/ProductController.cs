@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -40,7 +41,55 @@ public class ProductController : Controller
         var product = await _products.GetWithDetailsAsync(id);
         if (product == null)
             return NotFound();
+
+        var reviews = await _context.ProductReviews
+            .Include(r => r.User)
+            .Where(r => r.ProductId == id)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+        ViewBag.Reviews = reviews;
+
+        double avgRating = 0;
+        if (reviews.Any())
+        {
+            avgRating = reviews.Average(r => r.Rating);
+        }
+        ViewBag.AverageRating = avgRating;
+
         return View(product);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddReview(int productId, int rating, string comment)
+    {
+        var product = await _context.Products.FindAsync(productId);
+        if (product == null) return NotFound();
+
+        if (rating < 1 || rating > 5)
+        {
+            TempData["Error"] = "Số sao đánh giá phải từ 1 đến 5!";
+            return RedirectToAction(nameof(Details), new { id = productId });
+        }
+
+        var userId = _context.Users.Where(u => u.UserName == User.Identity!.Name).Select(u => u.Id).FirstOrDefault();
+        if (string.IsNullOrEmpty(userId)) return Challenge();
+
+        var review = new ProductReview
+        {
+            ProductId = productId,
+            UserId = userId,
+            Rating = rating,
+            Comment = comment ?? string.Empty,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.ProductReviews.Add(review);
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Cảm ơn bạn đã đánh giá sản phẩm!";
+        return RedirectToAction(nameof(Details), new { id = productId });
     }
 
     /// <summary>Trang Khuyến mãi công khai — hiển thị tất cả deal đang hoạt động</summary>
