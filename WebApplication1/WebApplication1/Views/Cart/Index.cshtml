@@ -1,6 +1,15 @@
 @model WebApplication1.ViewModels.CartViewModel
 @{
     ViewData["Title"] = "Giỏ hàng";
+
+    // ĐỒNG BỘ KHUYẾN MÃI: Kiểm tra xem Session có lưu số tiền được giảm giá hay không
+    var sessionDiscountCode = Context.Session.GetString("AppliedCouponCode") ?? "";
+    var sessionDiscountAmountStr = Context.Session.GetString("DiscountAmount") ?? "0";
+    decimal discountAmount = 0;
+    decimal.TryParse(sessionDiscountAmountStr, out discountAmount);
+
+    // Tính toán số tiền thực tế cuối cùng khách cần trả
+    decimal finalTotal = Math.Max(0, Model.Subtotal - discountAmount);
 }
 
 <h1>Giỏ hàng</h1>
@@ -13,38 +22,54 @@ else
 {
     <div class="glass-panel" style="padding:1rem;">
         <div class="table-scroll">
-        <table class="cart-table">
-            <thead>
-                <tr><th>Sản phẩm</th><th>Đơn giá</th><th>SL</th><th>Thành tiền</th><th></th></tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.Items)
-                {
-                    <tr>
-                        <td>
-                            <strong>@item.Name</strong>
-                        </td>
-                        <td>@item.UnitPrice.ToString("N0") ₫</td>
-                        <td>
-                            <input type="number" min="1" max="@item.Stock" value="@item.Quantity"
-                                   data-cart-qty data-cart-item-id="@item.CartItemId" class="form-control" style="width:80px;" />
-                        </td>
-                        <td>@item.LineTotal.ToString("N0") ₫</td>
-                        <td>
-                            <form asp-action="Remove" method="post">
-                                <input type="hidden" name="cartItemId" value="@item.CartItemId" />
-                                <button type="submit" class="btn btn-ghost btn-sm">Xóa</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+            <table class="cart-table">
+                <thead>
+                    <tr><th>Sản phẩm</th><th>Đơn giá</th><th>SL</th><th>Thành tiền</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@item.Name</strong>
+                            </td>
+                            <td>@item.UnitPrice.ToString("N0") ₫</td>
+                            <td>
+                                <input type="number" min="1" max="@item.Stock" value="@item.Quantity"
+                                       data-cart-qty data-cart-item-id="@item.CartItemId" class="form-control" style="width:80px;" />
+                            </td>
+                            <td>@item.LineTotal.ToString("N0") ₫</td>
+                            <td>
+                                <form asp-action="Remove" method="post">
+                                    <input type="hidden" name="cartItemId" value="@item.CartItemId" />
+                                    <button type="submit" class="btn btn-ghost btn-sm">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
-        <p style="text-align:right; font-size:1.2rem; margin-top:1rem;">
-            Tổng cộng: <strong data-cart-subtotal>@Model.Subtotal.ToString("N0") ₫</strong>
-        </p>
-        <div class="cart-actions">
+
+        <div style="text-align:right; margin-top:1.5rem; font-size:1rem; line-height: 1.8;">
+            <p style="margin: 0;">
+                Tạm tính: <strong data-cart-subtotal>@Model.Subtotal.ToString("N0") ₫</strong>
+            </p>
+
+            @if (discountAmount > 0)
+            {
+                <p style="margin: 0; color: #16a34a;" id="cart-discount-row">
+                    Giảm giá @(!string.IsNullOrEmpty(sessionDiscountCode) ? $"({sessionDiscountCode})" : ""):
+                    <strong id="cart-discount-value">-@discountAmount.ToString("N0") ₫</strong>
+                </p>
+            }
+
+            <p style="font-size:1.3rem; margin-top:0.5rem; margin-bottom: 0; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 0.5rem;">
+                Tổng thanh toán: <strong style="color: var(--accent);" id="cart-final-total">@finalTotal.ToString("N0") ₫</strong>
+            </p>
+        </div>
+
+        <div class="cart-actions" style="margin-top: 1.5rem;">
             <a asp-controller="Product" asp-action="Index" class="btn btn-ghost">Tiếp tục mua</a>
             <a asp-controller="Checkout" asp-action="Index" class="btn btn-primary">Thanh toán</a>
         </div>

@@ -10,10 +10,13 @@ namespace WebApplication1.Areas.Admin.Controllers;
 public class BrandsController : Controller
 {
     private readonly IBrandRepository _brands;
+    private readonly IWebHostEnvironment _env; // Khai báo thêm biến môi trường để lưu tệp
 
-    public BrandsController(IBrandRepository brands)
+    // Bổ sung IWebHostEnvironment vào Hàm khởi tạo (Constructor)
+    public BrandsController(IBrandRepository brands, IWebHostEnvironment env)
     {
         _brands = brands;
+        _env = env;
     }
 
     public async Task<IActionResult> Index() => View(await _brands.GetAllAsync());
@@ -22,9 +25,21 @@ public class BrandsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Brand model)
+    public async Task<IActionResult> Create(Brand model, IFormFile? logoFile)
     {
         if (!ModelState.IsValid) return View(model);
+
+        // Xử lý upload ảnh khi tạo mới thương hiệu
+        if (logoFile != null && logoFile.Length > 0)
+        {
+            model.LogoUrl = await SaveLogoAsync(logoFile);
+        }
+        else
+        {
+            // Gán ảnh mặc định nếu admin không upload tệp tin
+            model.LogoUrl = "/images/brands/placeholder.svg";
+        }
+
         await _brands.AddAsync(model);
         await _brands.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -39,11 +54,36 @@ public class BrandsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, Brand model)
+    public async Task<IActionResult> Edit(int id, Brand model, IFormFile? logoFile)
     {
         if (id != model.Id) return NotFound();
         if (!ModelState.IsValid) return View(model);
-        _brands.Update(model);
+
+        // Lấy dữ liệu cũ từ DB ra để so sánh và xử lý ảnh cũ
+        var existingBrand = await _brands.GetByIdAsync(id);
+        if (existingBrand == null) return NotFound();
+
+        // Cập nhật các thông tin cơ bản từ model sang đối tượng theo dõi của EF
+        existingBrand.Name = model.Name;
+
+        if (logoFile != null && logoFile.Length > 0)
+        {
+            // Tối ưu: Xóa logo cũ vật lý trên ổ đĩa nếu nó không phải ảnh mặc định
+            if (!string.IsNullOrEmpty(existingBrand.LogoUrl) && !existingBrand.LogoUrl.Contains("placeholder.svg"))
+            {
+                var oldFilePath = Path.Combine(_env.WebRootPath, existingBrand.LogoUrl.TrimStart('/'));
+                if (System.IO.File.Exists(oldFilePath))
+                {
+                    System.IO.File.Delete(oldFilePath);
+                }
+            }
+
+            // Lưu logo mới và gán đường dẫn
+            existingBrand.LogoUrl = await SaveLogoAsync(logoFile);
+        }
+        // Trường hợp không chọn file mới: Giữ nguyên đường dẫn cũ có sẵn trong DB (không chỉnh sửa trường LogoUrl)
+
+        _brands.Update(existingBrand);
         await _brands.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
@@ -54,8 +94,37 @@ public class BrandsController : Controller
     {
         var item = await _brands.GetByIdAsync(id);
         if (item == null) return NotFound();
+
+        // Tối ưu: Khi xóa thương hiệu, tiến hành dọn dẹp file ảnh logo vật lý trong hệ thống
+        if (!string.IsNullOrEmpty(item.LogoUrl) && !item.LogoUrl.Contains("placeholder.svg"))
+        {
+            var filePath = Path.Combine(_env.WebRootPath, item.LogoUrl.TrimStart('/'));
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
+        }
+
         _brands.Remove(item);
         await _brands.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
+    }
+
+    // Hàm phụ trợ xử lý lưu file vật lý xuống thư mục wwwroot/images/brands
+    private async Task<string> SaveLogoAsync(IFormFile file)
+    {
+        var uploads = Path.Combine(_env.WebRootPath, "images", "brands");
+        if (!Directory.Exists(uploads))
+        {
+            Directory.CreateDirectory(uploads);
+        }
+
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var path = Path.Combine(uploads, fileName);
+
+        await using var stream = System.IO.File.Create(path);
+        await file.CopyToAsync(stream);
+
+        return $"/images/brands/{fileName}";
     }
 }

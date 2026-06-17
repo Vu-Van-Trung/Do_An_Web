@@ -1,7 +1,24 @@
 @model WebApplication1.Models.Brand
-@{ ViewData["Title"] = "Thêm thương hiệu"; }
+@{
+    ViewData["Title"] = "Thêm thương hiệu";
+}
+
 <h1>Thêm thương hiệu</h1>
-<form asp-action="Create" method="post" class="glass-panel" style="padding:1rem;">
-    <input asp-for="Name" class="form-control" placeholder="Tên thương hiệu" />
+
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="glass-panel" style="padding:1rem;">
+
+    <div style="margin-bottom:0.75rem;">
+        <label asp-for="Name">Tên thương hiệu</label>
+        <input asp-for="Name" class="form-control" placeholder="Tên thương hiệu" />
+    </div>
+
+    <div style="margin-bottom:0.75rem;">
+        <label>Logo thương hiệu</label>
+        <input type="file" name="logoFile" class="form-control" accept="image/*" />
+        <small style="color: #777; font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+            Hỗ trợ định dạng: .jpg, .jpeg, .png, .webp (Nếu trống sẽ dùng ảnh mặc định)
+        </small>
+    </div>
+
     <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Lưu</button>
 </form>

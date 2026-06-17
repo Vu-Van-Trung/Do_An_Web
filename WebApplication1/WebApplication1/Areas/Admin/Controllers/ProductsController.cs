@@ -63,7 +63,7 @@ public class ProductsController : Controller
             Stock = product.Stock,
             CategoryId = product.CategoryId,
             BrandId = product.BrandId,
-            ImageUrl = product.ImageUrl,
+            ImageUrl = product.ImageUrl, // Giữ lại ImageUrl cũ để truyền sang Form hiển thị và nhận lại khi Post
             IsActive = product.IsActive,
             Specifications = product.Specifications.Select(s => new SpecInput { Key = s.Key, Value = s.Value }).ToList()
         };
@@ -82,8 +82,23 @@ public class ProductsController : Controller
             return View(model);
         }
 
+        // Lấy sản phẩm kèm theo ảnh cũ từ DB trước khi cập nhật
         var product = await _context.Products.Include(p => p.Specifications).FirstOrDefaultAsync(p => p.Id == id);
         if (product == null) return NotFound();
+
+        // Tối ưu hóa: Nếu admin chọn upload file ảnh mới VÀ sản phẩm hiện tại đang có ảnh thực tế (không phải placeholder)
+        // tiến hành xóa file ảnh cũ trên ổ đĩa Server để tiết kiệm dung lượng bộ nhớ.
+        if (model.ImageFile != null && model.ImageFile.Length > 0 && !string.IsNullOrEmpty(product.ImageUrl))
+        {
+            if (!product.ImageUrl.Contains("placeholder.svg"))
+            {
+                var oldFilePath = Path.Combine(_env.WebRootPath, product.ImageUrl.TrimStart('/'));
+                if (System.IO.File.Exists(oldFilePath))
+                {
+                    System.IO.File.Delete(oldFilePath);
+                }
+            }
+        }
 
         _context.ProductSpecifications.RemoveRange(product.Specifications);
         await MapProductAsync(product, model);
@@ -98,6 +113,17 @@ public class ProductsController : Controller
     {
         var product = await _products.GetByIdAsync(id);
         if (product == null) return NotFound();
+
+        // Tối ưu hóa: Xóa tệp ảnh vật lý trong thư mục uploads khi sản phẩm bị xóa hoàn toàn khỏi hệ thống
+        if (!string.IsNullOrEmpty(product.ImageUrl) && !product.ImageUrl.Contains("placeholder.svg"))
+        {
+            var filePath = Path.Combine(_env.WebRootPath, product.ImageUrl.TrimStart('/'));
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
+        }
+
         _products.Remove(product);
         await _products.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -112,7 +138,22 @@ public class ProductsController : Controller
         product.CategoryId = model.CategoryId;
         product.BrandId = model.BrandId;
         product.IsActive = model.IsActive;
-        product.ImageUrl = await SaveImageAsync(model) ?? model.ImageUrl ?? "/images/products/placeholder.svg";
+
+        // Cập nhật đường dẫn ảnh: Ưu tiên ảnh mới upload -> Tiếp đến là đường dẫn ảnh cũ từ Model -> Cuối cùng mới dùng placeholder
+        var newImagePath = await SaveImageAsync(model);
+        if (newImagePath != null)
+        {
+            product.ImageUrl = newImagePath;
+        }
+        else if (!string.IsNullOrWhiteSpace(model.ImageUrl))
+        {
+            product.ImageUrl = model.ImageUrl;
+        }
+        else
+        {
+            product.ImageUrl = "/images/products/placeholder.svg";
+        }
+
         product.Specifications = model.Specifications
             .Where(s => !string.IsNullOrWhiteSpace(s.Key) && !string.IsNullOrWhiteSpace(s.Value))
             .Select(s => new ProductSpecification { Key = s.Key.Trim(), Value = s.Value.Trim() })

@@ -4,18 +4,40 @@
 }
 
 <h1>Thương hiệu <a asp-action="Create" class="btn btn-primary btn-sm">Thêm</a></h1>
-<table class="admin-table glass-panel" style="padding:1rem; display:block;">
-    @foreach (var b in Model)
-    {
-        <tr>
-            <td>@b.Name</td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@b.Id">Sửa</a>
-                <form asp-action="Delete" method="post" style="display:inline;">
-                    <input type="hidden" name="id" value="@b.Id" />
-                    <button type="submit" class="btn btn-ghost btn-sm">Xóa</button>
-                </form>
-            </td>
+
+<table class="admin-table glass-panel" style="padding:1rem; display:block; width: 100%;">
+    <thead>
+        <tr style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <th style="padding: 0.5rem;">Tên thương hiệu</th>
+            <th style="padding: 0.5rem;">Logo</th>
+            <th style="padding: 0.5rem; text-align: right;">Hành động</th>
         </tr>
-    }
+    </thead>
+    <tbody>
+        @foreach (var b in Model)
+        {
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem 0.5rem; vertical-align: middle;">@b.Name</td>
+
+                <td style="padding: 0.75rem 0.5rem; vertical-align: middle;">
+                    @if (!string.IsNullOrEmpty(b.LogoUrl))
+                    {
+                        <img src="@b.LogoUrl" alt="@b.Name Logo" style="height: 40px; max-width: 100px; object-fit: contain; border-radius: 4px; background: rgba(255,255,255,0.05); padding: 2px;" />
+                    }
+                    else
+                    {
+                        <span style="font-size: 0.85rem; color: #777; font-style: italic;">Chưa có logo</span>
+                    }
+                </td>
+
+                <td style="padding: 0.75rem 0.5rem; vertical-align: middle; text-align: right;">
+                    <a asp-action="Edit" asp-route-id="@b.Id" class="btn btn-sm" style="margin-right: 0.5rem;">Sửa</a>
+                    <form asp-action="Delete" method="post" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa thương hiệu này không?')">
+                        <input type="hidden" name="id" value="@b.Id" />
+                        <button type="submit" class="btn btn-ghost btn-sm">Xóa</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
 </table>

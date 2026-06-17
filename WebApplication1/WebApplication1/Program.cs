@@ -4,6 +4,7 @@ using WebApplication1.Data;
 using WebApplication1.Models;
 using WebApplication1.Repositories;
 using WebApplication1.Services;
+using WebApplication1.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +57,9 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
+builder.Services.AddScoped<IDiscountService, DiscountService>();
+builder.Services.AddHostedService<OrderTimeoutWorker>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddHttpClient();
 builder.Services.AddControllersWithViews();

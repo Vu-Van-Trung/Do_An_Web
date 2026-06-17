@@ -6,28 +6,53 @@
 <h1>Sản phẩm <a asp-action="Create" class="btn btn-primary btn-sm">Thêm sản phẩm</a></h1>
 
 <div class="table-scroll glass-panel" style="padding:1rem;">
-<table class="admin-table">
-    <thead>
-        <tr><th>Tên</th><th>Thương hiệu</th><th>Danh mục</th><th>Giá</th><th>Tồn kho</th><th></th></tr>
-    </thead>
-    <tbody>
-        @foreach (var p in Model)
-        {
+    <table class="admin-table">
+        <thead>
             <tr>
-                <td>@p.Name</td>
-                <td>@p.Brand.Name</td>
-                <td>@p.Category.Name</td>
-                <td>@p.Price.ToString("N0")</td>
-                <td>@p.Stock</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@p.Id">Sửa</a>
-                    <form asp-action="Delete" method="post" style="display:inline;">
-                        <input type="hidden" name="id" value="@p.Id" />
-                        <button type="submit" class="btn btn-ghost btn-sm" onclick="return confirm('Xác nhận xóa sản phẩm này?')">Xóa</button>
-                    </form>
-                </td>
+                <th style="width: 80px;">Hình ảnh</th>
+                <th>Tên</th>
+                <th>Thương hiệu</th>
+                <th>Danh mục</th>
+                <th>Giá</th>
+                <th>Tồn kho</th>
+                <th></th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td>
+                        <div style="width: 50px; height: 50px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.05); padding: 2px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;">
+                            <img src="@(string.IsNullOrEmpty(p.ImageUrl) ? "/images/products/placeholder.svg" : p.ImageUrl)"
+                                 alt="@p.Name"
+                                 style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                        </div>
+                    </td>
+
+                    <td>@p.Name</td>
+                    <td>@p.Brand.Name</td>
+                    <td>@p.Category.Name</td>
+                    <td>@p.Price.ToString("N0") ₫</td>
+                    <td>
+                        @if (p.Stock <= 0)
+                        {
+                            <span style="color: #ef4444; font-weight: bold;">Hết hàng</span>
+                        }
+                        else
+                        {
+                            @p.Stock
+                        }
+                    </td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@p.Id">Sửa</a>
+                        <form asp-action="Delete" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <button type="submit" class="btn btn-ghost btn-sm" onclick="return confirm('Xác nhận xóa sản phẩm này?')">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>

@@ -1,8 +1,30 @@
 @model WebApplication1.Models.Brand
-@{ ViewData["Title"] = "Chỉnh sửa thương hiệu"; }
+@{
+    ViewData["Title"] = "Chỉnh sửa thương hiệu";
+}
+
 <h1>Chỉnh sửa thương hiệu</h1>
-<form asp-action="Edit" method="post" class="glass-panel" style="padding:1rem;">
+
+<form asp-action="Edit" method="post" enctype="multipart/form-data" class="glass-panel" style="padding:1rem;">
     <input type="hidden" asp-for="Id" />
-    <input asp-for="Name" class="form-control" />
+
+    <div style="margin-bottom:0.75rem;">
+        <label asp-for="Name">Tên thương hiệu</label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+
+    <div style="margin-bottom:0.75rem;">
+        <label>Logo thương hiệu</label>
+        <input type="file" name="logoFile" class="form-control" accept="image/*" />
+
+        @if (!string.IsNullOrEmpty(Model.LogoUrl))
+        {
+            <div style="margin-top:0.5rem; padding:0.5rem; border:1px solid #ddd; background-color: rgba(255,255,255,0.1); display:inline-block; border-radius:4px;">
+                <span style="font-size:0.85rem; display:block; margin-bottom:0.25rem; color:#777;">Logo hiện tại:</span>
+                <img src="@Model.LogoUrl" alt="Brand Logo" style="max-height: 80px; object-fit: contain; border-radius: 4px;" />
+            </div>
+        }
+    </div>
+
     <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Lưu</button>
 </form>

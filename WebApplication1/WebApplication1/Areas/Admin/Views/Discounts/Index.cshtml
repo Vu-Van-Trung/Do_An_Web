@@ -7,19 +7,19 @@
 
     string PromoLabel(PromotionType t) => t switch
     {
-        PromotionType.FlashSale    => "⚡ Flash Sale",
+        PromotionType.FlashSale => "⚡ Flash Sale",
         PromotionType.FreeShipping => "🚚 Free Ship",
-        PromotionType.FirstOrder   => "🎁 Đơn đầu",
-        PromotionType.BuyXGetY     => "🛒 Mua nhiều",
-        _                          => "🎟️ Coupon"
+        PromotionType.FirstOrder => "🎁 Đơn đầu",
+        PromotionType.BuyXGetY => "🛒 Mua X tặng Y", // Cập nhật nhãn rõ nghĩa hơn
+        _ => "🎟️ Coupon"
     };
     string PromoBadgeClass(PromotionType t) => t switch
     {
-        PromotionType.FlashSale    => "badge-warning",
+        PromotionType.FlashSale => "badge-warning",
         PromotionType.FreeShipping => "badge-info",
-        PromotionType.FirstOrder   => "badge-success",
-        PromotionType.BuyXGetY     => "badge-accent",
-        _                          => "badge-muted"
+        PromotionType.FirstOrder => "badge-success",
+        PromotionType.BuyXGetY => "badge-accent",
+        _ => "badge-muted"
     };
 }
 
@@ -53,6 +53,7 @@
                 <th>Mã</th>
                 <th>Tên chương trình</th>
                 <th>Loại</th>
+                <th>Phạm vi áp dụng</th>
                 <th>Giá trị giảm</th>
                 <th>Đơn tối thiểu</th>
                 <th>Đã dùng</th>
@@ -64,7 +65,7 @@
         <tbody>
             @foreach (var d in Model)
             {
-                var isExpired    = d.EndDate < now;
+                var isExpired = d.EndDate < now;
                 var isNotStarted = d.StartDate > now;
                 <tr>
                     <td><strong style="font-family:monospace;letter-spacing:1px;">@d.Code</strong></td>
@@ -76,10 +77,27 @@
                         }
                     </td>
                     <td><span class="badge @PromoBadgeClass(d.PromotionType)">@PromoLabel(d.PromotionType)</span></td>
+
+                    <td>
+                        @if (d.ApplicableCategoryId.HasValue)
+                        {
+                            <span class="badge badge-info" style="background-color: rgba(59, 130, 246, 0.1); color: #3b82f6;">Theo danh mục</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-muted" style="background-color: rgba(156, 163, 175, 0.1); color: #9ca3af;">Toàn cửa hàng</span>
+                        }
+                    </td>
+
                     <td>
                         @if (d.PromotionType == PromotionType.FreeShipping)
                         {
                             <span class="badge badge-info">Miễn phí ship</span>
+                        }
+                        @* BỔ SUNG: Tối ưu hiển thị cho hình thức BuyXGetY *@
+                        else if (d.PromotionType == PromotionType.BuyXGetY)
+                        {
+                            <span>Mua @((int)d.Value) tặng 1 món</span>
                         }
                         else if (d.DiscountType == DiscountType.Percent)
                         {
@@ -128,7 +146,9 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@d.Id" />
                             <button class="btn btn-ghost btn-sm" style="color:#ef4444;"
-                                    onclick="return confirm('Xóa khuyến mãi này?')">Xóa</button>
+                                    onclick="return confirm('Xóa khuyến mãi này?')">
+                                Xóa
+                            </button>
                         </form>
                     </td>
                 </tr>

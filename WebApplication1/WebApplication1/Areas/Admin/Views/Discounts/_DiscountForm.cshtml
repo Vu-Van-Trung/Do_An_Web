@@ -3,6 +3,8 @@
 
 <div class="glass-panel" style="padding:1.5rem;max-width:680px;">
 
+    <input type="hidden" asp-for="Id" />
+
     <div class="form-group">
         <label asp-for="PromotionType" class="form-label">Loại khuyến mãi *</label>
         <select asp-for="PromotionType" class="form-control" id="promotionTypeSelect">
@@ -10,7 +12,7 @@
             <option value="1">⚡ Flash Sale (giới hạn thời gian)</option>
             <option value="2">🚚 Miễn phí vận chuyển</option>
             <option value="3">🎁 Ưu đãi đơn đầu tiên</option>
-            <option value="4">🛒 Mua nhiều giảm nhiều</option>
+            <option value="4">🛒 Mua X tặng Y (BuyXGetY)</option>
         </select>
     </div>
 
@@ -32,20 +34,31 @@
         <input asp-for="Description" class="form-control" placeholder="VD: Giảm 20% tất cả bàn phím cơ" />
     </div>
 
+    <div class="form-group">
+        <label asp-for="ApplicableCategoryId" class="form-label">Danh mục sản phẩm áp dụng</label>
+        <select asp-for="ApplicableCategoryId" asp-items="ViewBag.Categories" class="form-control">
+            <option value="">🌐 Áp dụng cho tất cả sản phẩm (Toàn shop)</option>
+        </select>
+        <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+            Chọn một danh mục cụ thể nếu bạn muốn giới hạn phạm vi áp dụng của mã này.
+        </small>
+    </div>
+
     <div id="valueSection" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
-        <div class="form-group">
-            <label asp-for="DiscountType" class="form-label">Kiểu giảm</label>
-            <select asp-for="DiscountType" class="form-control">
+        <div class="form-group" id="discountTypeGroup">
+            <label asp-for="DiscountType" class="form-label" id="discountTypeLabel">Kiểu giảm</label>
+            <select asp-for="DiscountType" class="form-control" id="discountTypeSelect">
                 <option value="0">Phần trăm (%)</option>
                 <option value="1">Số tiền cố định (₫)</option>
             </select>
         </div>
         <div class="form-group">
-            <label asp-for="Value" class="form-label">Giá trị giảm</label>
-            <input asp-for="Value" class="form-control" type="number" step="0.01" min="0" />
+            <label asp-for="Value" class="form-label" id="valueLabel">Giá trị giảm</label>
+            <input asp-for="Value" class="form-control" type="number" step="0.01" min="0" id="valueInput" />
             <span asp-validation-for="Value" class="field-error"></span>
+            <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 0.25rem;" id="valueHelp"></small>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="maxDiscountGroup">
             <label asp-for="MaxDiscountAmount" class="form-label">Giảm tối đa (₫)</label>
             <input asp-for="MaxDiscountAmount" class="form-control" type="number" step="1000" min="0" placeholder="Không giới hạn" />
         </div>
@@ -92,10 +105,37 @@
     (function () {
         var sel = document.getElementById('promotionTypeSelect');
         var valueSection = document.getElementById('valueSection');
+
+        var discountTypeGroup = document.getElementById('discountTypeGroup');
+        var maxDiscountGroup = document.getElementById('maxDiscountGroup');
+        var valueLabel = document.getElementById('valueLabel');
+        var valueHelp = document.getElementById('valueHelp');
+
         function toggle() {
-            valueSection.style.display = sel.value === '2' ? 'none' : 'grid';
+            if (sel.value === '2') {
+                // Nếu là Miễn phí vận chuyển (value = 2), ẩn toàn bộ cụm giá trị tiền
+                valueSection.style.display = 'none';
+            } else if (sel.value === '4') {
+                // Nếu là Mua X tặng Y / BuyXGetY (value = 4)
+                valueSection.style.display = 'grid';
+                discountTypeGroup.style.display = 'none'; // Ẩn cột chọn kiểu giảm (% hoặc ₫)
+                maxDiscountGroup.style.display = 'none';  // Ẩn cột số tiền giảm tối đa
+
+                // Đổi nhãn text động để Admin dễ hiểu cách nhập số lượng X
+                valueLabel.innerText = "Số lượng X cần mua *";
+                valueHelp.innerText = "Ví dụ nhập 2: Nghĩa là khi mua từ 2 sản phẩm trở lên, hệ thống tự động miễn phí 1 món tiếp theo.";
+            } else {
+                // Các trường hợp Coupon, Flash Sale, First Order thông thường
+                valueSection.style.display = 'grid';
+                discountTypeGroup.style.display = 'block';
+                maxDiscountGroup.style.display = 'block';
+
+                valueLabel.innerText = "Giá trị giảm *";
+                valueHelp.innerText = "";
+            }
         }
+
         sel.addEventListener('change', toggle);
-        toggle();
+        toggle(); // Chạy kích hoạt ngay khi render trang lần đầu
     })();
 </script>

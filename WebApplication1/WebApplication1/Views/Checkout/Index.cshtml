@@ -1,6 +1,12 @@
 @model WebApplication1.ViewModels.CheckoutViewModel
 @{
     ViewData["Title"] = "Thanh toán";
+
+    // Lấy thông tin mã giảm giá và số tiền từ Session hoặc TempData do Controller đẩy sang (nếu có)
+    var sessionDiscountCode = Context.Session.GetString("AppliedCouponCode") ?? "";
+    var sessionDiscountAmountStr = Context.Session.GetString("DiscountAmount") ?? "0";
+    decimal serverDiscountAmount = 0;
+    decimal.TryParse(sessionDiscountAmountStr, out serverDiscountAmount);
 }
 
 <style>
@@ -10,12 +16,14 @@
         gap: 1.5rem;
         align-items: start;
     }
+
     .checkout-step-bar {
         display: flex;
         align-items: center;
         gap: 0;
         margin-bottom: 1.75rem;
     }
+
     .step-item {
         display: flex;
         align-items: center;
@@ -24,67 +32,172 @@
         font-weight: 600;
         color: var(--text-muted);
     }
-    .step-item.active { color: var(--accent); }
-    .step-item.done { color: #16a34a; }
+
+        .step-item.active {
+            color: var(--accent);
+        }
+
+        .step-item.done {
+            color: #16a34a;
+        }
+
     .step-num {
-        width: 28px; height: 28px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.8rem; font-weight: 700;
-        background: #f3f4f6; color: var(--text-muted);
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background: #f3f4f6;
+        color: var(--text-muted);
         border: 2px solid #e5e7eb;
     }
-    .step-item.active .step-num { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .step-item.done .step-num { background: #16a34a; color: #fff; border-color: #16a34a; }
-    .step-divider { flex: 1; height: 2px; background: #e5e7eb; margin: 0 12px; max-width: 60px; }
-    .step-divider.done { background: #16a34a; }
 
-    .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.35rem; color: var(--text); }
-    .form-control {
-        width: 100%; padding: 0.6rem 0.9rem; border: 1.5px solid var(--border);
-        border-radius: 10px; font-size: 0.9rem; font-family: inherit;
-        outline: none; transition: border-color .15s; background: #fff; box-sizing: border-box;
+    .step-item.active .step-num {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
     }
-    .form-control:focus { border-color: var(--accent); }
+
+    .step-item.done .step-num {
+        background: #16a34a;
+        color: #fff;
+        border-color: #16a34a;
+    }
+
+    .step-divider {
+        flex: 1;
+        height: 2px;
+        background: #e5e7eb;
+        margin: 0 12px;
+        max-width: 60px;
+    }
+
+        .step-divider.done {
+            background: #16a34a;
+        }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.35rem;
+            color: var(--text);
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 0.6rem 0.9rem;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color .15s;
+        background: #fff;
+        box-sizing: border-box;
+    }
+
+        .form-control:focus {
+            border-color: var(--accent);
+        }
 
     /* ── Payment options ── */
-    .payment-options { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
-    .payment-option { display: none; }
+    .payment-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .payment-option {
+        display: none;
+    }
+
     .payment-label {
-        display: flex; align-items: center; gap: 14px;
-        padding: 1rem 1.25rem; border: 2px solid var(--border);
-        border-radius: 12px; cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 1rem 1.25rem;
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
         transition: border-color .15s, background .15s;
     }
+
     .payment-option:checked + .payment-label {
         border-color: var(--accent);
         background: var(--accent-light);
     }
-    .payment-icon { font-size: 1.75rem; flex-shrink: 0; }
-    .payment-info strong { display: block; font-size: 0.95rem; font-weight: 600; }
-    .payment-info span { font-size: 0.8rem; color: var(--text-muted); }
+
+    .payment-icon {
+        font-size: 1.75rem;
+        flex-shrink: 0;
+    }
+
+    .payment-info strong {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    .payment-info span {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
 
     .vnpay-badge {
-        margin-left: auto; background: #e8253a; color: #fff;
-        font-size: 0.7rem; font-weight: 700; padding: 3px 8px;
-        border-radius: 6px; letter-spacing: 0.3px;
+        margin-left: auto;
+        background: #e8253a;
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 6px;
+        letter-spacing: 0.3px;
     }
 
     /* ── Order summary ── */
     .summary-item {
-        display: flex; justify-content: space-between;
-        font-size: 0.875rem; padding: 0.35rem 0;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        padding: 0.35rem 0;
     }
-    .summary-item.total {
-        font-weight: 700; font-size: 1rem;
-        border-top: 1px solid var(--border); margin-top: 0.5rem; padding-top: 0.75rem;
+
+        .summary-item.total {
+            font-weight: 700;
+            font-size: 1rem;
+            border-top: 1px solid var(--border);
+            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+        }
+
+            .summary-item.total .price {
+                color: var(--accent);
+            }
+
+    .summary-product {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 0.875rem;
     }
-    .summary-item.total .price { color: var(--accent); }
-    .summary-product { display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.875rem; }
-    .summary-product + .summary-product { border-top: 1px dashed #f3f4f6; }
+
+        .summary-product + .summary-product {
+            border-top: 1px dashed #f3f4f6;
+        }
 
     @@media (max-width: 720px) {
-        .checkout-layout { grid-template-columns: 1fr; }
+        .checkout-layout {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -104,7 +217,6 @@
 
     <div class="checkout-layout">
 
-        <!-- ── LEFT: form ── -->
         <div class="glass-panel" style="padding:1.5rem;">
 
             @if (Model.Step == 1)
@@ -147,7 +259,6 @@
 
                     <div class="payment-options">
 
-                        <!-- COD -->
                         <div>
                             <input type="radio" name="PaymentMethod" value="COD"
                                    id="pay-cod" class="payment-option" checked />
@@ -160,7 +271,6 @@
                             </label>
                         </div>
 
-                        <!-- VNPay -->
                         <div>
                             <input type="radio" name="PaymentMethod" value="VNPay"
                                    id="pay-vnpay" class="payment-option" />
@@ -176,19 +286,23 @@
 
                     </div>
 
-                    <!-- Mã giảm giá -->
                     <div style="margin-bottom:1rem;">
                         <label style="display:block;font-size:.875rem;font-weight:500;margin-bottom:.35rem;">Mã giảm giá</label>
                         <div style="display:flex;gap:.5rem;">
-                            <input type="text" id="discount-input" class="form-control"
+                            <input type="text" id="discount-input" class="form-control" value="@sessionDiscountCode"
                                    placeholder="Nhập mã khuyến mãi" style="text-transform:uppercase;" />
                             <button type="button" id="apply-discount-btn" class="btn btn-ghost btn-sm" style="white-space:nowrap;">Áp dụng</button>
                         </div>
-                        <div id="discount-msg" style="margin-top:.35rem;font-size:.8rem;"></div>
+                        <div id="discount-msg" style="margin-top:.35rem;font-size:.8rem;">
+                            @if (!string.IsNullOrEmpty(sessionDiscountCode) && serverDiscountAmount > 0)
+                            {
+                                <span style="color:#16a34a;">✓ Đã áp dụng mã @sessionDiscountCode thành công</span>
+                            }
+                        </div>
                     </div>
 
                     <div id="vnpay-note" style="display:none; background:#fffbeb; border:1px solid #fde68a;
-                         border-radius:10px; padding:.85rem 1rem; font-size:.85rem; margin-bottom:1rem;">
+                        border-radius:10px; padding:.85rem 1rem; font-size:.85rem; margin-bottom:1rem;">
                         ⚡ Bạn sẽ được chuyển hướng đến trang thanh toán <strong>VNPay</strong> an toàn.
                         Sau khi thanh toán xong, hệ thống tự động xác nhận đơn hàng.
                     </div>
@@ -199,67 +313,66 @@
                 </form>
 
                 <script>
-                    (function () {
-                        var codRadio   = document.getElementById('pay-cod');
-                        var vnpRadio   = document.getElementById('pay-vnpay');
-                        var note       = document.getElementById('vnpay-note');
-                        var submitBtn  = document.getElementById('submit-btn');
+                                (function () {
+                                    var codRadio   = document.getElementById('pay-cod');
+                                    var vnpRadio   = document.getElementById('pay-vnpay');
+                                    var note       = document.getElementById('vnpay-note');
+                                    var submitBtn  = document.getElementById('submit-btn');
 
-                        function updateUI() {
-                            if (vnpRadio.checked) {
-                                note.style.display = 'block';
-                                submitBtn.textContent = '💳 Chuyển đến VNPay để thanh toán';
-                            } else {
-                                note.style.display = 'none';
-                                submitBtn.textContent = 'Đặt hàng & Thanh toán COD';
-                            }
-                        }
-                        codRadio.addEventListener('change', updateUI);
-                        vnpRadio.addEventListener('change', updateUI);
+                                    function updateUI() {
+                                        if (vnpRadio.checked) {
+                                            note.style.display = 'block';
+                                            submitBtn.textContent = '💳 Chuyển đến VNPay để thanh toán';
+                                        } else {
+                                            note.style.display = 'none';
+                                            submitBtn.textContent = 'Đặt hàng & Thanh toán COD';
+                                        }
+                                    }
+                                    codRadio.addEventListener('change', updateUI);
+                                    vnpRadio.addEventListener('change', updateUI);
 
-                        // Discount code
-                        var subtotal = @Model.Cart.Subtotal;
-                        var shipping = 50000;
-                        var appliedDiscount = 0;
+                                    // Đồng bộ biến tính tiền trong Javascript từ dữ liệu của Model
+                                    var subtotal = @Model.Cart.Subtotal;
+                                    var shipping = 50000;
+                                    var appliedDiscount = @serverDiscountAmount;
 
-                        function formatVND(n) {
-                            return new Intl.NumberFormat('vi-VN').format(n) + ' ₫';
-                        }
+                                    function formatVND(n) {
+                                        return new Intl.NumberFormat('vi-VN').format(n) + ' ₫';
+                                    }
 
-                        document.getElementById('apply-discount-btn').addEventListener('click', function () {
-                            var code = document.getElementById('discount-input').value.trim();
-                            if (!code) return;
+                                    document.getElementById('apply-discount-btn').addEventListener('click', function () {
+                                        var code = document.getElementById('discount-input').value.trim();
+                                        if (!code) return;
 
-                            fetch('/Checkout/ApplyDiscount', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ code: code })
-                            })
-                            .then(function(r) { return r.json(); })
-                            .then(function(data) {
-                                var msg = document.getElementById('discount-msg');
-                                if (data.success) {
-                                    appliedDiscount = data.discountAmount;
-                                    msg.style.color = '#16a34a';
-                                    msg.textContent = '✓ ' + data.message;
-                                    document.getElementById('discount-row').style.display = 'flex';
-                                    document.getElementById('discount-value').textContent = '-' + formatVND(appliedDiscount);
-                                    document.getElementById('total-price').textContent = formatVND(subtotal - appliedDiscount + shipping);
-                                } else {
-                                    appliedDiscount = 0;
-                                    msg.style.color = '#ef4444';
-                                    msg.textContent = '✗ ' + data.message;
-                                    document.getElementById('discount-row').style.display = 'none';
-                                    document.getElementById('total-price').textContent = formatVND(subtotal + shipping);
-                                }
-                            });
-                        });
-                    })();
+                                        fetch('/Checkout/ApplyDiscount', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ code: code })
+                                        })
+                                        .then(function(r) { return r.json(); })
+                                        .then(function(data) {
+                                            var msg = document.getElementById('discount-msg');
+                                            if (data.success) {
+                                                appliedDiscount = data.discountAmount;
+                                                msg.style.color = '#16a34a';
+                                                msg.textContent = '✓ ' + data.message;
+                                                document.getElementById('discount-row').style.display = 'flex';
+                                                document.getElementById('discount-value').textContent = '-' + formatVND(appliedDiscount);
+                                                document.getElementById('total-price').textContent = formatVND(subtotal - appliedDiscount + shipping);
+                                            } else {
+                                                appliedDiscount = 0;
+                                                msg.style.color = '#ef4444';
+                                                msg.textContent = '✗ ' + data.message;
+                                                document.getElementById('discount-row').style.display = 'none';
+                                                document.getElementById('total-price').textContent = formatVND(subtotal + shipping);
+                                            }
+                                        });
+                                    });
+                                })();
                 </script>
             }
         </div>
 
-        <!-- ── RIGHT: order summary ── -->
         <div class="glass-panel" style="padding:1.25rem;">
             <h3 style="margin:0 0 1rem; font-size:1rem; font-weight:700;">Tóm tắt đơn hàng</h3>
 
@@ -276,17 +389,19 @@
                     <span>Tạm tính</span>
                     <span>@Model.Cart.Subtotal.ToString("N0") ₫</span>
                 </div>
-                <div class="summary-item" id="discount-row" style="display:none;color:#16a34a;">
+
+                <div class="summary-item" id="discount-row" style="display: @(serverDiscountAmount > 0 ? "flex" : "none"); color:#16a34a;">
                     <span>Giảm giá</span>
-                    <span id="discount-value">0 ₫</span>
+                    <span id="discount-value">-@serverDiscountAmount.ToString("N0") ₫</span>
                 </div>
+
                 <div class="summary-item">
                     <span>Phí vận chuyển</span>
                     <span>50.000 ₫</span>
                 </div>
                 <div class="summary-item total">
                     <span>Tổng cộng</span>
-                    <span class="price" id="total-price">@((Model.Cart.Subtotal + 50000).ToString("N0")) ₫</span>
+                    <span class="price" id="total-price">@((Model.Cart.Subtotal - serverDiscountAmount + 50000).ToString("N0")) ₫</span>
                 </div>
             </div>
         </div>
