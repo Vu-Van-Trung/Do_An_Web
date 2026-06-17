@@ -1,12 +1,42 @@
 @model WebApplication1.ViewModels.ReportViewModel
+@using WebApplication1.Models
 @{
     ViewData["Title"] = "Báo cáo & Thống kê";
     var labels = string.Join(",", Model.MonthlyRevenues.Select(m => $"\"{m.Month}\""));
     var revenues = string.Join(",", Model.MonthlyRevenues.Select(m => m.Revenue));
 }
 
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
     <h1>Báo cáo & Thống kê</h1>
+</div>
+
+<div class="glass-panel" style="padding: 1rem; margin-bottom: 1.5rem; display: block !important; visibility: visible !important;">
+    <form method="get" asp-action="Index" style="display: flex !important; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+
+        <div class="form-group" style="margin: 0; display: flex !important; flex-direction: column; gap: 0.35rem;">
+            <label class="form-label" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: block !important;">Từ ngày</label>
+            <input type="date" name="fromDate" value="@ViewBag.FromDate" class="form-control"
+                   style="padding: 0.6rem 0.9rem; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.9rem; background: #fff; color: #000; width: 180px; display: inline-block !important;" />
+        </div>
+
+        <div class="form-group" style="margin: 0; display: flex !important; flex-direction: column; gap: 0.35rem;">
+            <label class="form-label" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: block !important;">Đến ngày</label>
+            <input type="date" name="toDate" value="@ViewBag.ToDate" class="form-control"
+                   style="padding: 0.6rem 0.9rem; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.9rem; background: #fff; color: #000; width: 180px; display: inline-block !important;" />
+        </div>
+
+        <div style="display: flex !important; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+            <button type="submit" class="btn btn-primary btn-sm" style="height: 38px;">📊 Lọc báo cáo</button>
+            @if (ViewBag.FromDate != null || ViewBag.ToDate != null)
+            {
+                <a asp-action="Index" class="btn btn-ghost btn-sm" style="height: 38px; display: inline-flex; align-items: center;">Xóa bộ lọc</a>
+            }
+            <a asp-action="ExportRevenueCsv" asp-route-fromDate="@ViewBag.FromDate" asp-route-toDate="@ViewBag.ToDate" class="btn btn-ghost btn-sm"
+               style="color: #10b981; border: 1.5px solid rgba(16, 185, 129, 0.3); height: 38px; display: inline-flex; align-items: center; text-decoration: none; border-radius: 8px; padding: 0 0.75rem;">
+                📥 Xuất Excel/CSV
+            </a>
+        </div>
+    </form>
 </div>
 
 <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(175px,1fr));">
@@ -33,7 +63,9 @@
 </div>
 
 <div class="glass-panel" style="padding:1.5rem;margin-bottom:2rem;">
-    <h2 style="margin-top:0;">Doanh thu 12 tháng gần nhất</h2>
+    <h2 style="margin-top:0;">
+        @(ViewBag.FromDate != null || ViewBag.ToDate != null ? "Biểu đồ xu hướng doanh thu theo khoảng ngày" : "Doanh thu 12 tháng gần nhất")
+    </h2>
     <canvas id="revenueChart" height="80"></canvas>
 </div>
 
@@ -66,33 +98,33 @@
     <script>
         const ctx = document.getElementById('revenueChart').getContext('2d');
         new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [@Html.Raw(labels)],
-                datasets: [{
-                    label: 'Doanh thu (₫)',
-                    data: [@revenues],
-                    backgroundColor: 'rgba(79,70,229,0.15)',
-                    borderColor: 'rgba(79,70,229,0.9)',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    hoverBackgroundColor: 'rgba(79,70,229,0.3)'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: v => new Intl.NumberFormat('vi-VN').format(v) + ' ₫'
-                        },
-                        grid: { color: 'rgba(0,0,0,0.05)' }
-                    },
-                    x: { grid: { display: false } }
-                }
-            }
+        type: 'bar',
+        data: {
+        labels: [@Html.Raw(labels)],
+        datasets: [{
+        label: 'Doanh thu (₫)',
+        data: [@revenues],
+        backgroundColor: 'rgba(79,70,229,0.15)',
+        borderColor: 'rgba(79,70,229,0.9)',
+        borderWidth: 2,
+        borderRadius: 6,
+        hoverBackgroundColor: 'rgba(79,70,229,0.3)'
+        }]
+        },
+        options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+        y: {
+        beginAtZero: true,
+        ticks: {
+        callback: v => new Intl.NumberFormat('vi-VN').format(v) + ' ₫'
+        },
+        grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: { grid: { display: false } }
+        }
+        }
         });
     </script>
 }

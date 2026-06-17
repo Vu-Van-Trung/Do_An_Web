@@ -1,12 +1,14 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 using WebApplication1.Models;
 using WebApplication1.Repositories;
 using WebApplication1.Services;
 using WebApplication1.ViewModels;
 using System.Text.Json;
+using Microsoft.AspNetCore.SignalR; // BỔ SUNG: Thư viện SignalR
 
 namespace WebApplication1.Controllers;
 
@@ -20,14 +22,19 @@ public class CheckoutController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IVnPayService _vnPay;
     private readonly IConfiguration _config;
+    private readonly IEmailService _emailService; // BỔ SUNG: Dịch vụ gửi email
+    private readonly IHubContext<OrderHub> _hubContext; // BỔ SUNG: Trạm phát tín hiệu Real-time
 
+    // CẬP NHẬT: Inject thêm IEmailService và IHubContext vào Constructor
     public CheckoutController(
         ICartService cartService,
         IOrderRepository orders,
         IDiscountRepository discounts,
         ApplicationDbContext context,
         IVnPayService vnPay,
-        IConfiguration config)
+        IConfiguration config,
+        IEmailService emailService,
+        IHubContext<OrderHub> hubContext)
     {
         _cartService = cartService;
         _orders = orders;
@@ -35,6 +42,8 @@ public class CheckoutController : Controller
         _context = context;
         _vnPay = vnPay;
         _config = config;
+        _emailService = emailService;
+        _hubContext = hubContext;
     }
 
     public async Task<IActionResult> Index(int step = 1)
@@ -50,7 +59,6 @@ public class CheckoutController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Shipping(CheckoutViewModel vm)
     {
-        // Chỉ kiểm tra validation của các field Shipping.*
         var shippingKeys = ModelState.Keys
             .Where(k => !k.StartsWith("Shipping."))
             .ToList();
@@ -65,10 +73,10 @@ public class CheckoutController : Controller
                 Cart = await _cartService.GetCartAsync()
             });
 
-        TempData["ShippingFullName"]    = vm.Shipping.FullName;
-        TempData["ShippingPhone"]       = vm.Shipping.Phone;
-        TempData["ShippingAddress"]     = vm.Shipping.ShippingAddress;
-        TempData["ShippingNotes"]       = vm.Shipping.Notes;
+        TempData["ShippingFullName"] = vm.Shipping.FullName;
+        TempData["ShippingPhone"] = vm.Shipping.Phone;
+        TempData["ShippingAddress"] = vm.Shipping.ShippingAddress;
+        TempData["ShippingNotes"] = vm.Shipping.Notes;
         TempData.Keep();
         return RedirectToAction(nameof(Index), new { step = 2 });
     }
@@ -81,20 +89,19 @@ public class CheckoutController : Controller
         if (!cart.Items.Any())
             return RedirectToAction("Index", "Cart");
 
-        var userId   = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var subtotal = cart.Subtotal;
 
         // Apply discount
-        var discountCode   = TempData["DiscountCode"]?.ToString();
+        var discountCode = TempData["DiscountCode"]?.ToString();
         var discountAmount = 0m;
-        var shippingFee    = ShippingFee;
+        var shippingFee = ShippingFee;
 
         if (!string.IsNullOrEmpty(discountCode))
         {
             var discount = await _discounts.GetActiveByCodeAsync(discountCode, subtotal);
             if (discount != null)
             {
-                // Kiểm tra FirstOrder: user không được có đơn nào trước đó
                 if (discount.PromotionType == Models.PromotionType.FirstOrder)
                 {
                     var hasOrders = await _orders.UserHasOrdersAsync(userId);
@@ -110,7 +117,6 @@ public class CheckoutController : Controller
                 {
                     if (discount.PromotionType == Models.PromotionType.FreeShipping)
                     {
-                        // Miễn phí vận chuyển
                         shippingFee = 0m;
                     }
                     else
@@ -119,7 +125,6 @@ public class CheckoutController : Controller
                             ? Math.Round(subtotal * discount.Value / 100, 0)
                             : discount.Value;
 
-                        // Áp dụng cap tối đa nếu có
                         if (discount.MaxDiscountAmount.HasValue)
                             discountAmount = Math.Min(discountAmount, discount.MaxDiscountAmount.Value);
 
@@ -137,28 +142,27 @@ public class CheckoutController : Controller
 
         var total = subtotal - discountAmount + shippingFee;
 
-
         var order = new Order
         {
-            UserId          = userId,
-            FullName        = TempData["ShippingFullName"]?.ToString() ?? User.Identity?.Name ?? "",
-            Phone           = TempData["ShippingPhone"]?.ToString() ?? "",
+            UserId = userId,
+            FullName = TempData["ShippingFullName"]?.ToString() ?? User.Identity?.Name ?? "",
+            Phone = TempData["ShippingPhone"]?.ToString() ?? "",
             ShippingAddress = TempData["ShippingAddress"]?.ToString() ?? "",
-            Notes           = TempData["ShippingNotes"]?.ToString(),
-            PaymentMethod   = model.PaymentMethod,
-            PaymentStatus   = model.PaymentMethod == "VNPay" ? PaymentStatus.Pending : PaymentStatus.COD,
-            DiscountCode    = discountCode,
-            DiscountAmount  = discountAmount,
-            Subtotal        = subtotal,
-            ShippingFee     = shippingFee,
-            Total           = total,
-            Status          = OrderStatus.Pending,
+            Notes = TempData["ShippingNotes"]?.ToString(),
+            PaymentMethod = model.PaymentMethod,
+            PaymentStatus = model.PaymentMethod == "VNPay" ? PaymentStatus.Pending : PaymentStatus.COD,
+            DiscountCode = discountCode,
+            DiscountAmount = discountAmount,
+            Subtotal = subtotal,
+            ShippingFee = shippingFee,
+            Total = total,
+            Status = OrderStatus.Pending,
             Items = cart.Items.Select(i => new OrderItem
             {
-                ProductId   = i.ProductId,
+                ProductId = i.ProductId,
                 ProductName = i.Name,
-                UnitPrice   = i.UnitPrice,
-                Quantity    = i.Quantity
+                UnitPrice = i.UnitPrice,
+                Quantity = i.Quantity
             }).ToList()
         };
 
@@ -177,18 +181,37 @@ public class CheckoutController : Controller
         await _orders.AddAsync(order);
         await _orders.SaveChangesAsync();
 
-        // ── COD: xử lý xong, xóa giỏ hàng ngay ──
+        // ── COD: Xử lý xong, xóa giỏ hàng, bắn thông báo và gửi mail ngay ──
         if (model.PaymentMethod != "VNPay")
         {
             await _cartService.ClearCartAsync();
+
+            try
+            {
+                // 1. GỬI EMAIL XÁC NHẬN ĐƠN HÀNG BẤT ĐỒNG BỘ CHO KHÁCH (COD)
+                var customerEmail = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name ?? "";
+                if (!string.IsNullOrEmpty(customerEmail) && customerEmail.Contains("@"))
+                {
+                    _ = Task.Run(() => _emailService.SendOrderEmailAsync(customerEmail, order));
+                }
+
+                // 2. PHÁT TÍN HIỆU THÔNG BÁO ĐƠN HÀNG MỚI REAL-TIME CHO ADMIN (COD)
+                await _hubContext.Clients.All.SendAsync("ReceiveNewOrderNotification", order.Id, order.FullName, order.Total);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nền nếu hệ thống mạng nghẽn, tránh làm gián đoạn luồng Checkout của khách
+                Console.WriteLine($"Lỗi gửi thông báo hệ thống: {ex.Message}");
+            }
+
             return RedirectToAction(nameof(Confirmation), new { id = order.Id });
         }
 
         // ── VNPay: chuyển hướng sang cổng thanh toán ──
-        var returnUrl  = _config["VnPay:ReturnUrl"] is { Length: > 0 } u
+        var returnUrl = _config["VnPay:ReturnUrl"] is { Length: > 0 } u
                        ? u
                        : Url.Action("VnPayReturn", "Checkout", null, Request.Scheme)!;
-        var clientIp   = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
         var paymentUrl = _vnPay.CreatePaymentUrl(order, returnUrl, clientIp);
 
         return Redirect(paymentUrl);
@@ -215,13 +238,30 @@ public class CheckoutController : Controller
 
         if (result.IsSuccess)
         {
-            order.PaymentStatus      = PaymentStatus.Paid;
+            order.PaymentStatus = PaymentStatus.Paid;
             order.VnPayTransactionId = result.TransactionId;
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
             await _cartService.ClearCartAsync();
 
             TempData["Success"] = $"Thanh toán thành công! Mã giao dịch: {result.TransactionId}";
+
+            try
+            {
+                // 3. GỬI EMAIL XÁC NHẬN ĐƠN HÀNG CHO KHÁCH (VNPay Thành công)
+                var customerEmail = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name ?? "";
+                if (!string.IsNullOrEmpty(customerEmail) && customerEmail.Contains("@"))
+                {
+                    _ = Task.Run(() => _emailService.SendOrderEmailAsync(customerEmail, order));
+                }
+
+                // 4. PHÁT TÍN HIỆU THÔNG BÁO REAL-TIME CHO ADMIN (VNPay Thành công)
+                await _hubContext.Clients.All.SendAsync("ReceiveNewOrderNotification", order.Id, order.FullName, order.Total);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi gửi thông báo hệ thống: {ex.Message}");
+            }
         }
         else
         {
@@ -273,7 +313,6 @@ public class CheckoutController : Controller
         if (order == null)
             return NotFound();
 
-        // Cho phép xem nếu đã đăng nhập và sở hữu đơn, hoặc vừa được redirect từ VNPay
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId != null && order.UserId != userId)
             return NotFound();

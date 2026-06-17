@@ -64,6 +64,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHttpClient();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -92,5 +93,7 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<OrderHub>("/orderHub");
 
 app.Run();

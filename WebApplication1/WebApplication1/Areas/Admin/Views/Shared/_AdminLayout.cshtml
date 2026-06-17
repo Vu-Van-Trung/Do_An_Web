@@ -17,9 +17,20 @@
                     <span>NexusGear</span>
                 </a>
                 <span class="brand-sub">
-                    @if (User.IsInRole("Admin")) { <text>Admin Panel</text> }
-                    else if (User.IsInRole("Manager")) { <text>Manager</text> }
-                    else { <text>Staff</text> }
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <text>Admin Panel</text>
+                    }
+                    else if (User.IsInRole("Manager"))
+                    {
+
+                        <text>Manager</text>
+                    }
+                    else
+                    {
+
+                        <text>Staff</text>
+                    }
                 </span>
             </div>
 
@@ -116,7 +127,7 @@
                         var roleBadge = isAdmin ? "badge-accent" : isManager ? "badge-info" : "badge-warning";
                     }
                     <span class="badge @roleBadge">@roleLabel</span>
-                    <span style="font-size:.85rem;color:var(--text-muted);">@User.Identity?.Name</span>
+                    <span style="font-size:.85rem;color:var(--text-muted); font-weight: 500; margin-left: 0.25rem; margin-right: 0.5rem;">@User.Identity?.Name</span>
                     <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" style="display:inline;">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn btn-ghost btn-sm">Đăng xuất</button>
@@ -130,5 +141,78 @@
     </div>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script>
+        (function () {
+        // 1. Kết nối endpoint cấu hình SignalR Hub
+        var orderConn = new signalR.HubConnectionBuilder()
+        .withUrl("/orderHub")
+        .withAutomaticReconnect()
+        .build();
+
+        // 2. Lắng nghe tín hiệu bắn ra từ hàm PlaceOrder/VnPayReturn của CheckoutController
+        orderConn.on("ReceiveNewOrderNotification", function (orderId, customerName, totalAmount) {
+
+        // Khởi tạo thẻ div Pop-up thông báo nhanh
+        var popupNotification = document.createElement("div");
+        popupNotification.style.position = "fixed";
+        popupNotification.style.bottom = "24px";
+        popupNotification.style.right = "24px";
+        popupNotification.style.backgroundColor = "#141226"; // Khớp tone dark theme gaming
+        popupNotification.style.border = "2px solid #8b5cf6"; // Viền Neon Tím của NexusGear
+        popupNotification.style.color = "#ffffff";
+        popupNotification.style.padding = "16px 20px";
+        popupNotification.style.borderRadius = "12px";
+        popupNotification.style.boxShadow = "0 12px 35px rgba(0,0,0,0.6)";
+        popupNotification.style.zIndex = "999999";
+        popupNotification.style.fontFamily = "'Inter', sans-serif";
+        popupNotification.style.minWidth = "290px";
+        popupNotification.style.animation = "nexusSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+
+        var formattedValue = new Intl.NumberFormat('vi-VN').format(totalAmount) + ' ₫';
+
+        popupNotification.innerHTML = `
+        <div style="font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-family: 'Outfit', sans-serif; font-size: 0.95rem;">
+        <span style="animation: nexusPulse 1s infinite alternate;">⚡</span> ĐƠN HÀNG MỚI PHÁT SINH!
+        </div>
+        <div style="font-size: 0.88rem; opacity: 0.85; margin-bottom: 4px;">Mã đơn hàng: <strong style="color: var(--text);">#${orderId}</strong></div>
+        <div style="font-size: 0.88rem; opacity: 0.85; margin-bottom: 4px;">Khách hàng: <strong style="color: var(--text);">${customerName}</strong></div>
+        <div style="font-size: 0.88rem; opacity: 0.85; margin-bottom: 12px;">Tổng tiền: <strong style="color: #a78bfa;">${formattedValue}</strong></div>
+        <div style="text-align: right; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+        <a href="/Admin/Orders/Details/${orderId}" style="color: #60a5fa; font-size: 0.82rem; text-decoration: none; font-weight: 600; letter-spacing: 0.3px;">XỬ LÝ ĐƠN HÀNG →</a>
+        </div>
+        `;
+
+        document.body.appendChild(popupNotification);
+
+        // Kích hoạt âm thanh chuông báo
+        var audioNotify = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
+        audioNotify.play().catch(function(e) {
+        console.log("Browser blocked auto-play sound.");
+        });
+
+        // Tự động gỡ Pop-up sau 12 giây
+        setTimeout(function() {
+        popupNotification.style.animation = "nexusFadeOut 0.4s ease-in forwards";
+        setTimeout(function() { popupNotification.remove(); }, 400);
+        }, 12000);
+        });
+
+        // Tiêm CSS Keyframes mượt mà
+        var animationStyles = document.createElement('style');
+        animationStyles.innerHTML = `
+        @@keyframes nexusSlideIn { from { transform: translateX(130%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @@keyframes nexusFadeOut { from { transform: scale(1); opacity: 1; } to { transform: scale(0.9); opacity: 0; } }
+        @@keyframes nexusPulse { from { transform: scale(1); filter: drop-shadow(0 0 2px #10b981); } to { transform: scale(1.2); filter: drop-shadow(0 0 6px #10b981); } }
+        `;
+        document.head.appendChild(animationStyles);
+
+        // Khởi động cổng kết nối SignalR
+        orderConn.start().catch(function (err) {
+        console.error("SignalR Connection Error: " + err.toString());
+        });
+        })();
+    </script>
 </body>
 </html>
