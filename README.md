@@ -1,143 +1,129 @@
-# NexusGear — Cửa hàng phụ kiện gaming
+# NexusGear — Cửa hàng phụ kiện gaming cao cấp
 
-Website thương mại điện tử bán phụ kiện gaming (chuột, bàn phím, tai nghe, ghế gaming…) được xây dựng bằng **ASP.NET Core MVC**, **Entity Framework Core** và **SQL Server**. Giao diện tối (dark theme) kết hợp hiệu ứng glassmorphism; hỗ trợ lọc theo thông số kỹ thuật, giỏ hàng, thanh toán và khu vực quản trị.
+Website thương mại điện tử chuyên cung cấp phụ kiện gaming (chuột, bàn phím, tai nghe, ghế gaming…) được thiết kế hiện đại, đậm chất eSports. Dự án kết hợp sức mạnh của hệ sinh thái **ASP.NET Core** ở Backend và trải nghiệm giao diện người dùng sống động bằng **Vanilla JS, CSS Animations & Bootstrap 5** ở Frontend.
 
-## Tính năng chính
+---
 
-### Dành cho khách hàng
+## 🛠️ Ngăn xếp công nghệ (Tech Stack) chi tiết
 
-- **Danh mục sản phẩm**: phân trang, tìm kiếm, lọc theo:
-  - Danh mục, thương hiệu, khoảng giá
-  - Thông số: kết nối (có dây/không dây), loại switch, DPI
-- **Chi tiết sản phẩm**: mô tả, thông số, tồn kho, thêm vào giỏ
-- **Giỏ hàng**:
-  - Khách chưa đăng nhập: lưu theo phiên (session)
-  - Đã đăng nhập: lưu cơ sở dữ liệu; tự gộp giỏ khi đăng nhập
-- **Tài khoản**: đăng ký, đăng nhập (ASP.NET Core Identity)
-- **Thanh toán** hai bước: nhập địa chỉ giao hàng → thanh toán khi nhận hàng (COD) hoặc thẻ mô phỏng
-- **Lịch sử đơn hàng** trên tài khoản cá nhân
+Dự án chú trọng đến tốc độ, sự tối ưu và hiệu ứng hình ảnh (Aesthetics). Dưới đây là phân bổ công nghệ cho từng hạng mục cụ thể:
 
-### Dành cho quản trị viên
+### 1. Frontend: UI/UX & Client Logic
+- **Bootstrap 5 (`bootstrap.min.css` & `bootstrap.bundle.min.js`)**:
+  - Dùng để xây dựng **hệ thống lưới (Grid system)** responsive (container, row, col).
+  - Tận dụng các **Utility classes** cơ bản (m-*, p-*, d-flex) để dàn trang nhanh.
+- **Custom CSS3 (`gaming-theme.css` & `site.css`)**:
+  - **CSS Variables (Biến CSS)**: Xây dựng cơ chế **Dark Mode** toàn diện (`html[data-theme="dark"]`). Các biến số `--bg`, `--bg-card`, `--text`, `--accent` tự động thay đổi theo theme.
+  - **Glassmorphism**: Áp dụng hiệu ứng mờ kính (`backdrop-filter: blur`) cho thanh điều hướng Sticky Header, các thẻ số liệu và nút bấm.
+  - **CSS Animations**: Sử dụng `@keyframes` xử lý chuyển động mượt mà cho: 
+    - **Promo Ticker**: Thanh chữ chạy ngang liên tục (`translateX(-50%)`).
+    - **Neon Pulse**: Hiệu ứng phát sáng liên tục cho khu vực Flash Sale.
+- **Vanilla JavaScript (JS thuần, không dùng jQuery)**:
+  - **Logic Lọc Sản Phẩm (Category Filter)**: Bắt sự kiện click vào các "pill" danh mục ở trang chủ (Bàn phím, Chuột...) để ẩn/hiện (`display: none`) các thẻ sản phẩm `product-card` tức thời mà không cần tải lại trang.
+  - **Logic Custom Hero Slider**: Tạo thuật toán tính toán `translateX` đẩy các slide từ phải sang trái định kỳ mỗi 5s, tự động dừng (pause) khi hover, và đồng bộ với các nút Dot Indicators.
+  - **Logic Theme Toggle**: Chuyển đổi qua lại giữa Dark/Light mode và lưu cấu hình.
 
-- **Bảng điều khiển**: tổng doanh thu, số đơn, số khách, cảnh báo sản phẩm sắp hết hàng
-- **Quản lý sản phẩm**: thêm, sửa, xóa, tải ảnh lên
-- **Quản lý danh mục và thương hiệu**
-- **Quản lý đơn hàng**: xem chi tiết, đổi trạng thái (Chờ xử lý → Đang giao → Hoàn thành / Đã hủy)
+### 2. Backend & Database
+- **ASP.NET Core MVC (.NET 10)**: Xử lý routing, Controllers và render Razor Views.
+- **Entity Framework Core 10 (Code First)**: Quản lý ORM, migration dữ liệu.
+- **ASP.NET Core Identity**: Quản lý xác thực, cấp quyền, phân quyền Admin/Customer.
+- **SQL Server (LocalDB)**: Lưu trữ cơ sở dữ liệu.
 
-## Công nghệ
+---
 
-| Hạng mục | Công nghệ |
-|----------|-----------|
-| Nền tảng | ASP.NET Core MVC (.NET 10) |
-| Truy cập dữ liệu | Entity Framework Core 10 (Code First) |
-| Cơ sở dữ liệu | SQL Server LocalDB |
-| Xác thực | ASP.NET Core Identity (Admin / Customer) |
-| Giao diện | Razor Views, CSS tùy biến (font Outfit & Inter) |
-| Kiến trúc | MVC + Repository Pattern |
+## 🚀 Tính năng chính và Logic xử lý
 
-## Yêu cầu cài đặt
+### 🌟 Tính năng Khách hàng (Storefront)
+1. **Trang chủ động (Dynamic Homepage)**:
+   - **Hero Slider**: Trượt ngang tự động 4 banner quảng cáo khổ lớn. (Dùng `Vanilla JS` + `CSS transform`).
+   - **Thanh Ticker**: Chữ chạy quảng cáo vô tận (Dùng `CSS animation` + lặp nội dung 2 lần).
+   - **Lưới sản phẩm nổi bật**: Lọc trực tiếp trên giao diện Frontend (Dùng `Vanilla JS` so sánh `data-filter` và `data-category`).
+2. **Cửa hàng & Danh mục**: 
+   - Phân trang, tìm kiếm sản phẩm.
+   - Lọc sản phẩm theo khoảng giá, kết nối, switch (Backend Query).
+3. **Giỏ hàng (Cart)**:
+   - Gộp Session Cart vào Database Cart khi người dùng đăng nhập thành công.
+   - Hiển thị badge số lượng sản phẩm trên Navbar.
+4. **Tương tác sản phẩm**:
+   - Thêm vào Wishlist (Yêu thích).
+   - Đưa vào tính năng So sánh sản phẩm.
+5. **Thanh toán (Checkout)**: 
+   - Quy trình Checkout 2 bước. Hỗ trợ mô phỏng thanh toán VNPay/Thẻ.
+6. **Tài khoản cá nhân**: 
+   - Quản lý hồ sơ, đổi mật khẩu.
+   - Xem chi tiết Lịch sử đơn hàng, có khả năng hủy đơn.
 
+### ⚙️ Tính năng Quản trị (Admin Panel)
+1. **Dashboard**: Báo cáo tổng doanh thu, biểu đồ, danh sách sản phẩm sắp hết hàng.
+2. **Quản lý Sản phẩm & Danh mục**: Thêm/Sửa/Xóa, tải ảnh bằng File Upload.
+3. **Quản lý Đơn hàng**: Chuyển trạng thái đơn (Chờ xử lý → Đang giao → Hoàn thành).
+
+---
+
+## 🖥️ Hướng dẫn cài đặt & Chạy dự án
+
+### Yêu cầu hệ thống
 - [.NET SDK 10](https://dotnet.microsoft.com/download) trở lên
-- [SQL Server LocalDB](https://learn.microsoft.com/sql/database-engine/configure-windows/sql-server-express-localdb) (thường đi kèm Visual Studio)
-- Công cụ dòng lệnh EF Core (khuyến nghị):
+- [SQL Server LocalDB](https://learn.microsoft.com/sql/database-engine/configure-windows/sql-server-express-localdb) (Thường đi kèm Visual Studio)
+- *Tùy chọn*: Công cụ dòng lệnh EF Core (`dotnet tool install --global dotnet-ef --version 10.0.8`)
 
+### Các bước khởi chạy
+
+**Bước 1:** Di chuyển vào thư mục ứng dụng
 ```bash
-dotnet tool install --global dotnet-ef --version 10.0.8
+cd DoAnLapTrinhWeb\WebApplication1\WebApplication1
 ```
 
-## Hướng dẫn chạy dự án
-
-### Bước 1 — Mở thư mục dự án
-
-```bash
-cd DoAnLapTrinhWeb
-```
-
-### Bước 2 — Vào thư mục ứng dụng web
-
-```bash
-cd WebApplication1\WebApplication1
-```
-
-### Bước 3 — Khôi phục gói và biên dịch
-
+**Bước 2:** Build dự án
 ```bash
 dotnet restore
 dotnet build
 ```
 
-### Bước 4 — Tạo hoặc cập nhật cơ sở dữ liệu
-
+**Bước 3:** Tạo cơ sở dữ liệu (Database Update)
+*Lưu ý: Lần chạy đầu tiên, DbSeeder sẽ tự động tạo cấu trúc và nạp hàng loạt dữ liệu mẫu (Sản phẩm, User, Slider).*
 ```bash
 dotnet ef database update
 ```
 
-> Khi chạy lần đầu, ứng dụng tự áp dụng migration và **nạp dữ liệu mẫu** (danh mục, thương hiệu, sản phẩm, tài khoản quản trị).
-
-### Bước 5 — Chạy ứng dụng
-
+**Bước 4:** Chạy ứng dụng
 ```bash
 dotnet run
 ```
+Truy cập: `http://localhost:5224`
 
-Truy cập trên trình duyệt:
+---
 
-- HTTPS: `https://localhost:7169`
-- HTTP: `http://localhost:5224`
+## 👤 Tài khoản mẫu (Seeded Accounts)
 
-## Tài khoản mặc định
-
-| Vai trò | Email | Mật khẩu |
+| Vai trò | Email đăng nhập | Mật khẩu |
 |---------|-------|----------|
-| Quản trị viên | `admin@nexusgear.local` | `Admin@123` |
+| **Admin** | `admin@nexusgear.local` | `Admin@123` |
 
-Khách hàng mới: **đăng ký** tại đường dẫn `/Account/Register` (vai trò `Customer`).
+*(Để test quyền Khách hàng (Customer), vui lòng nhấn nút Đăng ký trên giao diện).*
 
-## Cấu hình kết nối cơ sở dữ liệu
+---
 
-Chỉnh trong file `WebApplication1/WebApplication1/appsettings.json`:
+## 📁 Cấu trúc thư mục nổi bật
 
-```json
-"DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=NexusGearDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
-```
-
-Nếu dùng SQL Server Express hoặc instance khác, hãy sửa giá trị `Server=` cho đúng máy của bạn.
-
-## Cấu trúc thư mục
-
-```
+```text
 DoAnLapTrinhWeb/
-├── openspec/                    # Đặc tả dự án (OpenSpec)
-├── WebApplication1/
-│   └── WebApplication1/
-│       ├── Areas/Admin/         # Khu vực quản trị
-│       ├── Controllers/         # Điều khiển: Trang chủ, Sản phẩm, Giỏ, Thanh toán, Tài khoản
-│       ├── Data/                # DbContext, DbSeeder
-│       ├── Models/              # Thực thể & Identity
-│       ├── Repositories/        # Lớp repository
-│       ├── Services/            # Dịch vụ giỏ hàng
-│       ├── Views/               # Giao diện cửa hàng
-│       ├── wwwroot/css/         # gaming-theme.css
-│       └── Migrations/          # Migration EF Core
+├── WebApplication1/WebApplication1/
+│   ├── Areas/Admin/         # Khu vực CMS dành cho Quản trị viên
+│   ├── Controllers/         # Logic Backend (Home, Product, Cart, Account...)
+│   ├── Views/               # Razor Views cho Frontend
+│   │   ├── Shared/          # Các layout dùng chung (_Layout.cshtml, _LayoutHome.cshtml)
+│   │   └── Home/Index.cshtml# Trang chủ chứa logic Slider, Ticker, JS Lọc sản phẩm
+│   ├── wwwroot/
+│   │   ├── css/             # File CSS tuỳ chỉnh (gaming-theme.css quan trọng nhất)
+│   │   ├── js/              # File JS (site.js, chatbot.js)
+│   │   └── bootstrap/       # Thư viện Bootstrap local
+│   └── Data/DbSeeder.cs     # Nơi nạp dữ liệu mẫu tự động
 └── README.md
 ```
 
-## Luồng thao tác gợi ý
+## ⚠️ Lưu ý kỹ thuật
 
-1. Vào **Cửa hàng** → lọc / tìm sản phẩm → xem chi tiết → **Thêm vào giỏ**
-2. **Đăng ký** → **Đăng nhập** → **Thanh toán** (bắt buộc đã đăng nhập)
-3. Đăng nhập **quản trị** → truy cập `/Admin` → quản lý sản phẩm và đơn hàng
-
-## Lưu ý
-
-- Thanh toán bằng thẻ chỉ **mô phỏng**, không kết nối cổng thanh toán thật.
-- Phí vận chuyển cố định: **50.000 ₫** / đơn.
-- Ảnh sản phẩm mẫu dùng file placeholder trong `wwwroot/images/products/`.
-
-## Đặc tả dự án (OpenSpec)
-
-Mô tả chi tiết nằm trong change `gaming-gear-ecommerce` thư mục `openspec/changes/`. Toàn bộ 35 hạng mục triển khai đã hoàn thành.
-
-## Thông tin đồ án
-
-**Đồ án lập trình web** — `DoAnLapTrinhWeb`
+- Thanh toán bằng thẻ là mô phỏng.
+- CSS của ứng dụng được thiết kế ưu tiên kỹ thuật **Breakout Container** (dùng `100vw`) để thanh trượt Slider ở trang chủ có thể kéo giãn toàn màn hình mà không bị bóp nghẹt bởi class `.container` của Bootstrap.
+- Mọi logic Slide trượt và Lọc danh mục đều dùng DOM Javascript thuần không phụ thuộc jQuery để tối ưu hóa hiệu năng render.
