@@ -35,6 +35,29 @@ public class HomeController : Controller
         }
         ViewBag.AverageRating = avgRating.ToString("F1");
 
+        var now = DateTime.UtcNow;
+        List<Discount> activeDiscounts = new();
+
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = _context.Users.Where(u => u.UserName == User.Identity.Name).Select(u => u.Id).FirstOrDefault();
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var orderCount = await _context.Orders.CountAsync(o => o.UserId == userId);
+                var discountsQuery = _context.Discounts
+                    .Where(d => d.IsActive && d.StartDate <= now && d.EndDate >= now
+                                && (d.MaxUsage == null || d.UsedCount < d.MaxUsage));
+
+                if (orderCount > 0)
+                {
+                    discountsQuery = discountsQuery.Where(d => d.PromotionType != PromotionType.FirstOrder);
+                }
+                activeDiscounts = await discountsQuery.ToListAsync();
+            }
+        }
+
+        ViewBag.ActiveDiscounts = activeDiscounts;
+
         return View(featured);
     }
 

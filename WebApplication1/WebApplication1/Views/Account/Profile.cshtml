@@ -29,11 +29,189 @@
         </div>
 
         <div style="margin-bottom:1.5rem;">
-            <label asp-for="Address" style="display:block; font-size:0.82rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Địa chỉ mặc định</label>
-            <textarea asp-for="Address" class="form-control" rows="3" placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+            <label style="display:block; font-size:0.82rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Địa chỉ mặc định</label>
+            
+            <div style="display:grid; grid-template-columns:1fr; gap:0.75rem; margin-bottom:0.75rem;">
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Tỉnh / Thành phố *</label>
+                    <select id="provinceSelect" class="form-control" required>
+                        <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Quận / Huyện *</label>
+                    <select id="districtSelect" class="form-control" required disabled>
+                        <option value="">-- Chọn Quận/Huyện --</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Phường / Xã *</label>
+                    <select id="wardSelect" class="form-control" required disabled>
+                        <option value="">-- Chọn Phường/Xã --</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Số nhà, tên đường (Địa chỉ cụ thể) *</label>
+                    <input type="text" id="specificAddress" class="form-control" placeholder="Số nhà, tên đường..." required />
+                </div>
+            </div>
+            
+            <input type="hidden" asp-for="Address" id="combinedAddress" />
             <span asp-validation-for="Address" class="text-danger" style="font-size:0.8rem; margin-top:0.25rem; display:block;"></span>
         </div>
 
         <button type="submit" class="btn btn-primary" style="width:100%; padding:0.75rem;">Lưu thay đổi</button>
     </form>
 </div>
+
+@section Scripts {
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const provinceSelect = document.getElementById("provinceSelect");
+    const districtSelect = document.getElementById("districtSelect");
+    const wardSelect = document.getElementById("wardSelect");
+    const specificAddressInput = document.getElementById("specificAddress");
+    const combinedAddressInput = document.getElementById("combinedAddress");
+    const form = combinedAddressInput.closest("form");
+
+    const initialAddressValue = combinedAddressInput.value.trim();
+
+    // Fetch provinces
+    fetch("https://provinces.open-api.vn/api/p/")
+        .then(res => res.json())
+        .then(provinces => {
+            provinces.forEach(p => {
+                const opt = document.createElement("option");
+                opt.value = p.code;
+                opt.textContent = p.name;
+                provinceSelect.appendChild(opt);
+            });
+
+            // Parse initial address if exists
+            if (initialAddressValue) {
+                parseAndSetAddress(initialAddressValue, provinces);
+            }
+        })
+        .catch(err => console.error("Error loading provinces:", err));
+
+    provinceSelect.addEventListener("change", function () {
+        districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
+        districtSelect.disabled = true;
+        wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+        wardSelect.disabled = true;
+
+        const pCode = this.value;
+        if (!pCode) return;
+
+        fetch(`https://provinces.open-api.vn/api/p/${pCode}?depth=2`)
+            .then(res => res.json())
+            .then(data => {
+                data.districts.forEach(d => {
+                    const opt = document.createElement("option");
+                    opt.value = d.code;
+                    opt.textContent = d.name;
+                    districtSelect.appendChild(opt);
+                });
+                districtSelect.disabled = false;
+            })
+            .catch(err => console.error("Error loading districts:", err));
+    });
+
+    districtSelect.addEventListener("change", function () {
+        wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+        wardSelect.disabled = true;
+
+        const dCode = this.value;
+        if (!dCode) return;
+
+        fetch(`https://provinces.open-api.vn/api/d/${dCode}?depth=2`)
+            .then(res => res.json())
+            .then(data => {
+                data.wards.forEach(w => {
+                    const opt = document.createElement("option");
+                    opt.value = w.code;
+                    opt.textContent = w.name;
+                    wardSelect.appendChild(opt);
+                });
+                wardSelect.disabled = false;
+            })
+            .catch(err => console.error("Error loading wards:", err));
+    });
+
+    form.addEventListener("submit", function (e) {
+        if (provinceSelect.value && districtSelect.value && wardSelect.value && specificAddressInput.value) {
+            const provinceName = provinceSelect.options[provinceSelect.selectedIndex].text;
+            const districtName = districtSelect.options[districtSelect.selectedIndex].text;
+            const wardName = wardSelect.options[wardSelect.selectedIndex].text;
+            const specific = specificAddressInput.value.trim();
+
+            combinedAddressInput.value = `${specific}, ${wardName}, ${districtName}, ${provinceName}`;
+        }
+    });
+
+    function parseAndSetAddress(fullAddress, provinces) {
+        const parts = fullAddress.split(",").map(p => p.trim());
+        if (parts.length < 4) {
+            // If format is not standard, put everything in specific address
+            specificAddressInput.value = fullAddress;
+            return;
+        }
+
+        const provinceName = parts[parts.length - 1];
+        const districtName = parts[parts.length - 2];
+        const wardName = parts[parts.length - 3];
+        const specificName = parts.slice(0, parts.length - 3).join(", ");
+
+        const foundProvince = provinces.find(p => p.name.toLowerCase() === provinceName.toLowerCase() || p.name.toLowerCase().includes(provinceName.toLowerCase()));
+        if (foundProvince) {
+            provinceSelect.value = foundProvince.code;
+            
+            // Load districts
+            fetch(`https://provinces.open-api.vn/api/p/${foundProvince.code}?depth=2`)
+                .then(res => res.json())
+                .then(data => {
+                    data.districts.forEach(d => {
+                        const opt = document.createElement("option");
+                        opt.value = d.code;
+                        opt.textContent = d.name;
+                        districtSelect.appendChild(opt);
+                    });
+                    districtSelect.disabled = false;
+
+                    const foundDistrict = data.districts.find(d => d.name.toLowerCase() === districtName.toLowerCase() || d.name.toLowerCase().includes(districtName.toLowerCase()));
+                    if (foundDistrict) {
+                        districtSelect.value = foundDistrict.code;
+
+                        // Load wards
+                        return fetch(`https://provinces.open-api.vn/api/d/${foundDistrict.code}?depth=2`)
+                            .then(res => res.json())
+                            .then(subData => {
+                                subData.wards.forEach(w => {
+                                    const opt = document.createElement("option");
+                                    opt.value = w.code;
+                                    opt.textContent = w.name;
+                                    wardSelect.appendChild(opt);
+                                });
+                                wardSelect.disabled = false;
+
+                                const foundWard = subData.wards.find(w => w.name.toLowerCase() === wardName.toLowerCase() || w.name.toLowerCase().includes(wardName.toLowerCase()));
+                                if (foundWard) {
+                                    wardSelect.value = foundWard.code;
+                                }
+                                specificAddressInput.value = specificName;
+                            });
+                    } else {
+                        specificAddressInput.value = fullAddress;
+                    }
+                })
+                .catch(err => {
+                    console.error("Error auto-populating address:", err);
+                    specificAddressInput.value = fullAddress;
+                });
+        } else {
+            specificAddressInput.value = fullAddress;
+        }
+    }
+});
+</script>
+}

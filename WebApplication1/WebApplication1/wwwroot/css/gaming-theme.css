@@ -966,6 +966,9 @@ html[data-theme="dark"] .card-action-btn {
 }
 .meta { color: var(--text-muted); font-size: 0.76rem; margin: 0 0 0.3rem; }
 .price { color: var(--text); font-weight: 700; font-size: 0.95rem; margin: 0; }
+.price-old { text-decoration: line-through; color: var(--text-muted); font-size: 0.78rem; margin-right: 0.4rem; }
+.price-new { color: #f97316; font-weight: 700; font-size: 1.1rem; }
+html[data-theme="dark"] .price-new { color: #fb923c; }
 
 .card-footer {
     display: flex;

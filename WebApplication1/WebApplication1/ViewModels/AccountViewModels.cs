@@ -4,29 +4,31 @@ namespace WebApplication1.ViewModels;
 
 public class RegisterViewModel
 {
-    [Required, Display(Name = "Full Name")]
+    [Required, Display(Name = "Họ và tên")]
     public string FullName { get; set; } = string.Empty;
 
     [Required, EmailAddress]
     public string Email { get; set; } = string.Empty;
 
-    [Phone, Display(Name = "Phone Number")]
+    [Phone, Display(Name = "Số điện thoại")]
     public string? PhoneNumber { get; set; }
 
     [Required, DataType(DataType.Password), MinLength(6)]
+    [Display(Name = "Mật khẩu")]
     public string Password { get; set; } = string.Empty;
 
     [Required, DataType(DataType.Password), Compare(nameof(Password))]
-    [Display(Name = "Confirm Password")]
+    [Display(Name = "Xác nhận mật khẩu")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
 public class LoginViewModel
 {
-    [Required, EmailAddress]
-    public string Email { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Vui lòng nhập Email hoặc Số điện thoại"), Display(Name = "Email hoặc Số điện thoại")]
+    public string EmailOrPhone { get; set; } = string.Empty;
 
-    [Required, DataType(DataType.Password)]
+    [Required(ErrorMessage = "Vui lòng nhập Mật khẩu"), DataType(DataType.Password)]
+    [Display(Name = "Mật khẩu")]
     public string Password { get; set; } = string.Empty;
 
     public bool RememberMe { get; set; }

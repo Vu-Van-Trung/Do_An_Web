@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models;
 using WebApplication1.Services;
 using WebApplication1.ViewModels;
@@ -40,6 +41,16 @@ public class AccountController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
+        if (!string.IsNullOrWhiteSpace(model.PhoneNumber))
+        {
+            var phoneExists = await _userManager.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber);
+            if (phoneExists)
+            {
+                ModelState.AddModelError("PhoneNumber", "Số điện thoại đã tồn tại.");
+                return View(model);
+            }
+        }
+
         var user = new ApplicationUser
         {
             UserName = model.Email,
@@ -58,10 +69,9 @@ public class AccountController : Controller
         }
 
         await _userManager.AddToRoleAsync(user, "Customer");
-        await _signInManager.SignInAsync(user, isPersistent: false);
-        await _cartService.MergeSessionCartAsync(user.Id);
 
-        return RedirectToLocal(returnUrl ?? Url.Action("Orders", "Account")!);
+        TempData["Success"] = "Đăng ký tài khoản thành công! Vui lòng đăng nhập bằng Email hoặc Số điện thoại của bạn.";
+        return RedirectToAction("Login", "Account");
     }
 
     [HttpGet]
@@ -77,18 +87,28 @@ public class AccountController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        var result = await _signInManager.PasswordSignInAsync(
-            model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
-
-        if (!result.Succeeded)
+        var user = await _userManager.FindByEmailAsync(model.EmailOrPhone);
+        if (user == null && !string.IsNullOrWhiteSpace(model.EmailOrPhone))
         {
-            ModelState.AddModelError(string.Empty, "Invalid email or password.");
+            user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == model.EmailOrPhone);
+        }
+
+        if (user == null)
+        {
+            ModelState.AddModelError(string.Empty, "Tên đăng nhập (Email/Số điện thoại) hoặc mật khẩu không chính xác.");
             return View(model);
         }
 
-        var user = await _userManager.FindByEmailAsync(model.Email);
-        if (user != null)
-            await _cartService.MergeSessionCartAsync(user.Id);
+        var result = await _signInManager.PasswordSignInAsync(
+            user.UserName!, model.Password, model.RememberMe, lockoutOnFailure: false);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, "Tên đăng nhập (Email/Số điện thoại) hoặc mật khẩu không chính xác.");
+            return View(model);
+        }
+
+        await _cartService.MergeSessionCartAsync(user.Id);
 
         return RedirectToLocal(model.ReturnUrl ?? Url.Action("Index", "Home")!);
     }

@@ -18,6 +18,43 @@ public static class DbSeeder
         await SeedRolesAsync(roleManager);
         await SeedAdminAsync(userManager);
 
+        // Seed initial discounts/vouchers if they don't exist
+        if (!await context.Discounts.AnyAsync(d => d.Code == "NEWUSER200K"))
+        {
+            context.Discounts.Add(new Discount
+            {
+                Code = "NEWUSER200K",
+                Name = "Quà tặng Đăng ký mới 200k",
+                Description = "Giảm ngay 200.000đ cho đơn hàng từ 500.000đ trở lên",
+                PromotionType = PromotionType.FirstOrder,
+                DiscountType = DiscountType.Fixed,
+                Value = 200000m,
+                MinOrderAmount = 500000m,
+                StartDate = DateTime.UtcNow.AddDays(-1),
+                EndDate = DateTime.UtcNow.AddYears(10),
+                IsActive = true
+            });
+        }
+
+        if (!await context.Discounts.AnyAsync(d => d.Code == "NEWUSERFREE"))
+        {
+            context.Discounts.Add(new Discount
+            {
+                Code = "NEWUSERFREE",
+                Name = "Miễn phí vận chuyển 0đ",
+                Description = "Miễn phí vận chuyển cho khách hàng mới",
+                PromotionType = PromotionType.FreeShipping,
+                DiscountType = DiscountType.Fixed,
+                Value = 0m,
+                MinOrderAmount = 0m,
+                StartDate = DateTime.UtcNow.AddDays(-1),
+                EndDate = DateTime.UtcNow.AddYears(10),
+                IsActive = true
+            });
+        }
+
+        await context.SaveChangesAsync();
+
         // Skip if new hierarchical categories already exist
         if (await context.Categories.AnyAsync(c => c.Icon != null))
             return;

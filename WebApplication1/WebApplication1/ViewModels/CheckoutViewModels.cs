@@ -32,6 +32,7 @@ public class CheckoutViewModel
     public PaymentViewModel Payment { get; set; } = new();
     public CartViewModel Cart { get; set; } = new();
     public int Step { get; set; } = 1;
+    public decimal ShippingFee { get; set; } = 50000m;
 }
 
 public class OrderConfirmationViewModel

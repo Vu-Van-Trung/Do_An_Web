@@ -33,6 +33,13 @@
         </div>
     }
 
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:.75rem 1rem; margin-bottom:.75rem; color:#15803d; font-size:.875rem;">
+            @TempData["Success"]
+        </div>
+    }
+
     <!-- Google OAuth -->
     <form asp-action="ExternalLogin" method="post">
         @Html.AntiForgeryToken()
@@ -56,8 +63,8 @@
         <input type="hidden" asp-for="ReturnUrl" />
         <div asp-validation-summary="All" class="text-danger" style="margin-bottom:.5rem;"></div>
         <div style="margin-bottom:0.75rem;">
-            <label asp-for="Email">Email</label>
-            <input asp-for="Email" class="form-control" placeholder="you@example.com" />
+            <label asp-for="EmailOrPhone">Email hoặc Số điện thoại</label>
+            <input asp-for="EmailOrPhone" class="form-control" placeholder="Email hoặc Số điện thoại" />
         </div>
         <div style="margin-bottom:0.75rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">

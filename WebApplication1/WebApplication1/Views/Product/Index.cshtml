@@ -4,6 +4,47 @@
     var f = Model.Filter;
 }
 
+@using WebApplication1.Models
+@functions {
+    public (decimal bestPrice, Discount? bestVoucher) GetBestPrice(Product p, IEnumerable<Discount>? discounts)
+    {
+        if (discounts == null) return (p.Price, null);
+        decimal bestPrice = p.Price;
+        Discount? bestVoucher = null;
+        decimal maxDiscount = 0;
+
+        foreach (var d in discounts)
+        {
+            if (!d.IsActive || d.StartDate > DateTime.UtcNow || d.EndDate < DateTime.UtcNow) continue;
+            if (d.ApplicableCategoryId.HasValue && d.ApplicableCategoryId.Value != p.CategoryId) continue;
+            if (d.MinOrderAmount > p.Price) continue;
+            if (d.PromotionType == PromotionType.FreeShipping) continue;
+
+            decimal discountAmount = 0;
+            if (d.DiscountType == DiscountType.Percent)
+            {
+                discountAmount = Math.Round(p.Price * d.Value / 100, 0);
+                if (d.MaxDiscountAmount.HasValue)
+                {
+                    discountAmount = Math.Min(discountAmount, d.MaxDiscountAmount.Value);
+                }
+            }
+            else
+            {
+                discountAmount = d.Value;
+            }
+
+            if (discountAmount > maxDiscount)
+            {
+                maxDiscount = discountAmount;
+                bestVoucher = d;
+            }
+        }
+
+        return (p.Price - maxDiscount, bestVoucher);
+    }
+}
+
 <section class="filters glass-panel">
     <form method="get" asp-action="Index">
         <div>
@@ -78,16 +119,10 @@
     @foreach (var product in Model.Products.Items)
     {
         var brandSlug = product.Brand.Name.ToLower().Replace(" ", "");
+        var (bestPrice, bestVoucher) = GetBestPrice(product, ViewBag.ActiveDiscounts as IEnumerable<Discount>);
         <article class="product-card" data-category="@product.Category.Name">
-            <!-- Nút Yêu thích & So sánh nhanh -->
+            <!-- Nút So sánh nhanh -->
             <div class="card-actions-overlay">
-                <form asp-controller="Wishlist" asp-action="Add" method="post" class="inline-form">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="productId" value="@product.Id" />
-                    <button type="submit" class="card-action-btn" title="Yêu thích">
-                        <i class="bi bi-heart"></i>
-                    </button>
-                </form>
                 <form asp-controller="Comparison" asp-action="Add" method="post" class="inline-form">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="productId" value="@product.Id" />
@@ -104,8 +139,22 @@
                     <p class="meta">@product.Brand.Name &middot; @product.Category.Name</p>
                 </div>
             </a>
-            <div class="card-footer">
-                <span class="price">@product.Price.ToString("N0") ₫</span>
+            <div class="card-footer" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
+                @if (bestVoucher != null)
+                {
+                    var percent = (int)Math.Round((product.Price - bestPrice) * 100 / product.Price);
+                    <div style="display: flex; flex-direction: column; gap: 0.15rem; width: 100%;">
+                        <span class="price-new">@bestPrice.ToString("N0") ₫</span>
+                        <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; line-height: 1;">
+                            <span class="price-old" style="margin-right: 0;">@product.Price.ToString("N0") ₫</span>
+                            <span class="discount-percent" style="color: var(--text-muted); font-weight: 500;">-@percent%</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <span class="price">@product.Price.ToString("N0") ₫</span>
+                }
             </div>
             <div class="card-cart-overlay">
                 <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">

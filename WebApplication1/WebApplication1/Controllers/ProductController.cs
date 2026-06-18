@@ -33,6 +33,29 @@ public class ProductController : Controller
             SwitchTypes = await _products.GetSpecValuesAsync("Switch Type"),
             DpiOptions  = await _products.GetSpecValuesAsync("DPI")
         };
+        var now = DateTime.UtcNow;
+        List<Discount> activeDiscounts = new();
+
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = _context.Users.Where(u => u.UserName == User.Identity.Name).Select(u => u.Id).FirstOrDefault();
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var orderCount = await _context.Orders.CountAsync(o => o.UserId == userId);
+                var discountsQuery = _context.Discounts
+                    .Where(d => d.IsActive && d.StartDate <= now && d.EndDate >= now
+                                && (d.MaxUsage == null || d.UsedCount < d.MaxUsage));
+
+                if (orderCount > 0)
+                {
+                    discountsQuery = discountsQuery.Where(d => d.PromotionType != PromotionType.FirstOrder);
+                }
+                activeDiscounts = await discountsQuery.ToListAsync();
+            }
+        }
+
+        ViewBag.ActiveDiscounts = activeDiscounts;
+
         return View(vm);
     }
 
@@ -55,6 +78,29 @@ public class ProductController : Controller
             avgRating = reviews.Average(r => r.Rating);
         }
         ViewBag.AverageRating = avgRating;
+
+        var now = DateTime.UtcNow;
+        List<Discount> activeDiscounts = new();
+
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = _context.Users.Where(u => u.UserName == User.Identity.Name).Select(u => u.Id).FirstOrDefault();
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var orderCount = await _context.Orders.CountAsync(o => o.UserId == userId);
+                var discountsQuery = _context.Discounts
+                    .Where(d => d.IsActive && d.StartDate <= now && d.EndDate >= now
+                                && (d.MaxUsage == null || d.UsedCount < d.MaxUsage));
+
+                if (orderCount > 0)
+                {
+                    discountsQuery = discountsQuery.Where(d => d.PromotionType != PromotionType.FirstOrder);
+                }
+                activeDiscounts = await discountsQuery.ToListAsync();
+            }
+        }
+
+        ViewBag.ActiveDiscounts = activeDiscounts;
 
         return View(product);
     }
@@ -109,6 +155,18 @@ public class ProductController : Controller
         ViewBag.FreeShipping  = active.Where(d => d.PromotionType == PromotionType.FreeShipping).ToList();
         ViewBag.FirstOrders   = active.Where(d => d.PromotionType == PromotionType.FirstOrder).ToList();
         ViewBag.Coupons       = active.Where(d => d.PromotionType == PromotionType.Coupon).ToList();
+
+        bool isNewUser = false;
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = _context.Users.Where(u => u.UserName == User.Identity!.Name).Select(u => u.Id).FirstOrDefault();
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var orderCount = await _context.Orders.CountAsync(o => o.UserId == userId);
+                isNewUser = (orderCount == 0);
+            }
+        }
+        ViewBag.IsNewUser = isNewUser;
 
         return View(active);
     }

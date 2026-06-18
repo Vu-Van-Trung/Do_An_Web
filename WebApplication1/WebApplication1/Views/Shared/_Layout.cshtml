@@ -34,7 +34,7 @@
                     <a asp-controller="Home"     asp-action="Index"  class="@NavClass("Home")">Trang chủ</a>
                     <a asp-controller="Product"  asp-action="Index"  class="@NavClass("Product")">Cửa hàng</a>
                     <a asp-controller="Category" asp-action="Index"  class="@NavClass("Category")">Danh mục</a>
-                    <a asp-controller="Product"  asp-action="Deals"  class="nav-deals @NavClass("Product", "Deals")">🏷️ Khuyến mãi</a>
+                    <a asp-controller="Product"  asp-action="Deals"  class="nav-deals @NavClass("Product", "Deals")">🎫 Voucher</a>
                 </div>
 
                 @* Action area (cart + auth) *@
@@ -46,15 +46,11 @@
                         </button>
                         @* So sánh *@
                         <a asp-controller="Comparison" asp-action="Index" class="nav-cart-btn @NavClass("Comparison")" title="So sánh sản phẩm">
-                            <i class="bi bi-arrow-left-right"></i>
-                        </a>
-                        @* Yêu thích *@
-                        <a asp-controller="Wishlist" asp-action="Index" class="nav-cart-btn @NavClass("Wishlist")" title="Sản phẩm yêu thích">
-                            <i class="bi bi-heart-fill" style="color:#ef4444;"></i>
+                            <i class="bi bi-arrow-left-right"></i> So sánh sản phẩm
                         </a>
                         @* Giỏ hàng *@
                         <a asp-controller="Cart" asp-action="Index" class="nav-cart-btn @NavClass("Cart")" title="Giỏ hàng">
-                            &#x1F6D2; <span id="cart-badge" class="badge">0</span>
+                            &#x1F6D2; Giỏ hàng <span id="cart-badge" class="badge">0</span>
                         </a>
 
                         @* User dropdown khi đã đăng nhập *@
@@ -98,11 +94,11 @@
                         </button>
                         @* So sánh *@
                         <a asp-controller="Comparison" asp-action="Index" class="nav-cart-btn @NavClass("Comparison")" title="So sánh sản phẩm">
-                            <i class="bi bi-arrow-left-right"></i>
+                            <i class="bi bi-arrow-left-right"></i> So sánh sản phẩm
                         </a>
                         @* Giỏ hàng khi chưa login *@
                         <a asp-controller="Cart" asp-action="Index" class="nav-cart-btn @NavClass("Cart")" title="Giỏ hàng">
-                            &#x1F6D2; <span id="cart-badge" class="badge">0</span>
+                            &#x1F6D2; Giỏ hàng <span id="cart-badge" class="badge">0</span>
                         </a>
 
                         @* Nút Đăng nhập riêng biệt *@
@@ -140,7 +136,7 @@
             </div>
             <div class="footer-links">
                 <a asp-controller="Product"  asp-action="Index">Cửa hàng</a>
-                <a asp-controller="Product"  asp-action="Deals">Khuyến mãi</a>
+                <a asp-controller="Product"  asp-action="Deals">Voucher</a>
                 <a asp-controller="Category" asp-action="Index">Danh mục</a>
             </div>
             <p class="footer-copy">&copy; @DateTime.Now.Year NexusGear. All rights reserved.</p>
