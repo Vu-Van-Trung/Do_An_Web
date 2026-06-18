@@ -462,7 +462,288 @@ body {
 }
 
 /* ── MAIN ── */
-.main-content { padding-bottom: 4rem; }
+.main-content { padding-bottom: 4rem; padding-top: 0; }
+
+/* ══════════════════════════════════════════════
+   HT-TICKER  (Promo marquee — chữ chạy ngang)
+══════════════════════════════════════════════ */
+.ht-ticker {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(90deg, #7c3aed 0%, #4f46e5 60%, #0ea5e9 100%);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    height: 38px;
+    overflow: hidden;
+    user-select: none;
+}
+.ht-ticker__label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(0,0,0,0.28);
+    padding: 0 1.2rem;
+    height: 100%;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-right: 1px solid rgba(255,255,255,0.15);
+}
+.ht-ticker__track {
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+.ht-ticker__inner {
+    display: inline-flex;
+    white-space: nowrap;
+    animation: htTickerScroll 45s linear infinite;
+}
+.ht-ticker__inner span {
+    padding: 0 2rem;
+    opacity: 0.9;
+}
+.ht-ticker__inner span::after {
+    content: '◆';
+    margin-left: 2rem;
+    font-size: 0.5em;
+    opacity: 0.4;
+    vertical-align: middle;
+}
+@keyframes htTickerScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.ht-ticker:hover .ht-ticker__inner { animation-play-state: paused; }
+
+html[data-theme="dark"] .ht-ticker {
+    background: linear-gradient(90deg, #5b21b6 0%, #3730a3 60%, #0369a1 100%);
+}
+
+/* ══════════════════════════════════════════════
+   HT-SLIDER  (Hero image slider — trượt ngang)
+══════════════════════════════════════════════ */
+.ht-slider {
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    /* Chiều cao slider */
+    height: 500px;
+}
+
+.ht-slider__track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Mỗi slide chiếm toàn bộ slider */
+.ht-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    /* Mặc định ẩn ở bên phải */
+    transform: translateX(100%);
+    will-change: transform;
+}
+.ht-slide--visible {
+    /* Slide đang hiển thị hoặc đang animate */
+    display: block;
+}
+
+/* Ảnh fill toàn bộ slide */
+.ht-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    filter: brightness(0.75);
+}
+
+/* Caption overlay */
+.ht-slide__caption {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1.5rem, 6vw, 5rem);
+    background: linear-gradient(
+        to top,
+        rgba(4, 4, 18, 0.88) 0%,
+        rgba(4, 4, 18, 0.5)  35%,
+        rgba(4, 4, 18, 0.08) 70%,
+        transparent          100%
+    );
+    max-width: 620px;
+}
+
+.ht-slide__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(139, 92, 246, 0.9);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.9rem;
+    border-radius: 999px;
+    margin-bottom: 0.8rem;
+    width: fit-content;
+}
+
+.ht-slide__caption h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3.5vw, 2.75rem);
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 0.55rem;
+    line-height: 1.15;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+}
+.ht-slide__caption p {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin: 0 0 1.2rem;
+}
+.ht-slide__btns {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Nút prev / next */
+.ht-slider__btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.2s, border-color 0.2s;
+}
+.ht-slider__btn:hover {
+    background: rgba(139, 92, 246, 0.8);
+    border-color: rgba(139, 92, 246, 0.6);
+    transform: translateY(-50%) scale(1.1);
+}
+.ht-slider__btn--prev { left: 1.25rem; }
+.ht-slider__btn--next { right: 1.25rem; }
+
+/* Dot indicators */
+.ht-slider__dots {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+}
+.ht-dot {
+    width: 28px;
+    height: 4px;
+    border-radius: 2px;
+    border: none;
+    background: rgba(255,255,255,0.35);
+    cursor: pointer;
+    padding: 0;
+    transition: width 0.3s ease, background 0.3s ease;
+}
+.ht-dot.active {
+    width: 52px;
+    background: var(--accent, #8b5cf6);
+}
+
+/* ══════════════════════════════════════════════
+   HT-STATS-BAR  (Thanh thông số dưới slider)
+══════════════════════════════════════════════ */
+.ht-stats-bar {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+.ht-stats-bar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.9rem 0;
+}
+.ht-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.2rem 2.5rem;
+}
+.ht-stat i {
+    font-size: 1.5rem;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+.ht-stat div {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+}
+.ht-stat b {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+}
+.ht-stat span {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+}
+.ht-stat-divider {
+    width: 1px;
+    height: 34px;
+    background: var(--border);
+    flex-shrink: 0;
+}
+
+/* Home layout main */
+.home-main { width: 100%; }
+.home-body { padding-top: 1.5rem; padding-bottom: 4rem; }
+
+/* Dark mode */
+html[data-theme="dark"] .ht-stats-bar {
+    background: rgba(15, 15, 28, 0.98);
+    border-bottom-color: rgba(255,255,255,0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ht-slider { height: 260px; }
+    .ht-slide__caption { padding: 1rem 1.25rem; max-width: 100%; }
+    .ht-slide__caption h2 { font-size: 1.3rem; }
+    .ht-slide__caption p { display: none; }
+    .ht-stats-bar__inner { flex-wrap: wrap; }
+    .ht-stat { padding: 0.4rem 1.25rem; }
+    .ht-stat-divider { display: none; }
+}
+
 
 /* ── HERO (Dark Gaming) ── */
 .hero {

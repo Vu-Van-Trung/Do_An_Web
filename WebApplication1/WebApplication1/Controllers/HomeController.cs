@@ -22,7 +22,7 @@ public class HomeController : Controller
             .Include(p => p.Category)
             .Where(p => p.IsActive)
             .OrderByDescending(p => p.CreatedAt)
-            .Take(4)
+            .Take(8)
             .ToListAsync();
 
         ViewBag.Brands = await _context.Brands.OrderBy(b => b.Name).ToListAsync();

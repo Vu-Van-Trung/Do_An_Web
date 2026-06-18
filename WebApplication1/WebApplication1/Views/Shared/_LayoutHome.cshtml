@@ -16,7 +16,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="~/bootstrap/css-20260516T012313Z-3-001/css/bootstrap.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/gaming-theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -120,15 +119,18 @@
         </nav>
     </header>
 
-    <main class="container main-content">
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-error">@TempData["Error"]</div>
-        }
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success">@TempData["Success"]</div>
-        }
+    @* Alerts (full-width) *@
+    @if (TempData["Error"] != null)
+    {
+        <div class="container"><div class="alert alert-error">@TempData["Error"]</div></div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="container"><div class="alert alert-success">@TempData["Success"]</div></div>
+    }
+
+    @* Body renders FULL WIDTH — no container wrapper *@
+    <main class="home-main">
         @RenderBody()
     </main>
 
@@ -147,7 +149,6 @@
         </div>
     </footer>
 
-    <script src="~/bootstrap/js-20260516T012316Z-3-001/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script src="~/js/chatbot.js" asp-append-version="true"></script>

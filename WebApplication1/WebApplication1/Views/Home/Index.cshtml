@@ -1,136 +1,353 @@
 @model IEnumerable<WebApplication1.Models.Product>
 @{
     ViewData["Title"] = "Trang chủ";
+    Layout = "_LayoutHome";
 }
 
-<!-- HERO -->
-<section class="hero">
-    <div class="hero-left">
-        <span class="hero-badge">&#x2728; Hàng mới về hàng tuần</span>
-        <h1>Nâng Tầm<br><span>Góc Gaming</span></h1>
-        <p>Thiết bị gaming cao cấp từ Razer, Logitech, Corsair và Keychron — được tạo ra cho tốc độ, độ chính xác và phong cách.</p>
-        <div class="hero-btns">
-            <a asp-controller="Product" asp-action="Index" class="btn btn-glow btn-lg">Khám phá sản phẩm</a>
-            <a asp-controller="Product" asp-action="Deals" class="btn btn-outline-light">Xem khuyến mãi &#x2192;</a>
+<!-- ══════════════════════════════════════════
+     PROMO TICKER — chữ chạy phải → trái
+═══════════════════════════════════════════ -->
+<div class="ht-ticker" aria-label="Thông báo khuyến mãi">
+    <span class="ht-ticker__label"><i class="bi bi-lightning-charge-fill"></i> HOT</span>
+    <div class="ht-ticker__track">
+        <div class="ht-ticker__inner" id="tickerInner">
+            <span>🔥 Flash Sale — Giảm đến 30% cho tất cả sản phẩm gaming</span>
+            <span>⚡ Miễn phí vận chuyển cho đơn hàng từ 1.000.000đ</span>
+            <span>🎮 Razer BlackWidow V4 — Hàng mới về tuần này</span>
+            <span>🖱️ Logitech G Pro X Superlight 2 — Giá tốt nhất thị trường</span>
+            <span>🎧 Corsair HS80 RGB Wireless — Giảm 15% hôm nay</span>
+            <span>⌨️ Keychron K8 Pro — Chỉ còn 50 sản phẩm cuối</span>
+            <span>💺 DXRacer Racing Series — Tặng kèm gối cổ &amp; lưng</span>
+            <span>🖥️ ASUS ROG Swift 240Hz — Tốc độ đỉnh cao cho game thủ</span>
+            <!-- duplicate để loop mượt mà -->
+            <span>🔥 Flash Sale — Giảm đến 30% cho tất cả sản phẩm gaming</span>
+            <span>⚡ Miễn phí vận chuyển cho đơn hàng từ 1.000.000đ</span>
+            <span>🎮 Razer BlackWidow V4 — Hàng mới về tuần này</span>
+            <span>🖱️ Logitech G Pro X Superlight 2 — Giá tốt nhất thị trường</span>
+            <span>🎧 Corsair HS80 RGB Wireless — Giảm 15% hôm nay</span>
+            <span>⌨️ Keychron K8 Pro — Chỉ còn 50 sản phẩm cuối</span>
+            <span>💺 DXRacer Racing Series — Tặng kèm gối cổ &amp; lưng</span>
+            <span>🖥️ ASUS ROG Swift 240Hz — Tốc độ đỉnh cao cho game thủ</span>
         </div>
     </div>
-    <div class="hero-stats">
-        <div class="hero-stat">
-            <span class="stat-num">500+</span>
-            <span class="stat-label">Sản phẩm có sẵn</span>
-        </div>
-        <div class="hero-stat">
-            <span class="stat-num">@ViewBag.AverageRating &#x2605;</span>
-            <span class="stat-label">Đánh giá trung bình</span>
-        </div>
-        <div class="hero-stat">
-            <span class="stat-num" style="color:#34d399;">Miễn phí</span>
-            <span class="stat-label">Giao hàng trên 1M VNĐ</span>
-        </div>
-    </div>
-</section>
-
-<!-- FEATURED GEAR -->
-<section>
-    <div class="section-header">
-        <h2>Sản phẩm nổi bật</h2>
-        <a asp-controller="Product" asp-action="Index">Xem tất cả &#x2192;</a>
-    </div>
-    <div class="category-pills">
-        <button class="category-pill active" data-filter="all">Tất cả</button>
-        <button class="category-pill" data-filter="Keyboards">Bàn phím</button>
-        <button class="category-pill" data-filter="Headsets">Tai nghe</button>
-        <button class="category-pill" data-filter="Chairs">Ghế</button>
-        <button class="category-pill" data-filter="Mice">Chuột</button>
-    </div>
-    <div class="product-grid" id="featured-grid">
-        @foreach (var product in Model)
-        {
-            var brandSlug = product.Brand.Name.ToLower().Replace(" ", "");
-            <article class="product-card" data-category="@product.Category.Name">
-                <!-- Nút Yêu thích & So sánh nhanh -->
-                <div class="card-actions-overlay">
-                    <form asp-controller="Wishlist" asp-action="Add" method="post" class="inline-form">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="productId" value="@product.Id" />
-                        <button type="submit" class="card-action-btn" title="Yêu thích">
-                            <i class="bi bi-heart"></i>
-                        </button>
-                    </form>
-                    <form asp-controller="Comparison" asp-action="Add" method="post" class="inline-form">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="productId" value="@product.Id" />
-                        <button type="submit" class="card-action-btn" title="So sánh">
-                            <i class="bi bi-arrow-left-right"></i>
-                        </button>
-                    </form>
-                </div>
-                <a asp-controller="Product" asp-action="Details" asp-route-id="@product.Id">
-                    <span class="product-card-brand-chip brand-chip-@brandSlug">@product.Brand.Name</span>
-                    <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
-                    <div class="body">
-                        <h3>@product.Name</h3>
-                        <p class="meta">@product.Brand.Name &middot; @product.Category.Name</p>
-                    </div>
-                </a>
-                <div class="card-footer">
-                    <span class="price">@product.Price.ToString("N0") &#x111;</span>
-                </div>
-                <div class="card-cart-overlay">
-                    <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="productId" value="@product.Id" />
-                        <input type="hidden" name="quantity" value="1" />
-                        <button type="submit" class="btn-cart" title="Thêm vào giỏ">
-                            <i class="bi bi-cart-plus-fill"></i> Thêm vào giỏ
-                        </button>
-                    </form>
-                </div>
-            </article>
-        }
-    </div>
-</section>
-
-<!-- FLASH SALE -->
-<div class="flash-sale">
-    <div class="flash-sale-text">
-        <h3>&#x1F525; Flash Sale &#x2014; Giảm đến 30%</h3>
-        <p>Chỉ còn hôm nay &middot; Hàng có hạn, nhanh tay kẻo lỡ!</p>
-        <div class="flash-progress">
-            <div class="flash-progress-bar" style="width: 70%;"></div>
-        </div>
-        <span class="flash-sold-text">Đã bán 70% — Chỉ còn vài sản phẩm!</span>
-    </div>
-    <a asp-controller="Product" asp-action="Deals" class="btn">Xem ngay &#x2192;</a>
 </div>
 
-<!-- SHOP BY BRAND -->
-<section>
-    <div class="section-header">
-        <h2>Mua theo thương hiệu</h2>
+<!-- ══════════════════════════════════════════
+     HERO SLIDER — 4 banner trượt ngang
+═══════════════════════════════════════════ -->
+<section class="ht-slider" id="heroSlider" aria-label="Banner quảng cáo">
+
+    <!-- Track chứa toàn bộ slide -->
+    <div class="ht-slider__track" id="sliderTrack">
+
+        <!-- Slide 1 -->
+        <div class="ht-slide">
+            <img src="~/images/banner/b5131e2aacd3dddffcf29dbce9aac0c4.jpg"
+                 alt="ASRock Phantom Gaming — Speed Style 180Hz" />
+            <div class="ht-slide__caption">
+                <span class="ht-slide__badge"><i class="bi bi-display-fill"></i> Màn hình Gaming</span>
+                <h2>Speed Style 180Hz</h2>
+                <p>PG27QFT2A / PG27QFT18 — QHD · AMD FreeSync · DisplayHDR 400</p>
+                <div class="ht-slide__btns">
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-glow">Khám phá ngay</a>
+                    <a asp-controller="Product" asp-action="Deals" class="btn btn-outline-light">Xem ưu đãi →</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="ht-slide">
+            <img src="~/images/banner/4c8241a495d208d759cfab78a81a3a51.jpg"
+                 alt="ROG Huracan — Uncover Gaming Supremacy" />
+            <div class="ht-slide__caption">
+                <span class="ht-slide__badge"><i class="bi bi-cpu-fill"></i> PC Gaming</span>
+                <h2>ROG Huracan</h2>
+                <p>Uncover Gaming Supremacy — RGB tinh xảo, sức mạnh không giới hạn</p>
+                <div class="ht-slide__btns">
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-glow">Mua ngay</a>
+                    <a asp-controller="Product" asp-action="Deals" class="btn btn-outline-light">Flash Sale →</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="ht-slide">
+            <img src="~/images/banner/ad43b214d189c618f85be643b41e0c54.jpg"
+                 alt="ROG Strix G13CHR" />
+            <div class="ht-slide__caption">
+                <span class="ht-slide__badge"><i class="bi bi-controller"></i> Gaming PC</span>
+                <h2>ROG Strix G13CHR</h2>
+                <p>Join Our Battle, Chill The Competition — Làm lạnh đỉnh cao, hiệu năng bùng cháy</p>
+                <div class="ht-slide__btns">
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-glow">Xem sản phẩm</a>
+                    <a asp-controller="Product" asp-action="Deals" class="btn btn-outline-light">Ưu đãi hôm nay →</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4 -->
+        <div class="ht-slide">
+            <img src="~/images/banner/e782b37bf24279307853a2b9e99c2101.jpg"
+                 alt="Lian Li O11 Dynamic — PC Gamer" />
+            <div class="ht-slide__caption">
+                <span class="ht-slide__badge"><i class="bi bi-motherboard-fill"></i> Full RGB Build</span>
+                <h2>PC Gamer Của Bạn</h2>
+                <p>Lian Li O11 Dynamic — Tủ máy gaming RGB 360°, hiệu năng đỉnh cao</p>
+                <div class="ht-slide__btns">
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-glow">Xây dựng PC</a>
+                    <a asp-controller="Product" asp-action="Deals" class="btn btn-outline-light">Deal tốt nhất →</a>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /ht-slider__track -->
+
+    <!-- Nút điều hướng -->
+    <button class="ht-slider__btn ht-slider__btn--prev" id="sliderPrev" aria-label="Slide trước">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <button class="ht-slider__btn ht-slider__btn--next" id="sliderNext" aria-label="Slide tiếp theo">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+
+    <!-- Dot indicators -->
+    <div class="ht-slider__dots" id="sliderDots">
+        <button class="ht-dot active" data-index="0" aria-label="Slide 1"></button>
+        <button class="ht-dot" data-index="1" aria-label="Slide 2"></button>
+        <button class="ht-dot" data-index="2" aria-label="Slide 3"></button>
+        <button class="ht-dot" data-index="3" aria-label="Slide 4"></button>
     </div>
-    <div class="brand-pills">
-        @if (ViewBag.Brands != null)
-        {
-            foreach (var brand in (IEnumerable<WebApplication1.Models.Brand>)ViewBag.Brands)
-            {
-                <a asp-controller="Product" asp-action="Index" asp-route-BrandId="@brand.Id" class="brand-pill">@brand.Name</a>
-            }
-        }
-    </div>
+
 </section>
+<!-- /ht-slider -->
+
+<!-- ══════════════════════════════════════════
+     STATS BAR
+═══════════════════════════════════════════ -->
+<div class="ht-stats-bar">
+    <div class="container">
+        <div class="ht-stats-bar__inner">
+            <div class="ht-stat">
+                <i class="bi bi-box-seam-fill"></i>
+                <div>
+                    <b>500+</b>
+                    <span>Sản phẩm</span>
+                </div>
+            </div>
+            <div class="ht-stat-divider"></div>
+            <div class="ht-stat">
+                <i class="bi bi-star-fill"></i>
+                <div>
+                    <b>@ViewBag.AverageRating ★</b>
+                    <span>Đánh giá TB</span>
+                </div>
+            </div>
+            <div class="ht-stat-divider"></div>
+            <div class="ht-stat">
+                <i class="bi bi-truck"></i>
+                <div>
+                    <b style="color:#34d399;">Miễn phí</b>
+                    <span>Giao hàng 1M+</span>
+                </div>
+            </div>
+            <div class="ht-stat-divider"></div>
+            <div class="ht-stat">
+                <i class="bi bi-shield-check-fill"></i>
+                <div>
+                    <b>Chính hãng</b>
+                    <span>Bảo hành toàn quốc</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     NỘI DUNG TRANG CHỦ (bọc trong container)
+═══════════════════════════════════════════ -->
+<div class="container home-body">
+
+    <!-- SẢN PHẨM NỔI BẬT -->
+    <section class="mt-4">
+        <div class="section-header">
+            <h2>Sản phẩm nổi bật</h2>
+            <a asp-controller="Product" asp-action="Index">Xem tất cả &#x2192;</a>
+        </div>
+        <div class="category-pills">
+            <button class="category-pill active" data-filter="all">Tất cả</button>
+            <button class="category-pill" data-filter="Bàn phím gaming">Bàn phím</button>
+            <button class="category-pill" data-filter="Tai nghe gaming">Tai nghe</button>
+            <button class="category-pill" data-filter="Ghế gaming">Ghế</button>
+            <button class="category-pill" data-filter="Chuột gaming">Chuột</button>
+        </div>
+        <div class="product-grid" id="featured-grid">
+            @foreach (var product in Model)
+            {
+                var brandSlug = product.Brand.Name.ToLower().Replace(" ", "");
+                <article class="product-card" data-category="@product.Category.Name">
+                    <div class="card-actions-overlay">
+                        <form asp-controller="Wishlist" asp-action="Add" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <button type="submit" class="card-action-btn" title="Yêu thích">
+                                <i class="bi bi-heart"></i>
+                            </button>
+                        </form>
+                        <form asp-controller="Comparison" asp-action="Add" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <button type="submit" class="card-action-btn" title="So sánh">
+                                <i class="bi bi-arrow-left-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <a asp-controller="Product" asp-action="Details" asp-route-id="@product.Id">
+                        <span class="product-card-brand-chip brand-chip-@brandSlug">@product.Brand.Name</span>
+                        <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
+                        <div class="body">
+                            <h3>@product.Name</h3>
+                            <p class="meta">@product.Brand.Name &middot; @product.Category.Name</p>
+                        </div>
+                    </a>
+                    <div class="card-footer">
+                        <span class="price">@product.Price.ToString("N0") &#x111;</span>
+                    </div>
+                    <div class="card-cart-overlay">
+                        <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <input type="hidden" name="quantity" value="1" />
+                            <button type="submit" class="btn-cart" title="Thêm vào giỏ">
+                                <i class="bi bi-cart-plus-fill"></i> Thêm vào giỏ
+                            </button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <!-- FLASH SALE -->
+    <div class="flash-sale">
+        <div class="flash-sale-text">
+            <h3>&#x1F525; Flash Sale &mdash; Giảm đến 30%</h3>
+            <p>Chỉ còn hôm nay &middot; Hàng có hạn, nhanh tay kẻo lỡ!</p>
+            <div class="flash-progress">
+                <div class="flash-progress-bar" style="width: 70%;"></div>
+            </div>
+            <span class="flash-sold-text">Đã bán 70% — Chỉ còn vài sản phẩm!</span>
+        </div>
+        <a asp-controller="Product" asp-action="Deals" class="btn">Xem ngay &#x2192;</a>
+    </div>
+
+    <!-- MUA THEO THƯƠNG HIỆU -->
+    <section>
+        <div class="section-header">
+            <h2>Mua theo thương hiệu</h2>
+        </div>
+        <div class="brand-pills">
+            @if (ViewBag.Brands != null)
+            {
+                foreach (var brand in (IEnumerable<WebApplication1.Models.Brand>)ViewBag.Brands)
+                {
+                    <a asp-controller="Product" asp-action="Index" asp-route-BrandId="@brand.Id" class="brand-pill">@brand.Name</a>
+                }
+            }
+        </div>
+    </section>
+
+</div><!-- /container home-body -->
 
 @section Scripts {
 <script>
-    document.querySelectorAll('.category-pill').forEach(pill => {
-        pill.addEventListener('click', () => {
-            document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-            const filter = pill.dataset.filter;
-            document.querySelectorAll('#featured-grid .product-card').forEach(card => {
-                card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
-            });
+/* ── Category filter ── */
+document.querySelectorAll('.category-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+        document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const filter = pill.dataset.filter;
+        document.querySelectorAll('#featured-grid .product-card').forEach(card => {
+            card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
         });
     });
+});
+
+/* ── Hero Slider (trượt ngang phải → trái) ── */
+(function () {
+    const track  = document.getElementById('sliderTrack');
+    const dots   = document.querySelectorAll('.ht-dot');
+    const slides = document.querySelectorAll('.ht-slide');
+    const total  = slides.length;
+    let current  = 0;
+    let timer    = null;
+    let isAnimating = false;
+
+    function goTo(index, dir) {
+        if (isAnimating || index === current) return;
+        isAnimating = true;
+
+        const direction = (dir !== undefined) ? dir : (index > current ? 1 : -1);
+        const incoming  = slides[index];
+        const outgoing  = slides[current];
+
+        /* Đặt incoming ở bên phải (hoặc trái nếu prev) */
+        incoming.style.transition = 'none';
+        incoming.style.transform  = direction > 0 ? 'translateX(100%)' : 'translateX(-100%)';
+        incoming.classList.add('ht-slide--visible');
+
+        /* Kick reflow */
+        incoming.getBoundingClientRect();
+
+        /* Slide cả hai cùng lúc */
+        incoming.style.transition = 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+        outgoing.style.transition = 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+        incoming.style.transform  = 'translateX(0)';
+        outgoing.style.transform  = direction > 0 ? 'translateX(-100%)' : 'translateX(100%)';
+
+        incoming.addEventListener('transitionend', function handler() {
+            incoming.removeEventListener('transitionend', handler);
+            outgoing.classList.remove('ht-slide--visible');
+            outgoing.style.transition = 'none';
+            outgoing.style.transform  = 'translateX(100%)';
+            isAnimating = false;
+        });
+
+        /* Cập nhật dots */
+        dots.forEach(d => d.classList.remove('active'));
+        dots[index].classList.add('active');
+        current = index;
+    }
+
+    function next() { goTo((current + 1) % total, 1); }
+    function prev() { goTo((current - 1 + total) % total, -1); }
+
+    function startTimer() {
+        clearInterval(timer);
+        timer = setInterval(next, 5000);
+    }
+
+    /* Khởi động */
+    slides.forEach((s, i) => {
+        s.style.transform = i === 0 ? 'translateX(0)' : 'translateX(100%)';
+        if (i === 0) s.classList.add('ht-slide--visible');
+    });
+
+    document.getElementById('sliderNext').addEventListener('click', () => { next(); startTimer(); });
+    document.getElementById('sliderPrev').addEventListener('click', () => { prev(); startTimer(); });
+    dots.forEach(dot => {
+        dot.addEventListener('click', () => {
+            const idx = parseInt(dot.dataset.index, 10);
+            goTo(idx, idx > current ? 1 : -1);
+            startTimer();
+        });
+    });
+
+    /* Pause on hover */
+    const slider = document.getElementById('heroSlider');
+    slider.addEventListener('mouseenter', () => clearInterval(timer));
+    slider.addEventListener('mouseleave', startTimer);
+
+    startTimer();
+})();
 </script>
 }
