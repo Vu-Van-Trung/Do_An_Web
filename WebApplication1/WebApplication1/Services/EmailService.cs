@@ -18,12 +18,12 @@ namespace WebApplication1.Services
         public async Task SendOrderEmailAsync(string customerEmail, Order order)
         {
             // 1. Lấy thông tin cấu hình từ appsettings.json
-            var smtpServer = _configuration["EmailSettings:SmtpServer"];
+            var smtpServer = _configuration["EmailSettings:SmtpServer"] ?? "smtp.gmail.com";
             var port = int.Parse(_configuration["EmailSettings:Port"] ?? "587");
-            var senderName = _configuration["EmailSettings:SenderName"];
-            var senderEmail = _configuration["EmailSettings:SenderEmail"];
-            var username = _configuration["EmailSettings:Username"];
-            var password = _configuration["EmailSettings:Password"];
+            var senderName = _configuration["EmailSettings:SenderName"] ?? "NexusGear";
+            var senderEmail = _configuration["EmailSettings:SenderEmail"] ?? "";
+            var username = _configuration["EmailSettings:Username"] ?? "";
+            var password = _configuration["EmailSettings:Password"] ?? "";
 
             // 2. Tạo nội dung Email bằng MimeKit
             var email = new MimeMessage();

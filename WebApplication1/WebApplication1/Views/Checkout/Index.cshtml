@@ -266,19 +266,45 @@
                                     <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Tỉnh / Thành phố *</label>
                                     <select id="provinceSelect" class="form-control">
                                         <option value="">-- Chọn Tỉnh/Thành phố --</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Quận / Huyện *</label>
-                                    <select id="districtSelect" class="form-control" disabled>
-                                        <option value="">-- Chọn Quận/Huyện --</option>
+                                        <option>Hà Nội</option>
+                                        <option>TP. Hồ Chí Minh</option>
+                                        <option>Hải Phòng</option>
+                                        <option>Đà Nẵng</option>
+                                        <option>Cần Thơ</option>
+                                        <option>Lào Cai</option>
+                                        <option>Hà Giang</option>
+                                        <option>Cao Bằng</option>
+                                        <option>Lạng Sơn</option>
+                                        <option>Quảng Ninh</option>
+                                        <option>Sơn La</option>
+                                        <option>Bắc Ninh</option>
+                                        <option>Hà Nam</option>
+                                        <option>Thanh Hóa</option>
+                                        <option>Hà Tĩnh</option>
+                                        <option>Quảng Trị</option>
+                                        <option>Bình Định</option>
+                                        <option>Phú Yên</option>
+                                        <option>Ninh Thuận</option>
+                                        <option>Gia Lai</option>
+                                        <option>Đắk Lắk</option>
+                                        <option>Lâm Đồng</option>
+                                        <option>Tây Ninh</option>
+                                        <option>Long An</option>
+                                        <option>Đồng Nai</option>
+                                        <option>Tiền Giang</option>
+                                        <option>An Giang</option>
+                                        <option>Kiên Giang</option>
+                                        <option>Vĩnh Long</option>
+                                        <option>Bến Tre</option>
+                                        <option>Trà Vinh</option>
+                                        <option>Bạc Liêu</option>
+                                        <option>Cà Mau</option>
+                                        <option>Bình Phước</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Phường / Xã *</label>
-                                    <select id="wardSelect" class="form-control" disabled>
-                                        <option value="">-- Chọn Phường/Xã --</option>
-                                    </select>
+                                    <input type="text" id="wardInput" class="form-control" placeholder="Nhập tên phường, xã..." />
                                 </div>
                                 <div>
                                     <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Số nhà, tên đường (Địa chỉ cụ thể) *</label>
@@ -297,25 +323,22 @@
                         const newRadio = document.getElementById("addressTypeNew");
                         const newAddressWrapper = document.getElementById("newAddressWrapper");
                         const provinceSelect = document.getElementById("provinceSelect");
-                        const districtSelect = document.getElementById("districtSelect");
-                        const wardSelect = document.getElementById("wardSelect");
+                        const wardInput = document.getElementById("wardInput");
                         const specificAddressInput = document.getElementById("specificAddress");
                         const shippingAddressCombined = document.getElementById("shippingAddressCombined");
                         const form = shippingAddressCombined.closest("form");
 
                         function toggleAddressFields() {
-                            const isNew = newRadio && newRadio.checked || !defaultRadio;
+                            const isNew = (newRadio && newRadio.checked) || !defaultRadio;
                             if (isNew) {
                                 newAddressWrapper.style.display = "block";
                                 provinceSelect.required = true;
-                                districtSelect.required = true;
-                                wardSelect.required = true;
+                                wardInput.required = true;
                                 specificAddressInput.required = true;
                             } else {
                                 newAddressWrapper.style.display = "none";
                                 provinceSelect.required = false;
-                                districtSelect.required = false;
-                                wardSelect.required = false;
+                                wardInput.required = false;
                                 specificAddressInput.required = false;
                             }
                         }
@@ -327,71 +350,16 @@
 
                         toggleAddressFields();
 
-                        // Load provinces
-                        fetch("https://provinces.open-api.vn/api/p/")
-                            .then(res => res.json())
-                            .then(provinces => {
-                                provinces.forEach(p => {
-                                    const opt = document.createElement("option");
-                                    opt.value = p.code;
-                                    opt.textContent = p.name;
-                                    provinceSelect.appendChild(opt);
-                                });
-                            })
-                            .catch(err => console.error("Error loading provinces:", err));
-
-                        provinceSelect.addEventListener("change", function () {
-                            districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
-                            districtSelect.disabled = true;
-                            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
-                            wardSelect.disabled = true;
-
-                            const pCode = this.value;
-                            if (!pCode) return;
-
-                            fetch(`https://provinces.open-api.vn/api/p/${pCode}?depth=2`)
-                                .then(res => res.json())
-                                .then(data => {
-                                    data.districts.forEach(d => {
-                                        const opt = document.createElement("option");
-                                        opt.value = d.code;
-                                        opt.textContent = d.name;
-                                        districtSelect.appendChild(opt);
-                                    });
-                                    districtSelect.disabled = false;
-                                })
-                                .catch(err => console.error("Error loading districts:", err));
-                        });
-
-                        districtSelect.addEventListener("change", function () {
-                            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
-                            wardSelect.disabled = true;
-
-                            const dCode = this.value;
-                            if (!dCode) return;
-
-                            fetch(`https://provinces.open-api.vn/api/d/${dCode}?depth=2`)
-                                .then(res => res.json())
-                                .then(data => {
-                                    data.wards.forEach(w => {
-                                        const opt = document.createElement("option");
-                                        opt.value = w.code;
-                                        opt.textContent = w.name;
-                                        wardSelect.appendChild(opt);
-                                    });
-                                    wardSelect.disabled = false;
-                                })
-                                .catch(err => console.error("Error loading wards:", err));
-                        });
-
                         form.addEventListener("submit", function (e) {
-                            const isNew = newRadio && newRadio.checked || !defaultRadio;
+                            const isNew = (newRadio && newRadio.checked) || !defaultRadio;
                             if (isNew) {
-                                const provinceName = provinceSelect.options[provinceSelect.selectedIndex].text;
-                                const districtName = districtSelect.options[districtSelect.selectedIndex].text;
-                                const wardName = wardSelect.options[wardSelect.selectedIndex].text;
+                                const province = provinceSelect.options[provinceSelect.selectedIndex].text;
+                                const ward = wardInput.value.trim();
                                 const specific = specificAddressInput.value.trim();
-                                shippingAddressCombined.value = `${specific}, ${wardName}, ${districtName}, ${provinceName}`;
+
+                                if (!provinceSelect.value || !ward || !specific) return;
+
+                                shippingAddressCombined.value = `${specific}, ${ward}, ${province}`;
                             } else {
                                 shippingAddressCombined.value = document.getElementById("defaultAddressValue").value;
                             }

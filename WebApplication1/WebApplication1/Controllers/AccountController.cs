@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebApplication1.Data;
 using WebApplication1.Models;
 using WebApplication1.Services;
 using WebApplication1.ViewModels;
@@ -15,17 +16,20 @@ public class AccountController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ICartService _cartService;
     private readonly Repositories.IOrderRepository _orders;
+    private readonly ApplicationDbContext _context;
 
     public AccountController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         ICartService cartService,
-        Repositories.IOrderRepository orders)
+        Repositories.IOrderRepository orders,
+        ApplicationDbContext context)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _cartService = cartService;
         _orders = orders;
+        _context = context;
     }
 
     [HttpGet]
@@ -376,7 +380,7 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelOrder(int id)
     {
-        var order = await _orders.GetByIdAsync(id);
+        var order = await _orders.GetWithItemsAsync(id);
         if (order == null) return NotFound();
 
         var userId = _userManager.GetUserId(User);
@@ -389,6 +393,14 @@ public class AccountController : Controller
         {
             TempData["Error"] = "Chỉ có thể hủy đơn hàng ở trạng thái Chờ xử lý!";
             return RedirectToAction(nameof(OrderDetails), new { id });
+        }
+
+        // Hoàn kho khi hủy đơn
+        foreach (var item in order.Items)
+        {
+            var product = await _context.Products.FindAsync(item.ProductId);
+            if (product != null)
+                product.Stock += item.Quantity;
         }
 
         order.Status = OrderStatus.Cancelled;

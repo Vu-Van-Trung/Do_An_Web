@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"e:\\\\Do_An_Web\\\\WebApplication1\\\\WebApplication1\" -Recurse -Directory | Select-Object -First 20 | ForEach-Object { $_.FullName })",
+      "Bash(sqlcmd -S \"\\(localdb\\)\\\\mssqllocaldb\" -Q \"SELECT name FROM sys.databases WHERE name='NexusGearDb'\")"
+    ]
+  }
+}
