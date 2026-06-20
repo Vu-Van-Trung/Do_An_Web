@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using WebApplication1.Services;
 
 namespace WebApplication1.Controllers;
 
 public class CartController : Controller
 {
+    private const string SelectedItemsKey = "SelectedCartItems";
     private readonly ICartService _cartService;
 
     public CartController(ICartService cartService)
@@ -15,6 +17,19 @@ public class CartController : Controller
     public async Task<IActionResult> Index()
     {
         return View(await _cartService.GetCartAsync());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult CheckoutSelected([FromForm] int[] selectedItems)
+    {
+        if (selectedItems == null || selectedItems.Length == 0)
+        {
+            TempData["Error"] = "Vui lòng chọn ít nhất một sản phẩm để thanh toán.";
+            return RedirectToAction(nameof(Index));
+        }
+        HttpContext.Session.SetString(SelectedItemsKey, JsonSerializer.Serialize(selectedItems));
+        return RedirectToAction("Index", "Checkout");
     }
 
     [HttpPost]

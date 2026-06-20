@@ -17,6 +17,7 @@ namespace WebApplication1.Controllers;
 public class CheckoutController : Controller
 {
     private const decimal ShippingFee = 50000m;
+    private const string SelectedItemsKey = "SelectedCartItems";
     private readonly ICartService _cartService;
     private readonly IOrderRepository _orders;
     private readonly IDiscountRepository _discounts;
@@ -47,132 +48,31 @@ public class CheckoutController : Controller
         _hubContext = hubContext;
     }
 
-    private async Task<double> CalculateAutomaticDistanceAsync(string address)
+    private static ShippingClass GetDominantShippingClass(CartViewModel cart) =>
+        cart.Items.Count == 0
+            ? ShippingClass.Nho
+            : cart.Items.Select(i => i.ShippingClass).OrderByDescending(s => (int)s).First();
+
+    private async Task<CartViewModel> GetCheckoutCartAsync()
     {
-        if (string.IsNullOrWhiteSpace(address)) return 0;
-        try
+        var json = HttpContext.Session.GetString(SelectedItemsKey);
+        if (!string.IsNullOrEmpty(json))
         {
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "NexusGear-Ecommerce-App");
-            
-            // OpenStreetMap Nominatim Geocoding
-            var geocodeUrl = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(address + ", Việt Nam")}&format=json&limit=1";
-            var geocodeResponse = await client.GetAsync(geocodeUrl);
-            if (!geocodeResponse.IsSuccessStatusCode) return 0;
-            
-            var geocodeContent = await geocodeResponse.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(geocodeContent);
-            if (doc.RootElement.ValueKind != JsonValueKind.Array || doc.RootElement.GetArrayLength() == 0)
-            {
-                return 0;
-            }
-            
-            var first = doc.RootElement[0];
-            if (!first.TryGetProperty("lat", out var latProp) || !first.TryGetProperty("lon", out var lonProp))
-            {
-                return 0;
-            }
-            
-            string latStr = latProp.GetString() ?? "";
-            string lonStr = lonProp.GetString() ?? "";
-            
-            if (!double.TryParse(latStr, System.Globalization.CultureInfo.InvariantCulture, out double lat) ||
-                !double.TryParse(lonStr, System.Globalization.CultureInfo.InvariantCulture, out double lon))
-            {
-                return 0;
-            }
-            
-            // OSRM Routing (Driving distance from shop: 10/80c Song Hành Xa Lộ Hà Nội, Tăng Nhơn Phú, Hồ Chí Minh, Việt Nam)
-            double startLat = 10.8407;
-            double startLon = 106.7808;
-            
-            var routeUrl = $"https://router.project-osrm.org/route/v1/driving/{startLon.ToString(System.Globalization.CultureInfo.InvariantCulture)},{startLat.ToString(System.Globalization.CultureInfo.InvariantCulture)};{lon.ToString(System.Globalization.CultureInfo.InvariantCulture)},{lat.ToString(System.Globalization.CultureInfo.InvariantCulture)}?overview=false";
-            var routeResponse = await client.GetAsync(routeUrl);
-            if (!routeResponse.IsSuccessStatusCode) return 0;
-            
-            var routeContent = await routeResponse.Content.ReadAsStringAsync();
-            using var routeDoc = JsonDocument.Parse(routeContent);
-            if (routeDoc.RootElement.TryGetProperty("routes", out var routesProp) && 
-                routesProp.ValueKind == JsonValueKind.Array && 
-                routesProp.GetArrayLength() > 0)
-            {
-                var route = routesProp[0];
-                if (route.TryGetProperty("distance", out var distProp))
-                {
-                    double distanceMeters = distProp.GetDouble();
-                    return distanceMeters / 1000.0; // convert to km
-                }
-            }
+            var ids = JsonSerializer.Deserialize<int[]>(json);
+            if (ids != null && ids.Length > 0)
+                return await _cartService.GetSelectedCartAsync(ids);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error in CalculateAutomaticDistanceAsync: {ex.Message}");
-        }
-        return 0;
+        return await _cartService.GetCartAsync();
     }
 
-    private decimal CalculateShippingFee(CartViewModel cart, string address, bool isNgoaiThanh, double distanceKm)
+    private void ClearSelectedItemsSession()
     {
-        // 1. Base shipping fee
-        decimal baseFee = 40000m;
-        
-        bool isHCM = !string.IsNullOrEmpty(address) && 
-                      (address.Contains("Hồ Chí Minh", StringComparison.OrdinalIgnoreCase) || 
-                       address.Contains("HCM", StringComparison.OrdinalIgnoreCase));
-
-        bool isOuter = isNgoaiThanh || !isHCM;
-
-        if (isOuter)
-        {
-            // Ngoại thành hoặc Tỉnh thành khác: Phí cố định 60.000 ₫ cho 20km đầu, cứ thêm 20km là cộng thêm 20.000 ₫
-            baseFee = 60000m;
-            if (distanceKm > 20)
-            {
-                var extraDistance = distanceKm - 20;
-                var blocks = Math.Ceiling(extraDistance / 20.0);
-                baseFee += (decimal)blocks * 20000m;
-            }
-        }
-        else
-        {
-            // Nội thành TP.HCM: 40.000 ₫ trong 10km, thêm 1km thêm 4.000 ₫
-            baseFee = 40000m;
-            if (distanceKm > 10)
-            {
-                baseFee += (decimal)(distanceKm - 10) * 4000m;
-            }
-        }
-
-        // 2. Phụ phí cồng kềnh: Ghế +15k, Bàn +30k
-        decimal bulkySurcharge = 0m;
-        if (cart?.Items != null)
-        {
-            foreach (var item in cart.Items)
-            {
-                if (item.IsBulky)
-                {
-                    if (item.Name.Contains("Bàn", StringComparison.OrdinalIgnoreCase))
-                    {
-                        bulkySurcharge += 30000m * item.Quantity;
-                    }
-                    else if (item.Name.Contains("Ghế", StringComparison.OrdinalIgnoreCase))
-                    {
-                        bulkySurcharge += 15000m * item.Quantity;
-                    }
-                    else
-                    {
-                        bulkySurcharge += 20000m * item.Quantity;
-                    }
-                }
-            }
-        }
-
-        return baseFee + bulkySurcharge;
+        HttpContext.Session.Remove(SelectedItemsKey);
     }
 
     public async Task<IActionResult> Index(int step = 1)
     {
-        var cart = await _cartService.GetCartAsync();
+        var cart = await GetCheckoutCartAsync();
         if (!cart.Items.Any())
             return RedirectToAction("Index", "Cart");
 
@@ -196,6 +96,9 @@ public class CheckoutController : Controller
         }
         ViewBag.UserVouchers = userVouchers;
 
+        var dominantClass = GetDominantShippingClass(cart);
+        ViewBag.CartShippingClassIndex = (int)dominantClass; // 0=Nho,1=Vua,2=CongKenh
+
         if (step == 1)
         {
             if (userId != null)
@@ -208,79 +111,19 @@ public class CheckoutController : Controller
                     vm.Shipping.ShippingAddress = user.Address ?? string.Empty;
                 }
             }
-
-            // Calculate shipping fee for Step 1 if default address is available
-            double defaultDist = 0;
-            bool defaultIsNgoai = false;
-            if (!string.IsNullOrEmpty(vm.Shipping.ShippingAddress))
-            {
-                defaultIsNgoai = !vm.Shipping.ShippingAddress.Contains("Hồ Chí Minh", StringComparison.OrdinalIgnoreCase) && 
-                                 !vm.Shipping.ShippingAddress.Contains("HCM", StringComparison.OrdinalIgnoreCase);
-                
-                if (TempData["DistanceKm"] is string distStr && double.TryParse(distStr, out var savedDist))
-                {
-                    defaultDist = savedDist;
-                }
-                else
-                {
-                    defaultDist = await CalculateAutomaticDistanceAsync(vm.Shipping.ShippingAddress);
-                }
-                
-                vm.Shipping.IsNgoaiThanh = defaultIsNgoai;
-                vm.Shipping.DistanceKm = defaultDist;
-
-                if (TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee))
-                {
-                    vm.ShippingFee = fee;
-                }
-                else
-                {
-                    vm.ShippingFee = CalculateShippingFee(cart, vm.Shipping.ShippingAddress, defaultIsNgoai, defaultDist);
-                    TempData["ShippingFee"] = vm.ShippingFee.ToString();
-                    TempData["IsNgoaiThanh"] = defaultIsNgoai.ToString();
-                    TempData["DistanceKm"] = defaultDist.ToString();
-                }
-            }
-            else
-            {
-                vm.ShippingFee = 40000m;
-            }
-
-            var originalShippingFee1 = !string.IsNullOrEmpty(vm.Shipping.ShippingAddress)
-                ? (TempData["ShippingFee"] is string originalFeeStr && decimal.TryParse(originalFeeStr, out var originalFee) 
-                    ? originalFee 
-                    : CalculateShippingFee(cart, vm.Shipping.ShippingAddress, defaultIsNgoai, defaultDist))
-                : 40000m;
-            ViewBag.OriginalShippingFee = originalShippingFee1;
-
-            // Apply free shipping discount in Step 1 if voucher is applied
-            var appliedCode1 = TempData["DiscountCode"]?.ToString() ?? HttpContext.Session.GetString("AppliedCouponCode");
-            if (!string.IsNullOrEmpty(appliedCode1))
-            {
-                var discount = await _discounts.GetActiveByCodeAsync(appliedCode1, cart.Subtotal);
-                if (discount != null && discount.PromotionType == PromotionType.FreeShipping)
-                {
-                    vm.ShippingFee = 0m;
-                }
-            }
-
             TempData.Keep();
         }
         else
         {
-            vm.Shipping.FullName = TempData["ShippingFullName"]?.ToString() ?? string.Empty;
-            vm.Shipping.Phone = TempData["ShippingPhone"]?.ToString() ?? string.Empty;
+            vm.Shipping.FullName    = TempData["ShippingFullName"]?.ToString() ?? string.Empty;
+            vm.Shipping.Phone       = TempData["ShippingPhone"]?.ToString() ?? string.Empty;
             vm.Shipping.ShippingAddress = TempData["ShippingAddress"]?.ToString() ?? string.Empty;
-            vm.Shipping.Notes = TempData["ShippingNotes"]?.ToString();
-            
-            if (TempData["IsNgoaiThanh"] is string isNgoaiStr && bool.TryParse(isNgoaiStr, out var isNgoai))
-            {
-                vm.Shipping.IsNgoaiThanh = isNgoai;
-            }
-            if (TempData["DistanceKm"] is string distStr && double.TryParse(distStr, out var dist))
-            {
-                vm.Shipping.DistanceKm = dist;
-            }
+            vm.Shipping.Notes       = TempData["ShippingNotes"]?.ToString();
+
+            if (TempData["ProvinceCode"] is string pcStr && int.TryParse(pcStr, out var pc))
+                vm.Shipping.ProvinceCode = pc;
+            if (TempData["SelectedService"] is string svcStr && Enum.TryParse<ShippingService>(svcStr, out var svc))
+                vm.Shipping.SelectedService = svc;
 
             if (TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee))
             {
@@ -288,12 +131,17 @@ public class CheckoutController : Controller
             }
             else
             {
-                vm.ShippingFee = CalculateShippingFee(cart, vm.Shipping.ShippingAddress, vm.Shipping.IsNgoaiThanh, vm.Shipping.DistanceKm);
+                var sc = GetDominantShippingClass(cart);
+                vm.ShippingFee = ShippingCalculator.GetFee(vm.Shipping.ProvinceCode, sc, vm.Shipping.SelectedService);
                 TempData["ShippingFee"] = vm.ShippingFee.ToString();
             }
 
-            var originalShippingFee = vm.ShippingFee;
-            ViewBag.OriginalShippingFee = originalShippingFee;
+            ViewBag.OriginalShippingFee = vm.ShippingFee;
+            if (dominantClass == ShippingClass.CongKenh)
+            {
+                var region = ShippingCalculator.GetRegion(vm.Shipping.ProvinceCode);
+                ViewBag.CongKenhIsFree = region == ShippingRegion.NoiThanhHCM;
+            }
 
             var appliedCode = TempData["DiscountCode"]?.ToString();
             if (string.IsNullOrEmpty(appliedCode))
@@ -309,21 +157,17 @@ public class CheckoutController : Controller
                         {
                             appliedCode = autoCode;
                             TempData["DiscountCode"] = autoCode;
-
                             var discountAmount = discount.DiscountType == DiscountType.Percent
                                 ? Math.Round(cart.Subtotal * discount.Value / 100, 0)
                                 : discount.Value;
-
                             if (discount.PromotionType == PromotionType.FreeShipping)
                             {
-                                discountAmount = 0m;
                                 vm.ShippingFee = 0m;
                             }
                             else
                             {
                                 discountAmount = Math.Min(discountAmount, cart.Subtotal);
                             }
-
                             HttpContext.Session.SetString("AppliedCouponCode", autoCode);
                             HttpContext.Session.SetString("DiscountAmount", discountAmount.ToString());
                         }
@@ -335,9 +179,7 @@ public class CheckoutController : Controller
             {
                 var discount = await _discounts.GetActiveByCodeAsync(appliedCode, cart.Subtotal);
                 if (discount != null && discount.PromotionType == PromotionType.FreeShipping)
-                {
                     vm.ShippingFee = 0m;
-                }
             }
 
             TempData.Keep();
@@ -356,7 +198,7 @@ public class CheckoutController : Controller
         foreach (var key in shippingKeys)
             ModelState.Remove(key);
 
-        var cart = await _cartService.GetCartAsync();
+        var cart = await GetCheckoutCartAsync();
         if (!ModelState.IsValid)
             return View("Index", new CheckoutViewModel
             {
@@ -365,15 +207,19 @@ public class CheckoutController : Controller
                 Cart = cart
             });
 
-        var shippingFee = CalculateShippingFee(cart, vm.Shipping.ShippingAddress, vm.Shipping.IsNgoaiThanh, vm.Shipping.DistanceKm);
-        TempData["ShippingFee"] = shippingFee.ToString();
+        var shippingClass = GetDominantShippingClass(cart);
+        var options       = ShippingCalculator.CalculateShippingFee(vm.Shipping.ProvinceCode, shippingClass);
+        var chosen        = options.FirstOrDefault(o => o.Service == vm.Shipping.SelectedService && !o.IsContactOnly)
+                         ?? options.FirstOrDefault(o => !o.IsContactOnly);
+        var shippingFee   = chosen?.Fee ?? 0m;
 
+        TempData["ShippingFee"]      = shippingFee.ToString();
+        TempData["ProvinceCode"]     = vm.Shipping.ProvinceCode.ToString();
+        TempData["SelectedService"]  = vm.Shipping.SelectedService.ToString();
         TempData["ShippingFullName"] = vm.Shipping.FullName;
-        TempData["ShippingPhone"] = vm.Shipping.Phone;
-        TempData["ShippingAddress"] = vm.Shipping.ShippingAddress;
-        TempData["ShippingNotes"] = vm.Shipping.Notes;
-        TempData["IsNgoaiThanh"] = vm.Shipping.IsNgoaiThanh.ToString();
-        TempData["DistanceKm"] = vm.Shipping.DistanceKm.ToString();
+        TempData["ShippingPhone"]    = vm.Shipping.Phone;
+        TempData["ShippingAddress"]  = vm.Shipping.ShippingAddress;
+        TempData["ShippingNotes"]    = vm.Shipping.Notes;
         TempData.Keep();
         return RedirectToAction(nameof(Index), new { step = 2 });
     }
@@ -382,7 +228,7 @@ public class CheckoutController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> PlaceOrder(PaymentViewModel model)
     {
-        var cart = await _cartService.GetCartAsync();
+        var cart = await GetCheckoutCartAsync();
         if (!cart.Items.Any())
             return RedirectToAction("Index", "Cart");
 
@@ -392,13 +238,19 @@ public class CheckoutController : Controller
         // Apply discount
         var discountCode = TempData["DiscountCode"]?.ToString();
         var discountAmount = 0m;
-        var shippingAddress = TempData["ShippingAddress"]?.ToString() ?? "";
-        var isNgoai = TempData["IsNgoaiThanh"] is string isNgoaiStr && bool.TryParse(isNgoaiStr, out var n) && n;
-        var dist = TempData["DistanceKm"] is string distStr && double.TryParse(distStr, out var d) ? d : 0.0;
-        
-        var shippingFee = TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee) 
-            ? fee 
-            : CalculateShippingFee(cart, shippingAddress, isNgoai, dist);
+
+        decimal shippingFee;
+        if (TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee))
+        {
+            shippingFee = fee;
+        }
+        else
+        {
+            var pc  = TempData["ProvinceCode"] is string pcStr && int.TryParse(pcStr, out var p) ? p : 0;
+            var svc = TempData["SelectedService"] is string svcStr && Enum.TryParse<ShippingService>(svcStr, out var s) ? s : ShippingService.Nhanh;
+            var sc  = GetDominantShippingClass(cart);
+            shippingFee = ShippingCalculator.GetFee(pc, sc, svc);
+        }
 
         if (!string.IsNullOrEmpty(discountCode))
         {
@@ -488,6 +340,7 @@ public class CheckoutController : Controller
         if (model.PaymentMethod != "VNPay")
         {
             await _cartService.ClearCartAsync();
+            ClearSelectedItemsSession();
             HttpContext.Session.Remove("AppliedCouponCode");
             HttpContext.Session.Remove("DiscountAmount");
 
@@ -548,6 +401,7 @@ public class CheckoutController : Controller
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
             await _cartService.ClearCartAsync();
+            ClearSelectedItemsSession();
             HttpContext.Session.Remove("AppliedCouponCode");
             HttpContext.Session.Remove("DiscountAmount");
 
@@ -599,7 +453,7 @@ public class CheckoutController : Controller
             return Json(new { success = true, code = "", discountAmount = 0m, message = "Đã bỏ áp dụng mã giảm giá." });
         }
 
-        var cart = await _cartService.GetCartAsync();
+        var cart = await GetCheckoutCartAsync();
         var discount = await _discounts.GetActiveByCodeAsync(req.Code, cart.Subtotal);
 
         if (discount == null)

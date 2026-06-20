@@ -61,11 +61,32 @@ public class CartService : ICartService
                 UnitPrice = c.Product.Price,
                 Quantity = c.Quantity,
                 Stock = c.Product.Stock,
-                IsBulky = (c.Product.Category != null && 
-                           (c.Product.Category.Name.Contains("Bàn", StringComparison.OrdinalIgnoreCase) || 
-                            c.Product.Category.Name.Contains("Ghế", StringComparison.OrdinalIgnoreCase))) ||
-                          c.Product.Name.Contains("Bàn", StringComparison.OrdinalIgnoreCase) ||
-                          c.Product.Name.Contains("Ghế", StringComparison.OrdinalIgnoreCase)
+                ShippingClass = c.Product.ShippingClass
+            }).ToList()
+        };
+    }
+
+    public async Task<CartViewModel> GetSelectedCartAsync(IEnumerable<int> cartItemIds)
+    {
+        var idSet = cartItemIds.ToHashSet();
+        var items = await CartQuery()
+            .Include(c => c.Product).ThenInclude(p => p.Brand)
+            .Include(c => c.Product.Category)
+            .Where(c => idSet.Contains(c.Id))
+            .ToListAsync();
+
+        return new CartViewModel
+        {
+            Items = items.Select(c => new CartLineViewModel
+            {
+                CartItemId = c.Id,
+                ProductId  = c.ProductId,
+                Name       = c.Product.Name,
+                ImageUrl   = c.Product.ImageUrl,
+                UnitPrice  = c.Product.Price,
+                Quantity   = c.Quantity,
+                Stock      = c.Product.Stock,
+                ShippingClass = c.Product.ShippingClass
             }).ToList()
         };
     }

@@ -2,17 +2,18 @@
 @{
     ViewData["Title"] = "Giỏ hàng";
 
-    // ĐỒNG BỘ KHUYẾN MÃI: Kiểm tra xem Session có lưu số tiền được giảm giá hay không
     var sessionDiscountCode = Context.Session.GetString("AppliedCouponCode") ?? "";
     var sessionDiscountAmountStr = Context.Session.GetString("DiscountAmount") ?? "0";
     decimal discountAmount = 0;
     decimal.TryParse(sessionDiscountAmountStr, out discountAmount);
-
-    // Tính toán số tiền thực tế cuối cùng khách cần trả
-    decimal finalTotal = Math.Max(0, Model.Subtotal - discountAmount);
 }
 
 <h1>Giỏ hàng</h1>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger" style="color:#f87171; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); padding:.75rem 1rem; border-radius:.5rem; margin-bottom:1rem;">@err</div>
+}
 
 @if (!Model.Items.Any())
 {
@@ -20,25 +21,49 @@
 }
 else
 {
+    <form id="checkoutForm" asp-controller="Cart" asp-action="CheckoutSelected" method="post" style="display:none;">
+        @Html.AntiForgeryToken()
+    </form>
     <div class="glass-panel" style="padding:1rem;">
         <div class="table-scroll">
             <table class="cart-table">
                 <thead>
-                    <tr><th>Sản phẩm</th><th>Đơn giá</th><th>SL</th><th>Thành tiền</th><th></th></tr>
+                    <tr>
+                        <th style="width:2.5rem;">
+                            <input type="checkbox" id="selectAll" title="Chọn tất cả" style="width:1.1rem;height:1.1rem;cursor:pointer;" />
+                        </th>
+                        <th>Sản phẩm</th>
+                        <th>Đơn giá</th>
+                        <th>SL</th>
+                        <th>Thành tiền</th>
+                        <th></th>
+                    </tr>
                 </thead>
                 <tbody>
                     @foreach (var item in Model.Items)
                     {
-                        <tr>
+                        <tr data-item-id="@item.CartItemId" data-line-total="@item.LineTotal">
                             <td>
-                                <strong>@item.Name</strong>
+                                <input type="checkbox" name="selectedItems" value="@item.CartItemId"
+                                       form="checkoutForm" class="item-checkbox"
+                                       style="width:1.1rem;height:1.1rem;cursor:pointer;" />
+                            </td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:.75rem;">
+                                    @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                    {
+                                        <img src="@item.ImageUrl" alt="@item.Name" style="width:52px;height:52px;object-fit:cover;border-radius:.4rem;" />
+                                    }
+                                    <strong>@item.Name</strong>
+                                </div>
                             </td>
                             <td>@item.UnitPrice.ToString("N0") ₫</td>
                             <td>
                                 <input type="number" min="1" max="@item.Stock" value="@item.Quantity"
-                                       data-cart-qty data-cart-item-id="@item.CartItemId" class="form-control" style="width:80px;" />
+                                       data-cart-qty data-cart-item-id="@item.CartItemId"
+                                       class="form-control" style="width:80px;" />
                             </td>
-                            <td>@item.LineTotal.ToString("N0") ₫</td>
+                            <td class="line-total">@item.LineTotal.ToString("N0") ₫</td>
                             <td>
                                 <form asp-action="Remove" method="post">
                                     <input type="hidden" name="cartItemId" value="@item.CartItemId" />
@@ -51,27 +76,121 @@ else
             </table>
         </div>
 
-        <div style="text-align:right; margin-top:1.5rem; font-size:1rem; line-height: 1.8;">
-            <p style="margin: 0;">
-                Tạm tính: <strong data-cart-subtotal>@Model.Subtotal.ToString("N0") ₫</strong>
+        <div style="text-align:right; margin-top:1.5rem; font-size:1rem; line-height:1.8;">
+            <p style="margin:0;">
+                Đã chọn: <strong id="selectedCount">0</strong> sản phẩm —
+                Tạm tính: <strong id="selectedSubtotal">0 ₫</strong>
             </p>
-
             @if (discountAmount > 0)
             {
-                <p style="margin: 0; color: #16a34a;" id="cart-discount-row">
-                    Giảm giá @(!string.IsNullOrEmpty(sessionDiscountCode) ? $"({sessionDiscountCode})" : ""):
-                    <strong id="cart-discount-value">-@discountAmount.ToString("N0") ₫</strong>
+                <p style="margin:0; color:#16a34a;">
+                    Giảm giá@(!string.IsNullOrEmpty(sessionDiscountCode) ? $" ({sessionDiscountCode})" : ""):
+                    <strong>-@discountAmount.ToString("N0") ₫</strong>
                 </p>
             }
-
-            <p style="font-size:1.3rem; margin-top:0.5rem; margin-bottom: 0; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 0.5rem;">
-                Tổng thanh toán: <strong style="color: var(--accent);" id="cart-final-total">@finalTotal.ToString("N0") ₫</strong>
-            </p>
         </div>
 
-        <div class="cart-actions" style="margin-top: 1.5rem;">
+        <div class="cart-actions" style="margin-top:1.5rem;">
             <a asp-controller="Product" asp-action="Index" class="btn btn-ghost">Tiếp tục mua</a>
-            <a asp-controller="Checkout" asp-action="Index" class="btn btn-primary">Thanh toán</a>
+            <button type="submit" form="checkoutForm" id="checkoutBtn" class="btn btn-primary" disabled>
+                Thanh toán sản phẩm đã chọn
+            </button>
         </div>
     </div>
+}
+
+@section Scripts {
+<script>
+(function () {
+    const rows = document.querySelectorAll('tr[data-item-id]');
+    const selectAll = document.getElementById('selectAll');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const selectedCountEl = document.getElementById('selectedCount');
+    const selectedSubtotalEl = document.getElementById('selectedSubtotal');
+
+    function fmt(n) {
+        return n.toLocaleString('vi-VN') + ' ₫';
+    }
+
+    function updateSummary() {
+        let count = 0;
+        let subtotal = 0;
+        document.querySelectorAll('.item-checkbox:checked').forEach(cb => {
+            count++;
+            const row = cb.closest('tr');
+            // Use current quantity and unit price recalculated from qty input
+            const qtyInput = row.querySelector('[data-cart-qty]');
+            const lineTotal = qtyInput
+                ? parseFloat(qtyInput.value) * parseFloat(row.dataset.unitPrice || 0)
+                : parseFloat(row.dataset.lineTotal || 0);
+            subtotal += lineTotal || parseFloat(row.dataset.lineTotal || 0);
+        });
+        if (selectedCountEl) selectedCountEl.textContent = count;
+        if (selectedSubtotalEl) selectedSubtotalEl.textContent = fmt(subtotal);
+        if (checkoutBtn) checkoutBtn.disabled = count === 0;
+        if (selectAll) {
+            const total = document.querySelectorAll('.item-checkbox').length;
+            selectAll.indeterminate = count > 0 && count < total;
+            selectAll.checked = count === total && total > 0;
+        }
+    }
+
+    // Preload unit prices into row dataset for live recalculation
+    rows.forEach(row => {
+        const lineTotal = parseFloat(row.dataset.lineTotal || 0);
+        const qtyInput = row.querySelector('[data-cart-qty]');
+        if (qtyInput) {
+            const qty = parseInt(qtyInput.value, 10) || 1;
+            row.dataset.unitPrice = (lineTotal / qty).toFixed(2);
+        }
+    });
+
+    document.querySelectorAll('.item-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateSummary);
+    });
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            document.querySelectorAll('.item-checkbox').forEach(cb => {
+                cb.checked = this.checked;
+            });
+            updateSummary();
+        });
+    }
+
+    // Sync line total display when qty changes (AJAX update)
+    document.querySelectorAll('[data-cart-qty]').forEach(input => {
+        input.addEventListener('change', function () {
+            const id = this.dataset.cartItemId;
+            const qty = parseInt(this.value, 10);
+            if (!qty || qty < 1) return;
+            fetch('@Url.Action("Update", "Cart")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? ''
+                },
+                body: `cartItemId=${id}&quantity=${qty}`
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    const row = this.closest('tr');
+                    if (row) {
+                        const unitPrice = parseFloat(row.dataset.unitPrice || 0);
+                        const newLine = unitPrice * qty;
+                        row.dataset.lineTotal = newLine.toFixed(0);
+                        const lineTotalEl = row.querySelector('.line-total');
+                        if (lineTotalEl) lineTotalEl.textContent = fmt(newLine);
+                    }
+                    updateSummary();
+                }
+            });
+        });
+    });
+
+    // Check all on page load
+    selectAll && (selectAll.checked = false);
+    updateSummary();
+})();
+</script>
 }

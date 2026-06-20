@@ -1,3 +1,5 @@
+using WebApplication1.Services;
+
 namespace WebApplication1.Models;
 
 public class Product
@@ -10,6 +12,7 @@ public class Product
     public string? ImageUrl { get; set; }
     public string? SecondaryImageUrls { get; set; }
     public bool IsActive { get; set; } = true;
+    public ShippingClass ShippingClass { get; set; } = ShippingClass.Nho;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public int CategoryId { get; set; }

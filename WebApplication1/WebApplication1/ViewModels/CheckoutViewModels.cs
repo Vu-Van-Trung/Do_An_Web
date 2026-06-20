@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using WebApplication1.Models;
+using WebApplication1.Services;
 using Microsoft.AspNetCore.Identity;
 
 
@@ -18,12 +19,9 @@ public class ShippingViewModel
 
     public string? Notes { get; set; }
 
-    [Display(Name = "Khu vực ngoại thành")]
-    public bool IsNgoaiThanh { get; set; } = false;
+    public int ProvinceCode { get; set; } = 0;
 
-    [Display(Name = "Khoảng cách (km)")]
-    [Range(0, 2000, ErrorMessage = "Khoảng cách phải từ 0 đến 2000 km")]
-    public double DistanceKm { get; set; } = 0;
+    public ShippingService SelectedService { get; set; } = ShippingService.Nhanh;
 }
 
 public class PaymentViewModel
