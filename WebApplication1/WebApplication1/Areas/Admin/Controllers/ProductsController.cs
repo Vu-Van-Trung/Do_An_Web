@@ -64,6 +64,7 @@ public class ProductsController : Controller
             CategoryId = product.CategoryId,
             BrandId = product.BrandId,
             ImageUrl = product.ImageUrl, // Giữ lại ImageUrl cũ để truyền sang Form hiển thị và nhận lại khi Post
+            SecondaryImageUrls = product.SecondaryImageUrls,
             IsActive = product.IsActive,
             Specifications = product.Specifications.Select(s => new SpecInput { Key = s.Key, Value = s.Value }).ToList()
         };
@@ -100,6 +101,24 @@ public class ProductsController : Controller
             }
         }
 
+        // Tối ưu hóa: Nếu admin chọn upload các file ảnh phụ mới VÀ sản phẩm hiện tại đang có các ảnh phụ cũ
+        // tiến hành xóa các file ảnh phụ cũ trên ổ đĩa Server.
+        if (model.SecondaryImageFiles != null && model.SecondaryImageFiles.Count > 0 && model.SecondaryImageFiles.Any(f => f.Length > 0) && !string.IsNullOrEmpty(product.SecondaryImageUrls))
+        {
+            var oldUrls = product.SecondaryImageUrls.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var oldUrl in oldUrls)
+            {
+                if (!oldUrl.Contains("placeholder.svg") && !oldUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    var oldFilePath = Path.Combine(_env.WebRootPath, oldUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
+            }
+        }
+
         _context.ProductSpecifications.RemoveRange(product.Specifications);
         await MapProductAsync(product, model);
         _products.Update(product);
@@ -121,6 +140,23 @@ public class ProductsController : Controller
             if (System.IO.File.Exists(filePath))
             {
                 System.IO.File.Delete(filePath);
+            }
+        }
+
+        // Tối ưu hóa: Xóa các tệp ảnh phụ vật lý trong thư mục uploads khi sản phẩm bị xóa
+        if (!string.IsNullOrEmpty(product.SecondaryImageUrls))
+        {
+            var oldUrls = product.SecondaryImageUrls.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var oldUrl in oldUrls)
+            {
+                if (!oldUrl.Contains("placeholder.svg") && !oldUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    var oldFilePath = Path.Combine(_env.WebRootPath, oldUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
             }
         }
 
@@ -154,6 +190,17 @@ public class ProductsController : Controller
             product.ImageUrl = "/images/products/placeholder.svg";
         }
 
+        // Cập nhật đường dẫn ảnh phụ: Ưu tiên các ảnh phụ mới upload -> Tiếp đến là đường dẫn ảnh phụ cũ từ Model
+        var newSecondaryPaths = await SaveSecondaryImagesAsync(model);
+        if (newSecondaryPaths.Count > 0)
+        {
+            product.SecondaryImageUrls = string.Join(",", newSecondaryPaths);
+        }
+        else if (!string.IsNullOrWhiteSpace(model.SecondaryImageUrls))
+        {
+            product.SecondaryImageUrls = model.SecondaryImageUrls;
+        }
+
         product.Specifications = model.Specifications
             .Where(s => !string.IsNullOrWhiteSpace(s.Key) && !string.IsNullOrWhiteSpace(s.Value))
             .Select(s => new ProductSpecification { Key = s.Key.Trim(), Value = s.Value.Trim() })
@@ -173,6 +220,26 @@ public class ProductsController : Controller
         await using var stream = System.IO.File.Create(path);
         await model.ImageFile.CopyToAsync(stream);
         return $"/images/uploads/{fileName}";
+    }
+
+    private async Task<List<string>> SaveSecondaryImagesAsync(ProductFormViewModel model)
+    {
+        if (model.SecondaryImageFiles == null || model.SecondaryImageFiles.Count == 0)
+            return new List<string>();
+
+        var list = new List<string>();
+        var uploads = Path.Combine(_env.WebRootPath, "images", "uploads");
+        Directory.CreateDirectory(uploads);
+        foreach (var file in model.SecondaryImageFiles)
+        {
+            if (file.Length == 0) continue;
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            var path = Path.Combine(uploads, fileName);
+            await using var stream = System.IO.File.Create(path);
+            await file.CopyToAsync(stream);
+            list.Add($"/images/uploads/{fileName}");
+        }
+        return list;
     }
 
     private async Task PopulateLookupsAsync(ProductFormViewModel? model = null)

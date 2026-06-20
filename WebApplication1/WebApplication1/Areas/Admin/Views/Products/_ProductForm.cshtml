@@ -33,6 +33,25 @@
         }
     </div>
 
+    <div style="margin-bottom:0.75rem;">
+        <label asp-for="SecondaryImageFiles">Tải các ảnh phụ lên (chọn nhiều ảnh)</label>
+        <input asp-for="SecondaryImageFiles" type="file" class="form-control" accept="image/*" multiple />
+        <input type="hidden" asp-for="SecondaryImageUrls" />
+
+        @if (Model.Id != 0 && !string.IsNullOrEmpty(Model.SecondaryImageUrls))
+        {
+            <div style="margin-top:0.5rem; padding:0.5rem; border:1px solid #ddd; background-color: rgba(255,255,255,0.1); display:block; border-radius:4px;">
+                <span style="font-size:0.85rem; display:block; margin-bottom:0.25rem; color:#777;">Các ảnh phụ hiện tại:</span>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    @foreach (var url in Model.SecondaryImageUrls.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <img src="@url" alt="Secondary Image" style="max-height: 80px; object-fit: contain; border-radius: 4px; border:1px solid rgba(255,255,255,0.2); padding:2px;" />
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
     <div style="margin-bottom:0.75rem;"><label><input asp-for="IsActive" /> Hiển thị</label></div>
 
     <h3>Thông số kỹ thuật</h3>

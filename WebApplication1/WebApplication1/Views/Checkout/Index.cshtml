@@ -266,45 +266,19 @@
                                     <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Tỉnh / Thành phố *</label>
                                     <select id="provinceSelect" class="form-control">
                                         <option value="">-- Chọn Tỉnh/Thành phố --</option>
-                                        <option>Hà Nội</option>
-                                        <option>TP. Hồ Chí Minh</option>
-                                        <option>Hải Phòng</option>
-                                        <option>Đà Nẵng</option>
-                                        <option>Cần Thơ</option>
-                                        <option>Lào Cai</option>
-                                        <option>Hà Giang</option>
-                                        <option>Cao Bằng</option>
-                                        <option>Lạng Sơn</option>
-                                        <option>Quảng Ninh</option>
-                                        <option>Sơn La</option>
-                                        <option>Bắc Ninh</option>
-                                        <option>Hà Nam</option>
-                                        <option>Thanh Hóa</option>
-                                        <option>Hà Tĩnh</option>
-                                        <option>Quảng Trị</option>
-                                        <option>Bình Định</option>
-                                        <option>Phú Yên</option>
-                                        <option>Ninh Thuận</option>
-                                        <option>Gia Lai</option>
-                                        <option>Đắk Lắk</option>
-                                        <option>Lâm Đồng</option>
-                                        <option>Tây Ninh</option>
-                                        <option>Long An</option>
-                                        <option>Đồng Nai</option>
-                                        <option>Tiền Giang</option>
-                                        <option>An Giang</option>
-                                        <option>Kiên Giang</option>
-                                        <option>Vĩnh Long</option>
-                                        <option>Bến Tre</option>
-                                        <option>Trà Vinh</option>
-                                        <option>Bạc Liêu</option>
-                                        <option>Cà Mau</option>
-                                        <option>Bình Phước</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Quận / Huyện *</label>
+                                    <select id="districtSelect" class="form-control" disabled>
+                                        <option value="">-- Chọn Quận/Huyện --</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Phường / Xã *</label>
-                                    <input type="text" id="wardInput" class="form-control" placeholder="Nhập tên phường, xã..." />
+                                    <select id="wardSelect" class="form-control" disabled>
+                                        <option value="">-- Chọn Phường/Xã --</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Số nhà, tên đường (Địa chỉ cụ thể) *</label>
@@ -323,7 +297,8 @@
                         const newRadio = document.getElementById("addressTypeNew");
                         const newAddressWrapper = document.getElementById("newAddressWrapper");
                         const provinceSelect = document.getElementById("provinceSelect");
-                        const wardInput = document.getElementById("wardInput");
+                        const districtSelect = document.getElementById("districtSelect");
+                        const wardSelect = document.getElementById("wardSelect");
                         const specificAddressInput = document.getElementById("specificAddress");
                         const shippingAddressCombined = document.getElementById("shippingAddressCombined");
                         const form = shippingAddressCombined.closest("form");
@@ -333,12 +308,14 @@
                             if (isNew) {
                                 newAddressWrapper.style.display = "block";
                                 provinceSelect.required = true;
-                                wardInput.required = true;
+                                districtSelect.required = true;
+                                wardSelect.required = true;
                                 specificAddressInput.required = true;
                             } else {
                                 newAddressWrapper.style.display = "none";
                                 provinceSelect.required = false;
-                                wardInput.required = false;
+                                districtSelect.required = false;
+                                wardSelect.required = false;
                                 specificAddressInput.required = false;
                             }
                         }
@@ -350,22 +327,450 @@
 
                         toggleAddressFields();
 
-                        form.addEventListener("submit", function (e) {
+                        // Dynamic administrative divisions loader
+                        fetch("https://provinces.open-api.vn/api/p/")
+                            .then(res => res.json())
+                            .then(provinces => {
+                                provinces.forEach(p => {
+                                    const opt = document.createElement("option");
+                                    opt.value = p.code;
+                                    opt.textContent = p.name;
+                                    provinceSelect.appendChild(opt);
+                                });
+                            })
+                            .catch(err => console.error("Error loading provinces:", err));
+
+                        provinceSelect.addEventListener("change", function () {
+                            districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
+                            districtSelect.disabled = true;
+                            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+                            wardSelect.disabled = true;
+
+                            const pCode = this.value;
+                            if (!pCode) {
+                                updateCombinedAddress();
+                                return;
+                            }
+
+                            fetch(`https://provinces.open-api.vn/api/p/${pCode}?depth=2`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    data.districts.forEach(d => {
+                                        const opt = document.createElement("option");
+                                        opt.value = d.code;
+                                        opt.textContent = d.name;
+                                        districtSelect.appendChild(opt);
+                                    });
+                                    districtSelect.disabled = false;
+                                    updateCombinedAddress();
+                                })
+                                .catch(err => console.error("Error loading districts:", err));
+                        });
+
+                        districtSelect.addEventListener("change", function () {
+                            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+                            wardSelect.disabled = true;
+
+                            const dCode = this.value;
+                            if (!dCode) {
+                                updateCombinedAddress();
+                                return;
+                            }
+
+                            fetch(`https://provinces.open-api.vn/api/d/${dCode}?depth=2`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    data.wards.forEach(w => {
+                                        const opt = document.createElement("option");
+                                        opt.value = w.code;
+                                        opt.textContent = w.name;
+                                        wardSelect.appendChild(opt);
+                                    });
+                                    wardSelect.disabled = false;
+                                    updateCombinedAddress();
+                                })
+                                .catch(err => console.error("Error loading wards:", err));
+                        });
+
+                        wardSelect.addEventListener("change", updateCombinedAddress);
+                        specificAddressInput.addEventListener("input", updateCombinedAddress);
+
+                        function updateCombinedAddress() {
                             const isNew = (newRadio && newRadio.checked) || !defaultRadio;
                             if (isNew) {
-                                const province = provinceSelect.options[provinceSelect.selectedIndex].text;
-                                const ward = wardInput.value.trim();
+                                const provinceName = provinceSelect.value ? provinceSelect.options[provinceSelect.selectedIndex].text : "";
+                                const districtName = districtSelect.value ? districtSelect.options[districtSelect.selectedIndex].text : "";
+                                const wardName = wardSelect.value ? wardSelect.options[wardSelect.selectedIndex].text : "";
                                 const specific = specificAddressInput.value.trim();
 
-                                if (!provinceSelect.value || !ward || !specific) return;
-
-                                shippingAddressCombined.value = `${specific}, ${ward}, ${province}`;
+                                if (provinceName || districtName || wardName || specific) {
+                                    const parts = [specific, wardName, districtName, provinceName].filter(Boolean);
+                                    shippingAddressCombined.value = parts.join(", ");
+                                } else {
+                                    shippingAddressCombined.value = "";
+                                }
                             } else {
-                                shippingAddressCombined.value = document.getElementById("defaultAddressValue").value;
+                                shippingAddressCombined.value = document.getElementById("defaultAddressValue") ? document.getElementById("defaultAddressValue").value : "";
                             }
+                        }
+
+                        form.addEventListener("submit", function (e) {
+                            updateCombinedAddress();
                         });
                     });
                     </script>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label>Khu vực giao hàng *</label>
+                        <select asp-for="Shipping.IsNgoaiThanh" id="isNgoaiThanhSelect" class="form-control">
+                            <option value="false">Nội thành TP. Hồ Chí Minh (Cố định 40k dưới 10km, sau đó +4k/km)</option>
+                            <option value="true">Ngoại thành TP. Hồ Chí Minh / Tỉnh thành khác (Cố định 60k dưới 20km, cứ thêm 20km +20k)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="distanceWrapper" style="display:none;">
+                        <label asp-for="Shipping.DistanceKm">Khoảng cách giao hàng tự động (km)</label>
+                        <input asp-for="Shipping.DistanceKm" type="number" step="0.1" id="distanceInput" class="form-control" placeholder="Tự động tính km..." min="0" readonly />
+                        <span asp-validation-for="Shipping.DistanceKm" class="text-danger"></span>
+                    </div>
+
+                    <!-- Live Shipping Fee Estimate Preview -->
+                    <div class="glass-panel" id="shipping-estimate-box" style="padding:1rem; margin:1rem 0; border:1px dashed var(--accent); border-radius:10px; display:flex; justify-content:space-between; align-items:center; background:var(--accent-light);">
+                        <div>
+                            <strong style="font-size:0.88rem; display:block; color:var(--text);">Ước tính phí vận chuyển</strong>
+                            <span id="shipping-breakdown" style="font-size:0.75rem; color:var(--text-muted);">Đang tính toán...</span>
+                        </div>
+                        <span id="shipping-estimate-amount" style="font-size:1.15rem; font-weight:700; color:var(--accent);">40.000 ₫</span>
+                    </div>
+
+                    <script>
+                        // Dữ liệu giỏ hàng phục vụ tính phí ship trực tiếp client-side
+                        const cartItems = [
+                            @foreach (var item in Model.Cart.Items)
+                            {
+                                <text>{ name: "@Html.Raw(item.Name)", quantity: @item.Quantity, isBulky: @(item.IsBulky ? "true" : "false") },</text>
+                            }
+                        ];
+
+                        document.addEventListener("DOMContentLoaded", function () {
+                            const isNgoaiSelect = document.getElementById("isNgoaiThanhSelect");
+                            const distanceWrapper = document.getElementById("distanceWrapper");
+                            const distanceInput = document.getElementById("distanceInput");
+                            const breakdownEl = document.getElementById("shipping-breakdown");
+                            const amountEl = document.getElementById("shipping-estimate-amount");
+
+                            // Shop coordinates: 10/80c Song Hành Xa Lộ Hà Nội, Tăng Nhơn Phú, Hồ Chí Minh, Việt Nam
+                            const startLat = 10.8407;
+                            const startLon = 106.7808;
+
+                            async function fetchCoords(query) {
+                                try {
+                                    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
+                                    const res = await fetch(url, { headers: { "Accept-Language": "vi,en;q=0.9" } });
+                                    if (res.ok) {
+                                        const data = await res.json();
+                                        if (data && data.length > 0) {
+                                            return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error("OSM Geocoding error:", e);
+                                }
+                                return null;
+                            }
+
+                            async function getGeocodedCoordinates(specific, ward, district, province) {
+                                // Chain 1: Full address
+                                let q = `${specific}, ${ward}, ${district}, ${province}, Việt Nam`;
+                                let coords = await fetchCoords(q);
+                                if (coords) return coords;
+
+                                // Chain 2: Ward + District + Province
+                                if (ward && district) {
+                                    q = `${ward}, ${district}, ${province}, Việt Nam`;
+                                    coords = await fetchCoords(q);
+                                    if (coords) return coords;
+                                }
+
+                                // Chain 3: District + Province
+                                if (district) {
+                                    q = `${district}, ${province}, Việt Nam`;
+                                    coords = await fetchCoords(q);
+                                    if (coords) return coords;
+                                }
+
+                                // Chain 4: Province only
+                                q = `${province}, Việt Nam`;
+                                return await fetchCoords(q);
+                            }
+
+                            async function getActualDistanceOSM(specific, ward, district, province) {
+                                const coords = await getGeocodedCoordinates(specific, ward, district, province);
+                                if (!coords) return null;
+
+                                try {
+                                    const routeUrl = `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${coords.lon},${coords.lat}?overview=false`;
+                                    const routeResponse = await fetch(routeUrl);
+                                    if (!routeResponse.ok) return null;
+                                    
+                                    const routeData = await routeResponse.json();
+                                    if (!routeData.routes || routeData.routes.length === 0) return null;
+
+                                    const distanceMeters = routeData.routes[0].distance;
+                                    return distanceMeters / 1000.0; // km
+                                } catch (e) {
+                                    console.error("OSRM Routing error:", e);
+                                    return null;
+                                }
+                            }
+
+                            async function getActualDistanceOSMSingle(address) {
+                                const coords = await fetchCoords(address + ", Việt Nam");
+                                if (!coords) return null;
+
+                                try {
+                                    const routeUrl = `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${coords.lon},${coords.lat}?overview=false`;
+                                    const routeResponse = await fetch(routeUrl);
+                                    if (!routeResponse.ok) return null;
+                                    
+                                    const routeData = await routeResponse.json();
+                                    if (!routeData.routes || routeData.routes.length === 0) return null;
+
+                                    const distanceMeters = routeData.routes[0].distance;
+                                    return distanceMeters / 1000.0; // km
+                                } catch (e) {
+                                    console.error("OSRM Routing error:", e);
+                                    return null;
+                                }
+                            }
+
+                            function calculateAutomaticDistance(address) {
+                                if (!address) return 0;
+                                const addr = address.toLowerCase();
+                                
+                                // 1. Check province
+                                if (addr.includes("hồ chí minh") || addr.includes("hcm")) {
+                                    if (addr.includes("quận 7") || addr.includes("q.7") || addr.includes("q7")) return 12.5;
+                                    if (addr.includes("quận 12") || addr.includes("q.12") || addr.includes("q12")) return 18.0;
+                                    if (addr.includes("bình tân")) return 16.0;
+                                    if (addr.includes("thủ đức")) return 5.0; // Rất gần Tăng Nhơn Phú
+                                    if (addr.includes("tăng nhơn phú")) return 1.5;
+                                    if (addr.includes("hóc môn")) return 22.0;
+                                    if (addr.includes("bình chánh")) return 25.0;
+                                    if (addr.includes("nhà bè")) return 28.0;
+                                    if (addr.includes("củ chi")) return 45.0;
+                                    if (addr.includes("cần giờ")) return 65.0;
+                                    
+                                    return 8.0;
+                                }
+                                
+                                if (addr.includes("bình dương")) return 30.0;
+                                if (addr.includes("đồng nai")) return 25.0;
+                                if (addr.includes("long an")) return 50.0;
+                                if (addr.includes("tây ninh")) return 90.0;
+                                if (addr.includes("vũng tàu") || addr.includes("bà rịa")) return 95.0;
+                                if (addr.includes("tiền giang")) return 80.0;
+                                if (addr.includes("bến tre")) return 100.0;
+                                if (addr.includes("vĩnh long")) return 130.0;
+                                if (addr.includes("cần thơ")) return 170.0;
+                                if (addr.includes("đồng tháp")) return 145.0;
+                                if (addr.includes("trà vinh")) return 140.0;
+                                
+                                if (addr.includes("đà nẵng")) return 960.0;
+                                if (addr.includes("hà nội")) return 1720.0;
+                                if (addr.includes("hải phòng")) return 1700.0;
+                                if (addr.includes("lâm đồng") || addr.includes("đà lạt")) return 310.0;
+                                if (addr.includes("khánh hòa") || addr.includes("nha trang")) return 430.0;
+                                
+                                return 150.0; // Tỉnh khác mặc định
+                            }
+
+                            function updateShippingEstimate() {
+                                const isNgoai = isNgoaiSelect.value === "true";
+                                const provinceSelect = document.getElementById("provinceSelect");
+                                const defaultRadio = document.getElementById("addressTypeDefault");
+                                
+                                let prov = provinceSelect ? (provinceSelect.options[provinceSelect.selectedIndex]?.text || "") : "";
+                                const isNew = (document.getElementById("addressTypeNew") && document.getElementById("addressTypeNew").checked) || !defaultRadio;
+                                
+                                let currentAddr = "";
+                                if (isNew) {
+                                    const districtSelect = document.getElementById("districtSelect");
+                                    const wardSelect = document.getElementById("wardSelect");
+                                    const distText = districtSelect ? (districtSelect.options[districtSelect.selectedIndex]?.text || "") : "";
+                                    const wardText = wardSelect ? (wardSelect.options[wardSelect.selectedIndex]?.text || "") : "";
+                                    const specificVal = document.getElementById("specificAddress").value.trim();
+
+                                    const parts = [specificVal, wardText, distText, prov].filter(Boolean);
+                                    currentAddr = parts.join(", ");
+                                } else {
+                                    currentAddr = document.getElementById("defaultAddressValue") ? document.getElementById("defaultAddressValue").value : "";
+                                }
+
+                                const isHCM = currentAddr.toLowerCase().includes("hồ chí minh") || currentAddr.toLowerCase().includes("hcm");
+                                distanceWrapper.style.display = "block";
+
+                                const dist = parseFloat(distanceInput.value) || 0;
+                                
+                                // 1. Base fee
+                                let baseFee = 40000;
+                                let explanation = "";
+                                
+                                const isOuter = isNgoai || !isHCM;
+                                
+                                 if (isOuter) {
+                                     baseFee = 60000;
+                                     explanation = `Ngoại thành / Liên tỉnh (${dist.toFixed(1)} km): Cố định 60.000 ₫`;
+                                     if (dist > 20) {
+                                         const extra = dist - 20;
+                                         const blocks = Math.ceil(extra / 20);
+                                         baseFee += blocks * 20000;
+                                         explanation += ` + ${new Intl.NumberFormat('vi-VN').format(blocks * 20000)} ₫ cho thêm ${blocks} block 20km`;
+                                     }
+                                 } else {
+                                     baseFee = 40000;
+                                     explanation = `Nội thành TP.HCM (${dist.toFixed(1)} km): Cố định 40.000 ₫`;
+                                     if (dist > 10) {
+                                         const extra = dist - 10;
+                                         baseFee += extra * 4000;
+                                         explanation += ` + ${new Intl.NumberFormat('vi-VN').format(extra * 4000)} ₫ cho thêm ${extra.toFixed(1)} km`;
+                                     }
+                                 }
+
+                                // 2. Bulky surcharge
+                                let bulkySurcharge = 0;
+                                let bulkyDetails = [];
+                                cartItems.forEach(item => {
+                                    if (item.isBulky) {
+                                        if (item.name.toLowerCase().includes("bàn")) {
+                                            const surcharge = 30000 * item.quantity;
+                                            bulkySurcharge += surcharge;
+                                            bulkyDetails.push(`Phụ phí Bàn: +${new Intl.NumberFormat('vi-VN').format(surcharge)} ₫ (${item.quantity} cái)`);
+                                        } else if (item.name.toLowerCase().includes("ghế")) {
+                                            const surcharge = 15000 * item.quantity;
+                                            bulkySurcharge += surcharge;
+                                            bulkyDetails.push(`Phụ phí Ghế: +${new Intl.NumberFormat('vi-VN').format(surcharge)} ₫ (${item.quantity} cái)`);
+                                        } else {
+                                            const surcharge = 20000 * item.quantity;
+                                            bulkySurcharge += surcharge;
+                                            bulkyDetails.push(`Cồng kềnh: +${new Intl.NumberFormat('vi-VN').format(surcharge)} ₫ (${item.quantity} cái)`);
+                                        }
+                                    }
+                                });
+
+                                const totalFee = baseFee + bulkySurcharge;
+                                amountEl.textContent = new Intl.NumberFormat('vi-VN').format(totalFee) + ' ₫';
+                                
+                                if (bulkyDetails.length > 0) {
+                                    breakdownEl.innerHTML = `${explanation}<br>${bulkyDetails.join('<br>')}`;
+                                } else {
+                                    breakdownEl.textContent = explanation;
+                                }
+                            }
+
+                            if (isNgoaiSelect && distanceInput) {
+                                isNgoaiSelect.addEventListener("change", updateShippingEstimate);
+
+                                // Detect initial states
+                                const provinceSelect = document.getElementById("provinceSelect");
+                                const districtSelect = document.getElementById("districtSelect");
+                                const wardSelect = document.getElementById("wardSelect");
+                                const specificAddressInput = document.getElementById("specificAddress");
+                                const defaultRadio = document.getElementById("addressTypeDefault");
+                                
+                                let lastRequestTime = 0;
+
+                                async function handleAddressStateChange() {
+                                    const isNew = (document.getElementById("addressTypeNew") && document.getElementById("addressTypeNew").checked) || !defaultRadio;
+                                    let addressStr = "";
+                                    let prov = "";
+                                    let district = "";
+                                    let ward = "";
+                                    let specific = "";
+
+                                    if (isNew) {
+                                        prov = provinceSelect.value ? provinceSelect.options[provinceSelect.selectedIndex].text : "";
+                                        district = districtSelect.value ? districtSelect.options[districtSelect.selectedIndex].text : "";
+                                        ward = wardSelect.value ? wardSelect.options[wardSelect.selectedIndex].text : "";
+                                        specific = specificAddressInput.value.trim();
+
+                                        const parts = [specific, ward, district, prov].filter(Boolean);
+                                        addressStr = parts.join(", ");
+                                    } else {
+                                        addressStr = document.getElementById("defaultAddressValue") ? document.getElementById("defaultAddressValue").value : "";
+                                    }
+
+                                    const isHCM = addressStr.toLowerCase().includes("hồ chí minh") || addressStr.toLowerCase().includes("hcm");
+
+                                    // Check if new address form is incomplete
+                                    if (isNew && (!prov || !district || !ward || !specific)) {
+                                        distanceInput.value = "0.0";
+                                        breakdownEl.innerHTML = `<span style="color:var(--text-muted);">Vui lòng nhập đầy đủ thông tin địa chỉ để định vị.</span>`;
+                                        amountEl.textContent = "Chờ định vị...";
+                                        return;
+                                    }
+
+                                    // 1. Show loading indicator
+                                    breakdownEl.innerHTML = `<span style="color:var(--accent);">⏳ Đang định vị địa chỉ và tính toán khoảng cách thực tế từ cửa hàng...</span>`;
+                                    amountEl.textContent = "...";
+
+                                    // Debounce
+                                    const reqTime = Date.now();
+                                    lastRequestTime = reqTime;
+
+                                    await new Promise(resolve => setTimeout(resolve, 800));
+                                    if (reqTime !== lastRequestTime) return;
+
+                                    let distance = null;
+                                    if (isNew) {
+                                        distance = await getActualDistanceOSM(specific, ward, district, prov);
+                                    } else if (addressStr) {
+                                        distance = await getActualDistanceOSMSingle(addressStr);
+                                    }
+
+                                    if (reqTime !== lastRequestTime) return;
+
+                                    if (distance === null) {
+                                        distanceInput.value = "0.0";
+                                        breakdownEl.innerHTML = `<span style="color:#ef4444; font-weight: 500;">⚠️ Không thể định vị địa chỉ này. Vui lòng kiểm tra lại.</span>`;
+                                        amountEl.textContent = "Chờ định vị...";
+                                        return;
+                                    }
+
+                                    distanceInput.value = distance.toFixed(1);
+
+                                    // Tự động chọn Nội thành vs Ngoại thành dựa trên khoảng cách km
+                                    if (isHCM) {
+                                        isNgoaiSelect.value = distance > 15 ? "true" : "false";
+                                    } else {
+                                        isNgoaiSelect.value = "true";
+                                    }
+
+                                    updateShippingEstimate();
+                                }
+
+                                if (defaultRadio) {
+                                    defaultRadio.addEventListener("change", handleAddressStateChange);
+                                    const newRadio = document.getElementById("addressTypeNew");
+                                    if (newRadio) newRadio.addEventListener("change", handleAddressStateChange);
+                                }
+                                if (provinceSelect) {
+                                    provinceSelect.addEventListener("change", handleAddressStateChange);
+                                }
+                                if (districtSelect) {
+                                    districtSelect.addEventListener("change", handleAddressStateChange);
+                                }
+                                if (wardSelect) {
+                                    wardSelect.addEventListener("change", handleAddressStateChange);
+                                }
+                                if (specificAddressInput) {
+                                    specificAddressInput.addEventListener("input", handleAddressStateChange);
+                                }
+
+                                handleAddressStateChange();
+                            }
+                        });
+                    </script>
+
                     <div class="form-group">
                         <label asp-for="Shipping.Notes">Ghi chú đơn hàng</label>
                         <input asp-for="Shipping.Notes" class="form-control" placeholder="Giao giờ hành chính, gọi trước..." />

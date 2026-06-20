@@ -17,6 +17,13 @@ public class ShippingViewModel
     public string ShippingAddress { get; set; } = string.Empty;
 
     public string? Notes { get; set; }
+
+    [Display(Name = "Khu vực ngoại thành")]
+    public bool IsNgoaiThanh { get; set; } = false;
+
+    [Display(Name = "Khoảng cách (km)")]
+    [Range(0, 1000, ErrorMessage = "Khoảng cách phải từ 0 đến 1000 km")]
+    public double DistanceKm { get; set; } = 0;
 }
 
 public class PaymentViewModel
@@ -188,6 +195,8 @@ public class ProductFormViewModel
 
     public string? ImageUrl { get; set; }
     public IFormFile? ImageFile { get; set; }
+    public string? SecondaryImageUrls { get; set; }
+    public List<IFormFile>? SecondaryImageFiles { get; set; }
     public bool IsActive { get; set; } = true;
     public List<SpecInput> Specifications { get; set; } = new();
 }

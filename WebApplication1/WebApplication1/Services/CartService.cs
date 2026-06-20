@@ -47,6 +47,7 @@ public class CartService : ICartService
         var items = await CartQuery()
             .Include(c => c.Product)
             .ThenInclude(p => p.Brand)
+            .Include(c => c.Product.Category)
             .ToListAsync();
 
         return new CartViewModel
@@ -59,7 +60,12 @@ public class CartService : ICartService
                 ImageUrl = c.Product.ImageUrl,
                 UnitPrice = c.Product.Price,
                 Quantity = c.Quantity,
-                Stock = c.Product.Stock
+                Stock = c.Product.Stock,
+                IsBulky = (c.Product.Category != null && 
+                           (c.Product.Category.Name.Contains("Bàn", StringComparison.OrdinalIgnoreCase) || 
+                            c.Product.Category.Name.Contains("Ghế", StringComparison.OrdinalIgnoreCase))) ||
+                          c.Product.Name.Contains("Bàn", StringComparison.OrdinalIgnoreCase) ||
+                          c.Product.Name.Contains("Ghế", StringComparison.OrdinalIgnoreCase)
             }).ToList()
         };
     }

@@ -9,6 +9,7 @@ public class CartLineViewModel
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public int Stock { get; set; }
+    public bool IsBulky { get; set; }
     public decimal LineTotal => UnitPrice * Quantity;
 }
 

@@ -8,6 +8,7 @@ public class Product
     public decimal Price { get; set; }
     public int Stock { get; set; }
     public string? ImageUrl { get; set; }
+    public string? SecondaryImageUrls { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -20,4 +21,5 @@ public class Product
     public ICollection<ProductSpecification> Specifications { get; set; } = new List<ProductSpecification>();
     public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public ICollection<ProductReview> Reviews { get; set; } = new List<ProductReview>();
 }

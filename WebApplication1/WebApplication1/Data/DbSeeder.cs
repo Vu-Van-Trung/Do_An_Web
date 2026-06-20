@@ -80,27 +80,35 @@ public static class DbSeeder
         {
             CreateProduct("Razer DeathAdder V3 Pro", "Chuột gaming không dây với cảm biến Focus Pro 30K.", 2890000, 25,
                 chuot.Id, brands[0].Id, "/images/products/placeholder.svg",
+                "/images/products/placeholder.svg?color=black,/images/products/placeholder.svg?angle=side,/images/products/placeholder.svg?angle=bottom",
                 ("DPI", "30000"), ("Connection", "Wireless"), ("Weight", "63g")),
             CreateProduct("Logitech G Pro X Superlight 2", "Chuột không dây siêu nhẹ dành cho esport.", 3490000, 18,
                 chuot.Id, brands[1].Id, "/images/products/placeholder.svg",
+                "/images/products/placeholder.svg?color=white,/images/products/placeholder.svg?angle=front,/images/products/placeholder.svg?angle=back",
                 ("DPI", "32000"), ("Connection", "Wireless"), ("Weight", "60g")),
             CreateProduct("Corsair K70 RGB PRO", "Bàn phím cơ gaming với switch Cherry MX.", 4290000, 12,
                 banPhim.Id, brands[2].Id, "/images/products/placeholder.svg",
+                "/images/products/placeholder.svg?layout=us,/images/products/placeholder.svg?lighting=rgb,/images/products/placeholder.svg?switches=cherry",
                 ("Switch Type", "Cherry MX Red"), ("Connection", "Wired"), ("Layout", "Full-size")),
             CreateProduct("Keychron Q1 Pro", "Bàn phím cơ không dây tùy biến cao.", 3990000, 20,
                 banPhim.Id, brands[3].Id, "/images/products/placeholder.svg",
+                "/images/products/placeholder.svg?layout=ansi,/images/products/placeholder.svg?color=grey,/images/products/placeholder.svg?keycaps=pbt",
                 ("Switch Type", "Gateron Pro Brown"), ("Connection", "Wireless"), ("Layout", "75%")),
             CreateProduct("Razer BlackShark V2 Pro", "Tai nghe gaming không dây chuẩn THX.", 5490000, 15,
                 taiNghe.Id, brands[0].Id, "/images/products/placeholder.svg",
+                "/images/products/placeholder.svg?mic=on,/images/products/placeholder.svg?color=black,/images/products/placeholder.svg?case=carry",
                 ("Connection", "Wireless"), ("Driver", "50mm"), ("Mic", "Detachable")),
             CreateProduct("Logitech G733 Lightspeed", "Tai nghe không dây RGB nhẹ nhàng.", 2990000, 22,
                 taiNghe.Id, brands[1].Id, "/images/products/placeholder.svg",
+                "/images/products/placeholder.svg?color=blue,/images/products/placeholder.svg?lighting=on,/images/products/placeholder.svg?weight=light",
                 ("Connection", "Wireless"), ("Driver", "40mm"), ("Weight", "278g")),
             CreateProduct("Corsair T3 Rush", "Ghế gaming vải cao cấp, tay ghế 4D.", 8990000, 8,
                 gheGaming.Id, brands[2].Id, "/images/products/placeholder.svg",
+                "/images/products/placeholder.svg?material=cloth,/images/products/placeholder.svg?armrest=4d,/images/products/placeholder.svg?wheels=nylon",
                 ("Material", "Fabric"), ("Max Load", "120kg"), ("Recline", "160°")),
             CreateProduct("Razer Huntsman V3 Pro", "Bàn phím gaming optical analog.", 5990000, 10,
                 banPhim.Id, brands[0].Id, "/images/products/placeholder.svg",
+                "/images/products/placeholder.svg?switch=analog,/images/products/placeholder.svg?profile=gaming,/images/products/placeholder.svg?lighting=on",
                 ("Switch Type", "Analog Optical"), ("Connection", "Wired"), ("Layout", "Full-size"))
         };
 
@@ -478,7 +486,7 @@ public static class DbSeeder
     }
 
     private static Product CreateProduct(string name, string description, decimal price, int stock,
-        int categoryId, int brandId, string imageUrl, params ValueTuple<string, string>[] specs)
+        int categoryId, int brandId, string imageUrl, string? secondaryImageUrls, params ValueTuple<string, string>[] specs)
     {
         var product = new Product
         {
@@ -488,7 +496,8 @@ public static class DbSeeder
             Stock = stock,
             CategoryId = categoryId,
             BrandId = brandId,
-            ImageUrl = imageUrl
+            ImageUrl = imageUrl,
+            SecondaryImageUrls = secondaryImageUrls
         };
         foreach (var (key, value) in specs)
         {

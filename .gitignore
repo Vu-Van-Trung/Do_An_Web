@@ -37,4 +37,5 @@ bld/
 [Pp]ublish/
 
 # ASP.NET
-wwwroot/
+# Bỏ qua các file ảnh động do admin/user upload lên khi chạy ứng dụng
+**/wwwroot/images/uploads/

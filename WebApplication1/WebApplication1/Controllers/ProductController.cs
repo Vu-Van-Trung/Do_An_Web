@@ -33,6 +33,16 @@ public class ProductController : Controller
             SwitchTypes = await _products.GetSpecValuesAsync("Switch Type"),
             DpiOptions  = await _products.GetSpecValuesAsync("DPI")
         };
+
+        // Calculate rating per product
+        var productIds = vm.Products.Items.Select(p => p.Id).ToList();
+        var productRatings = await _context.ProductReviews
+            .Where(r => productIds.Contains(r.ProductId))
+            .GroupBy(r => r.ProductId)
+            .Select(g => new { ProductId = g.Key, AverageRating = g.Average(r => r.Rating), Count = g.Count() })
+            .ToDictionaryAsync(x => x.ProductId, x => (AverageRating: x.AverageRating, Count: x.Count));
+        ViewBag.ProductRatings = productRatings;
+
         var now = DateTime.UtcNow;
         List<Discount> activeDiscounts = new();
 
@@ -64,6 +74,12 @@ public class ProductController : Controller
         var product = await _products.GetWithDetailsAsync(id);
         if (product == null)
             return NotFound();
+
+        // Fallback for secondary images if database is not re-seeded
+        if (string.IsNullOrEmpty(product.SecondaryImageUrls) && !string.IsNullOrEmpty(product.ImageUrl))
+        {
+            product.SecondaryImageUrls = $"{product.ImageUrl}?v=1,{product.ImageUrl}?v=2,{product.ImageUrl}?v=3";
+        }
 
         var reviews = await _context.ProductReviews
             .Include(r => r.User)
@@ -97,6 +113,13 @@ public class ProductController : Controller
                     discountsQuery = discountsQuery.Where(d => d.PromotionType != PromotionType.FirstOrder);
                 }
                 activeDiscounts = await discountsQuery.ToListAsync();
+
+                // Check if user has purchased this product
+                bool hasPurchased = await _context.Orders
+                    .AnyAsync(o => o.UserId == userId && 
+                                   o.Status == OrderStatus.Completed && 
+                                   o.Items.Any(i => i.ProductId == id));
+                ViewBag.HasPurchased = hasPurchased;
             }
         }
 
@@ -121,6 +144,17 @@ public class ProductController : Controller
 
         var userId = _context.Users.Where(u => u.UserName == User.Identity!.Name).Select(u => u.Id).FirstOrDefault();
         if (string.IsNullOrEmpty(userId)) return Challenge();
+
+        // RÀNG BUỘC: chỉ khách hàng đã mua sản phẩm nào mới có thể đánh giá sản phẩm đó
+        bool hasPurchased = await _context.Orders
+            .AnyAsync(o => o.UserId == userId && 
+                           o.Status == OrderStatus.Completed && 
+                           o.Items.Any(i => i.ProductId == productId));
+        if (!hasPurchased)
+        {
+            TempData["Error"] = "Bạn chỉ có thể đánh giá sản phẩm này sau khi đã mua hàng thành công!";
+            return RedirectToAction(nameof(Details), new { id = productId });
+        }
 
         var review = new ProductReview
         {

@@ -8,6 +8,7 @@ using WebApplication1.Repositories;
 using WebApplication1.Services;
 using WebApplication1.ViewModels;
 using System.Text.Json;
+using System.Net.Http;
 using Microsoft.AspNetCore.SignalR; // BỔ SUNG: Thư viện SignalR
 
 namespace WebApplication1.Controllers;
@@ -46,21 +47,127 @@ public class CheckoutController : Controller
         _hubContext = hubContext;
     }
 
-    private decimal CalculateShippingFee(string address)
+    private async Task<double> CalculateAutomaticDistanceAsync(string address)
     {
-        if (string.IsNullOrWhiteSpace(address)) return 30000m;
-        bool isHCM = address.Contains("Hồ Chí Minh", StringComparison.OrdinalIgnoreCase) || 
-                     address.Contains("HCM", StringComparison.OrdinalIgnoreCase);
-        
-        var random = new Random();
-        if (isHCM)
+        if (string.IsNullOrWhiteSpace(address)) return 0;
+        try
         {
-            return random.Next(20, 31) * 1000m;
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", "NexusGear-Ecommerce-App");
+            
+            // OpenStreetMap Nominatim Geocoding
+            var geocodeUrl = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(address + ", Việt Nam")}&format=json&limit=1";
+            var geocodeResponse = await client.GetAsync(geocodeUrl);
+            if (!geocodeResponse.IsSuccessStatusCode) return 0;
+            
+            var geocodeContent = await geocodeResponse.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(geocodeContent);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array || doc.RootElement.GetArrayLength() == 0)
+            {
+                return 0;
+            }
+            
+            var first = doc.RootElement[0];
+            if (!first.TryGetProperty("lat", out var latProp) || !first.TryGetProperty("lon", out var lonProp))
+            {
+                return 0;
+            }
+            
+            string latStr = latProp.GetString() ?? "";
+            string lonStr = lonProp.GetString() ?? "";
+            
+            if (!double.TryParse(latStr, System.Globalization.CultureInfo.InvariantCulture, out double lat) ||
+                !double.TryParse(lonStr, System.Globalization.CultureInfo.InvariantCulture, out double lon))
+            {
+                return 0;
+            }
+            
+            // OSRM Routing (Driving distance from shop: 10/80c Song Hành Xa Lộ Hà Nội, Tăng Nhơn Phú, Hồ Chí Minh, Việt Nam)
+            double startLat = 10.8407;
+            double startLon = 106.7808;
+            
+            var routeUrl = $"https://router.project-osrm.org/route/v1/driving/{startLon.ToString(System.Globalization.CultureInfo.InvariantCulture)},{startLat.ToString(System.Globalization.CultureInfo.InvariantCulture)};{lon.ToString(System.Globalization.CultureInfo.InvariantCulture)},{lat.ToString(System.Globalization.CultureInfo.InvariantCulture)}?overview=false";
+            var routeResponse = await client.GetAsync(routeUrl);
+            if (!routeResponse.IsSuccessStatusCode) return 0;
+            
+            var routeContent = await routeResponse.Content.ReadAsStringAsync();
+            using var routeDoc = JsonDocument.Parse(routeContent);
+            if (routeDoc.RootElement.TryGetProperty("routes", out var routesProp) && 
+                routesProp.ValueKind == JsonValueKind.Array && 
+                routesProp.GetArrayLength() > 0)
+            {
+                var route = routesProp[0];
+                if (route.TryGetProperty("distance", out var distProp))
+                {
+                    double distanceMeters = distProp.GetDouble();
+                    return distanceMeters / 1000.0; // convert to km
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error in CalculateAutomaticDistanceAsync: {ex.Message}");
+        }
+        return 0;
+    }
+
+    private decimal CalculateShippingFee(CartViewModel cart, string address, bool isNgoaiThanh, double distanceKm)
+    {
+        // 1. Base shipping fee
+        decimal baseFee = 40000m;
+        
+        bool isHCM = !string.IsNullOrEmpty(address) && 
+                      (address.Contains("Hồ Chí Minh", StringComparison.OrdinalIgnoreCase) || 
+                       address.Contains("HCM", StringComparison.OrdinalIgnoreCase));
+
+        bool isOuter = isNgoaiThanh || !isHCM;
+
+        if (isOuter)
+        {
+            // Ngoại thành hoặc Tỉnh thành khác: Phí cố định 60.000 ₫ cho 20km đầu, cứ thêm 20km là cộng thêm 20.000 ₫
+            baseFee = 60000m;
+            if (distanceKm > 20)
+            {
+                var extraDistance = distanceKm - 20;
+                var blocks = Math.Ceiling(extraDistance / 20.0);
+                baseFee += (decimal)blocks * 20000m;
+            }
         }
         else
         {
-            return random.Next(50, 81) * 1000m;
+            // Nội thành TP.HCM: 40.000 ₫ trong 10km, thêm 1km thêm 4.000 ₫
+            baseFee = 40000m;
+            if (distanceKm > 10)
+            {
+                baseFee += (decimal)(distanceKm - 10) * 4000m;
+            }
         }
+
+        // 2. Phụ phí cồng kềnh: Ghế +15k, Bàn +30k
+        decimal bulkySurcharge = 0m;
+        if (cart?.Items != null)
+        {
+            foreach (var item in cart.Items)
+            {
+                if (item.IsBulky)
+                {
+                    if (item.Name.Contains("Bàn", StringComparison.OrdinalIgnoreCase))
+                    {
+                        bulkySurcharge += 30000m * item.Quantity;
+                    }
+                    else if (item.Name.Contains("Ghế", StringComparison.OrdinalIgnoreCase))
+                    {
+                        bulkySurcharge += 15000m * item.Quantity;
+                    }
+                    else
+                    {
+                        bulkySurcharge += 20000m * item.Quantity;
+                    }
+                }
+            }
+        }
+
+        return baseFee + bulkySurcharge;
     }
 
     public async Task<IActionResult> Index(int step = 1)
@@ -103,26 +210,47 @@ public class CheckoutController : Controller
             }
 
             // Calculate shipping fee for Step 1 if default address is available
+            double defaultDist = 0;
+            bool defaultIsNgoai = false;
             if (!string.IsNullOrEmpty(vm.Shipping.ShippingAddress))
             {
+                defaultIsNgoai = !vm.Shipping.ShippingAddress.Contains("Hồ Chí Minh", StringComparison.OrdinalIgnoreCase) && 
+                                 !vm.Shipping.ShippingAddress.Contains("HCM", StringComparison.OrdinalIgnoreCase);
+                
+                if (TempData["DistanceKm"] is string distStr && double.TryParse(distStr, out var savedDist))
+                {
+                    defaultDist = savedDist;
+                }
+                else
+                {
+                    defaultDist = await CalculateAutomaticDistanceAsync(vm.Shipping.ShippingAddress);
+                }
+                
+                vm.Shipping.IsNgoaiThanh = defaultIsNgoai;
+                vm.Shipping.DistanceKm = defaultDist;
+
                 if (TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee))
                 {
                     vm.ShippingFee = fee;
                 }
                 else
                 {
-                    vm.ShippingFee = CalculateShippingFee(vm.Shipping.ShippingAddress);
+                    vm.ShippingFee = CalculateShippingFee(cart, vm.Shipping.ShippingAddress, defaultIsNgoai, defaultDist);
                     TempData["ShippingFee"] = vm.ShippingFee.ToString();
+                    TempData["IsNgoaiThanh"] = defaultIsNgoai.ToString();
+                    TempData["DistanceKm"] = defaultDist.ToString();
                 }
             }
             else
             {
-                vm.ShippingFee = 50000m;
+                vm.ShippingFee = 40000m;
             }
 
             var originalShippingFee1 = !string.IsNullOrEmpty(vm.Shipping.ShippingAddress)
-                ? (TempData["ShippingFee"] is string originalFeeStr && decimal.TryParse(originalFeeStr, out var originalFee) ? originalFee : CalculateShippingFee(vm.Shipping.ShippingAddress))
-                : 50000m;
+                ? (TempData["ShippingFee"] is string originalFeeStr && decimal.TryParse(originalFeeStr, out var originalFee) 
+                    ? originalFee 
+                    : CalculateShippingFee(cart, vm.Shipping.ShippingAddress, defaultIsNgoai, defaultDist))
+                : 40000m;
             ViewBag.OriginalShippingFee = originalShippingFee1;
 
             // Apply free shipping discount in Step 1 if voucher is applied
@@ -145,13 +273,22 @@ public class CheckoutController : Controller
             vm.Shipping.ShippingAddress = TempData["ShippingAddress"]?.ToString() ?? string.Empty;
             vm.Shipping.Notes = TempData["ShippingNotes"]?.ToString();
             
+            if (TempData["IsNgoaiThanh"] is string isNgoaiStr && bool.TryParse(isNgoaiStr, out var isNgoai))
+            {
+                vm.Shipping.IsNgoaiThanh = isNgoai;
+            }
+            if (TempData["DistanceKm"] is string distStr && double.TryParse(distStr, out var dist))
+            {
+                vm.Shipping.DistanceKm = dist;
+            }
+
             if (TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee))
             {
                 vm.ShippingFee = fee;
             }
             else
             {
-                vm.ShippingFee = CalculateShippingFee(vm.Shipping.ShippingAddress);
+                vm.ShippingFee = CalculateShippingFee(cart, vm.Shipping.ShippingAddress, vm.Shipping.IsNgoaiThanh, vm.Shipping.DistanceKm);
                 TempData["ShippingFee"] = vm.ShippingFee.ToString();
             }
 
@@ -219,21 +356,24 @@ public class CheckoutController : Controller
         foreach (var key in shippingKeys)
             ModelState.Remove(key);
 
+        var cart = await _cartService.GetCartAsync();
         if (!ModelState.IsValid)
             return View("Index", new CheckoutViewModel
             {
                 Step = 1,
                 Shipping = vm.Shipping,
-                Cart = await _cartService.GetCartAsync()
+                Cart = cart
             });
 
-        var shippingFee = CalculateShippingFee(vm.Shipping.ShippingAddress);
+        var shippingFee = CalculateShippingFee(cart, vm.Shipping.ShippingAddress, vm.Shipping.IsNgoaiThanh, vm.Shipping.DistanceKm);
         TempData["ShippingFee"] = shippingFee.ToString();
 
         TempData["ShippingFullName"] = vm.Shipping.FullName;
         TempData["ShippingPhone"] = vm.Shipping.Phone;
         TempData["ShippingAddress"] = vm.Shipping.ShippingAddress;
         TempData["ShippingNotes"] = vm.Shipping.Notes;
+        TempData["IsNgoaiThanh"] = vm.Shipping.IsNgoaiThanh.ToString();
+        TempData["DistanceKm"] = vm.Shipping.DistanceKm.ToString();
         TempData.Keep();
         return RedirectToAction(nameof(Index), new { step = 2 });
     }
@@ -252,7 +392,7 @@ public class CheckoutController : Controller
         // Apply discount
         var discountCode = TempData["DiscountCode"]?.ToString();
         var discountAmount = 0m;
-        var shippingFee = TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee) ? fee : 50000m;
+        var shippingFee = TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee) ? fee : 25000m;
 
         if (!string.IsNullOrEmpty(discountCode))
         {

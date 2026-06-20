@@ -115,6 +115,16 @@
     </form>
 </section>
 
+@if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+{
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; margin-top:1rem;">
+        <h2 style="margin:0;">Quản lý sản phẩm</h2>
+        <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="btn btn-primary" style="font-size:0.9rem; padding:0.5rem 1.25rem; border-radius:8px; display:inline-flex; align-items:center; gap:0.4rem; background-color:var(--accent); color:#fff; text-decoration:none;">
+            <i class="bi bi-plus-circle-fill"></i> Thêm sản phẩm mới
+        </a>
+    </div>
+}
+
 <div class="product-grid">
     @foreach (var product in Model.Products.Items)
     {
@@ -136,7 +146,28 @@
                 <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
                 <div class="body">
                     <h3>@product.Name</h3>
-                    <p class="meta">@product.Brand.Name &middot; @product.Category.Name</p>
+                    <p class="meta" style="margin-bottom:0;">@product.Brand.Name &middot; @product.Category.Name</p>
+                    @{
+                        var ratings = ViewBag.ProductRatings as Dictionary<int, (double average, int count)>;
+                        double avg = 0;
+                        int count = 0;
+                        if (ratings != null && ratings.TryGetValue(product.Id, out var ratingInfo))
+                        {
+                            avg = ratingInfo.average;
+                            count = ratingInfo.count;
+                        }
+                    }
+                    <div class="product-card-rating" style="display:flex; align-items:center; gap:4px; font-size:0.8rem; margin-top:0.35rem; color:#f59e0b;">
+                        @if (count > 0)
+                        {
+                            <span>★ @avg.ToString("F1")</span>
+                            <span style="color:var(--text-muted);">(@count)</span>
+                        }
+                        else
+                        {
+                            <span style="color:var(--text-muted); font-size:0.75rem;">Chưa có đánh giá</span>
+                        }
+                    </div>
                 </div>
             </a>
             <div class="card-footer" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
@@ -157,14 +188,31 @@
                 }
             </div>
             <div class="card-cart-overlay">
-                <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="productId" value="@product.Id" />
-                    <input type="hidden" name="quantity" value="1" />
-                    <button type="submit" class="btn-cart" title="Thêm vào giỏ">
-                        <i class="bi bi-cart-plus-fill"></i> Thêm vào giỏ
-                    </button>
-                </form>
+                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                {
+                    <div style="display:flex; flex-direction:column; gap:0.4rem; width:100%; padding:0.5rem; align-items:center;">
+                        <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@product.Id" class="btn-cart" style="background-color:#eab308; color:#000; width:90%; justify-content:center; text-decoration:none;" title="Sửa sản phẩm">
+                            <i class="bi bi-pencil-square"></i> Sửa
+                        </a>
+                        <form asp-area="Admin" asp-controller="Products" asp-action="Delete" asp-route-id="@product.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');" style="width:90%; display:flex; justify-content:center; margin:0;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-cart" style="background-color:#ef4444; color:#fff; width:100%; justify-content:center; border:none; cursor:pointer;" title="Xóa sản phẩm">
+                                <i class="bi bi-trash-fill"></i> Xóa
+                            </button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@product.Id" />
+                        <input type="hidden" name="quantity" value="1" />
+                        <button type="submit" class="btn-cart" title="Thêm vào giỏ">
+                            <i class="bi bi-cart-plus-fill"></i> Thêm vào giỏ
+                        </button>
+                    </form>
+                }
             </div>
         </article>
     }
