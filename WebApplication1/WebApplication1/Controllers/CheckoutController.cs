@@ -392,7 +392,13 @@ public class CheckoutController : Controller
         // Apply discount
         var discountCode = TempData["DiscountCode"]?.ToString();
         var discountAmount = 0m;
-        var shippingFee = TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee) ? fee : 25000m;
+        var shippingAddress = TempData["ShippingAddress"]?.ToString() ?? "";
+        var isNgoai = TempData["IsNgoaiThanh"] is string isNgoaiStr && bool.TryParse(isNgoaiStr, out var n) && n;
+        var dist = TempData["DistanceKm"] is string distStr && double.TryParse(distStr, out var d) ? d : 0.0;
+        
+        var shippingFee = TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee) 
+            ? fee 
+            : CalculateShippingFee(cart, shippingAddress, isNgoai, dist);
 
         if (!string.IsNullOrEmpty(discountCode))
         {

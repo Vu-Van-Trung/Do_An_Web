@@ -22,7 +22,7 @@ public class ShippingViewModel
     public bool IsNgoaiThanh { get; set; } = false;
 
     [Display(Name = "Khoảng cách (km)")]
-    [Range(0, 1000, ErrorMessage = "Khoảng cách phải từ 0 đến 1000 km")]
+    [Range(0, 2000, ErrorMessage = "Khoảng cách phải từ 0 đến 2000 km")]
     public double DistanceKm { get; set; } = 0;
 }
 
