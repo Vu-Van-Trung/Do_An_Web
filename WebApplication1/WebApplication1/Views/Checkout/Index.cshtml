@@ -269,12 +269,6 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Quận / Huyện *</label>
-                                    <select id="districtSelect" class="form-control" disabled>
-                                        <option value="">-- Chọn Quận/Huyện --</option>
-                                    </select>
-                                </div>
-                                <div>
                                     <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Phường / Xã *</label>
                                     <select id="wardSelect" class="form-control" disabled>
                                         <option value="">-- Chọn Phường/Xã --</option>
@@ -297,7 +291,6 @@
                         const newRadio = document.getElementById("addressTypeNew");
                         const newAddressWrapper = document.getElementById("newAddressWrapper");
                         const provinceSelect = document.getElementById("provinceSelect");
-                        const districtSelect = document.getElementById("districtSelect");
                         const wardSelect = document.getElementById("wardSelect");
                         const specificAddressInput = document.getElementById("specificAddress");
                         const shippingAddressCombined = document.getElementById("shippingAddressCombined");
@@ -308,13 +301,11 @@
                             if (isNew) {
                                 newAddressWrapper.style.display = "block";
                                 provinceSelect.required = true;
-                                districtSelect.required = true;
                                 wardSelect.required = true;
                                 specificAddressInput.required = true;
                             } else {
                                 newAddressWrapper.style.display = "none";
                                 provinceSelect.required = false;
-                                districtSelect.required = false;
                                 wardSelect.required = false;
                                 specificAddressInput.required = false;
                             }
@@ -327,8 +318,7 @@
 
                         toggleAddressFields();
 
-                        // Dynamic administrative divisions loader
-                        fetch("https://provinces.open-api.vn/api/p/")
+                        fetch("https://provinces.open-api.vn/api/v2/p/")
                             .then(res => res.json())
                             .then(provinces => {
                                 provinces.forEach(p => {
@@ -341,8 +331,6 @@
                             .catch(err => console.error("Error loading provinces:", err));
 
                         provinceSelect.addEventListener("change", function () {
-                            districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
-                            districtSelect.disabled = true;
                             wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
                             wardSelect.disabled = true;
 
@@ -352,35 +340,11 @@
                                 return;
                             }
 
-                            fetch(`https://provinces.open-api.vn/api/p/${pCode}?depth=2`)
+                            fetch(`https://provinces.open-api.vn/api/v2/p/${pCode}?depth=2`)
                                 .then(res => res.json())
                                 .then(data => {
-                                    data.districts.forEach(d => {
-                                        const opt = document.createElement("option");
-                                        opt.value = d.code;
-                                        opt.textContent = d.name;
-                                        districtSelect.appendChild(opt);
-                                    });
-                                    districtSelect.disabled = false;
-                                    updateCombinedAddress();
-                                })
-                                .catch(err => console.error("Error loading districts:", err));
-                        });
-
-                        districtSelect.addEventListener("change", function () {
-                            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
-                            wardSelect.disabled = true;
-
-                            const dCode = this.value;
-                            if (!dCode) {
-                                updateCombinedAddress();
-                                return;
-                            }
-
-                            fetch(`https://provinces.open-api.vn/api/d/${dCode}?depth=2`)
-                                .then(res => res.json())
-                                .then(data => {
-                                    data.wards.forEach(w => {
+                                    const wards = data.wards || [];
+                                    wards.forEach(w => {
                                         const opt = document.createElement("option");
                                         opt.value = w.code;
                                         opt.textContent = w.name;
@@ -399,12 +363,11 @@
                             const isNew = (newRadio && newRadio.checked) || !defaultRadio;
                             if (isNew) {
                                 const provinceName = provinceSelect.value ? provinceSelect.options[provinceSelect.selectedIndex].text : "";
-                                const districtName = districtSelect.value ? districtSelect.options[districtSelect.selectedIndex].text : "";
                                 const wardName = wardSelect.value ? wardSelect.options[wardSelect.selectedIndex].text : "";
                                 const specific = specificAddressInput.value.trim();
 
-                                if (provinceName || districtName || wardName || specific) {
-                                    const parts = [specific, wardName, districtName, provinceName].filter(Boolean);
+                                if (provinceName || wardName || specific) {
+                                    const parts = [specific, wardName, provinceName].filter(Boolean);
                                     shippingAddressCombined.value = parts.join(", ");
                                 } else {
                                     shippingAddressCombined.value = "";
@@ -594,13 +557,11 @@
                                 
                                 let currentAddr = "";
                                 if (isNew) {
-                                    const districtSelect = document.getElementById("districtSelect");
                                     const wardSelect = document.getElementById("wardSelect");
-                                    const distText = districtSelect ? (districtSelect.options[districtSelect.selectedIndex]?.text || "") : "";
                                     const wardText = wardSelect ? (wardSelect.options[wardSelect.selectedIndex]?.text || "") : "";
                                     const specificVal = document.getElementById("specificAddress").value.trim();
 
-                                    const parts = [specificVal, wardText, distText, prov].filter(Boolean);
+                                    const parts = [specificVal, wardText, prov].filter(Boolean);
                                     currentAddr = parts.join(", ");
                                 } else {
                                     currentAddr = document.getElementById("defaultAddressValue") ? document.getElementById("defaultAddressValue").value : "";
@@ -670,50 +631,42 @@
                             if (isNgoaiSelect && distanceInput) {
                                 isNgoaiSelect.addEventListener("change", updateShippingEstimate);
 
-                                // Detect initial states
                                 const provinceSelect = document.getElementById("provinceSelect");
-                                const districtSelect = document.getElementById("districtSelect");
                                 const wardSelect = document.getElementById("wardSelect");
                                 const specificAddressInput = document.getElementById("specificAddress");
                                 const defaultRadio = document.getElementById("addressTypeDefault");
-                                
+
                                 let lastRequestTime = 0;
 
                                 async function handleAddressStateChange() {
                                     const isNew = (document.getElementById("addressTypeNew") && document.getElementById("addressTypeNew").checked) || !defaultRadio;
                                     let addressStr = "";
                                     let prov = "";
-                                    let district = "";
                                     let ward = "";
                                     let specific = "";
 
                                     if (isNew) {
                                         prov = provinceSelect.value ? provinceSelect.options[provinceSelect.selectedIndex].text : "";
-                                        district = districtSelect.value ? districtSelect.options[districtSelect.selectedIndex].text : "";
                                         ward = wardSelect.value ? wardSelect.options[wardSelect.selectedIndex].text : "";
                                         specific = specificAddressInput.value.trim();
 
-                                        const parts = [specific, ward, district, prov].filter(Boolean);
-                                        addressStr = parts.join(", ");
+                                        addressStr = [specific, ward, prov].filter(Boolean).join(", ");
                                     } else {
-                                        addressStr = document.getElementById("defaultAddressValue") ? document.getElementById("defaultAddressValue").value : "";
+                                        addressStr = document.getElementById("defaultAddressValue")?.value || "";
                                     }
 
                                     const isHCM = addressStr.toLowerCase().includes("hồ chí minh") || addressStr.toLowerCase().includes("hcm");
 
-                                    // Check if new address form is incomplete
-                                    if (isNew && (!prov || !district || !ward || !specific)) {
+                                    if (isNew && (!prov || !ward || !specific)) {
                                         distanceInput.value = "0.0";
                                         breakdownEl.innerHTML = `<span style="color:var(--text-muted);">Vui lòng nhập đầy đủ thông tin địa chỉ để định vị.</span>`;
                                         amountEl.textContent = "Chờ định vị...";
                                         return;
                                     }
 
-                                    // 1. Show loading indicator
                                     breakdownEl.innerHTML = `<span style="color:var(--accent);">⏳ Đang định vị địa chỉ và tính toán khoảng cách thực tế từ cửa hàng...</span>`;
                                     amountEl.textContent = "...";
 
-                                    // Debounce
                                     const reqTime = Date.now();
                                     lastRequestTime = reqTime;
 
@@ -722,7 +675,7 @@
 
                                     let distance = null;
                                     if (isNew) {
-                                        distance = await getActualDistanceOSM(specific, ward, district, prov);
+                                        distance = await getActualDistanceOSM(specific, ward, "", prov);
                                     } else if (addressStr) {
                                         distance = await getActualDistanceOSMSingle(addressStr);
                                     }
@@ -738,7 +691,6 @@
 
                                     distanceInput.value = distance.toFixed(1);
 
-                                    // Tự động chọn Nội thành vs Ngoại thành dựa trên khoảng cách km
                                     if (isHCM) {
                                         isNgoaiSelect.value = distance > 15 ? "true" : "false";
                                     } else {
@@ -753,18 +705,9 @@
                                     const newRadio = document.getElementById("addressTypeNew");
                                     if (newRadio) newRadio.addEventListener("change", handleAddressStateChange);
                                 }
-                                if (provinceSelect) {
-                                    provinceSelect.addEventListener("change", handleAddressStateChange);
-                                }
-                                if (districtSelect) {
-                                    districtSelect.addEventListener("change", handleAddressStateChange);
-                                }
-                                if (wardSelect) {
-                                    wardSelect.addEventListener("change", handleAddressStateChange);
-                                }
-                                if (specificAddressInput) {
-                                    specificAddressInput.addEventListener("input", handleAddressStateChange);
-                                }
+                                if (provinceSelect) provinceSelect.addEventListener("change", handleAddressStateChange);
+                                if (wardSelect) wardSelect.addEventListener("change", handleAddressStateChange);
+                                if (specificAddressInput) specificAddressInput.addEventListener("input", handleAddressStateChange);
 
                                 handleAddressStateChange();
                             }
