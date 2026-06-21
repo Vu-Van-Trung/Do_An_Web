@@ -1,0 +1,296 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NexusGear REST API",
+    "version": "1.0.0",
+    "description": "API đầy đủ cho nền tảng thương mại điện tử gaming gear NexusGear.\n\n**Xác thực:** Sử dụng cookie phiên (đăng nhập qua `POST /api/auth/login` trước)."
+  },
+  "servers": [{ "url": "" }],
+  "tags": [
+    { "name": "Auth",      "description": "Đăng nhập, đăng ký, thông tin tài khoản" },
+    { "name": "Products",  "description": "Danh sách và chi tiết sản phẩm" },
+    { "name": "Categories","description": "Danh mục sản phẩm" },
+    { "name": "Brands",    "description": "Thương hiệu" },
+    { "name": "Cart",      "description": "Giỏ hàng (session hoặc tài khoản)" },
+    { "name": "Orders",    "description": "Đặt hàng và tra cứu đơn hàng" },
+    { "name": "Wishlist",  "description": "Danh sách yêu thích (yêu cầu đăng nhập)" },
+    { "name": "Shipping",  "description": "Phí vận chuyển" },
+    { "name": "Discounts", "description": "Kiểm tra mã giảm giá" }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"], "summary": "Đăng nhập",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } } },
+        "responses": { "200": { "description": "Đăng nhập thành công" }, "401": { "description": "Sai tài khoản / mật khẩu" } }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"], "summary": "Đăng ký tài khoản mới",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterRequest" } } } },
+        "responses": { "201": { "description": "Tạo tài khoản thành công" }, "409": { "description": "Email đã tồn tại" } }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Auth"], "summary": "Thông tin người dùng hiện tại (cần đăng nhập)",
+        "responses": { "200": { "description": "OK" }, "401": { "description": "Chưa đăng nhập" } }
+      },
+      "put": {
+        "tags": ["Auth"], "summary": "Cập nhật thông tin cá nhân (cần đăng nhập)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateProfileRequest" } } } },
+        "responses": { "200": { "description": "Đã cập nhật" } }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Auth"], "summary": "Đăng xuất (cần đăng nhập)",
+        "responses": { "200": { "description": "Đã đăng xuất" } }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": ["Products"], "summary": "Danh sách sản phẩm (lọc + phân trang)",
+        "parameters": [
+          { "name": "search",    "in": "query", "schema": { "type": "string" } },
+          { "name": "categoryId","in": "query", "schema": { "type": "integer" } },
+          { "name": "brandId",   "in": "query", "schema": { "type": "integer" } },
+          { "name": "minPrice",  "in": "query", "schema": { "type": "number" } },
+          { "name": "maxPrice",  "in": "query", "schema": { "type": "number" } },
+          { "name": "page",      "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize",  "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Products"], "summary": "Chi tiết sản phẩm",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "OK" }, "404": { "description": "Không tìm thấy" } }
+      }
+    },
+    "/api/products/{id}/reviews": {
+      "get": {
+        "tags": ["Products"], "summary": "Danh sách đánh giá sản phẩm",
+        "parameters": [
+          { "name": "id",       "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "page",     "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["Products"], "summary": "Thêm đánh giá (cần đăng nhập)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AddReviewRequest" } } } },
+        "responses": { "201": { "description": "Đã gửi đánh giá" }, "409": { "description": "Đã đánh giá rồi" } }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "tags": ["Categories"], "summary": "Danh sách toàn bộ danh mục",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/categories/{id}": {
+      "get": {
+        "tags": ["Categories"], "summary": "Chi tiết danh mục kèm danh mục con",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "OK" }, "404": { "description": "Không tìm thấy" } }
+      }
+    },
+    "/api/categories/{id}/products": {
+      "get": {
+        "tags": ["Categories"], "summary": "Sản phẩm theo danh mục",
+        "parameters": [
+          { "name": "id",       "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "page",     "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/brands": {
+      "get": {
+        "tags": ["Brands"], "summary": "Danh sách thương hiệu",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/brands/{id}": {
+      "get": {
+        "tags": ["Brands"], "summary": "Chi tiết thương hiệu",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "OK" }, "404": { "description": "Không tìm thấy" } }
+      }
+    },
+    "/api/cart": {
+      "get":    { "tags": ["Cart"], "summary": "Lấy giỏ hàng hiện tại", "responses": { "200": { "description": "OK" } } },
+      "delete": { "tags": ["Cart"], "summary": "Xóa toàn bộ giỏ hàng",  "responses": { "200": { "description": "OK" } } }
+    },
+    "/api/cart/items": {
+      "post": {
+        "tags": ["Cart"], "summary": "Thêm sản phẩm vào giỏ hàng",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AddToCartRequest" } } } },
+        "responses": { "200": { "description": "OK" }, "400": { "description": "Hết hàng" } }
+      }
+    },
+    "/api/cart/items/{cartItemId}": {
+      "put": {
+        "tags": ["Cart"], "summary": "Cập nhật số lượng (0 = xóa)",
+        "parameters": [{ "name": "cartItemId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateCartItemRequest" } } } },
+        "responses": { "200": { "description": "OK" } }
+      },
+      "delete": {
+        "tags": ["Cart"], "summary": "Xóa sản phẩm khỏi giỏ hàng",
+        "parameters": [{ "name": "cartItemId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "tags": ["Orders"], "summary": "Danh sách đơn hàng của tôi (cần đăng nhập)",
+        "parameters": [
+          { "name": "page",     "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["Orders"], "summary": "Đặt hàng mới (cần đăng nhập)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlaceOrderApiRequest" } } } },
+        "responses": { "201": { "description": "Đặt hàng thành công" }, "400": { "description": "Lỗi dữ liệu / hết hàng" } }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "tags": ["Orders"], "summary": "Chi tiết đơn hàng (cần đăng nhập)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "OK" }, "404": { "description": "Không tìm thấy" } }
+      }
+    },
+    "/api/orders/{id}/cancel": {
+      "post": {
+        "tags": ["Orders"], "summary": "Hủy đơn hàng Pending (cần đăng nhập)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Đã hủy" }, "400": { "description": "Không thể hủy" } }
+      }
+    },
+    "/api/wishlist": {
+      "get": {
+        "tags": ["Wishlist"], "summary": "Danh sách yêu thích (cần đăng nhập)",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/wishlist/{productId}": {
+      "get": {
+        "tags": ["Wishlist"], "summary": "Kiểm tra sản phẩm có trong wishlist không",
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["Wishlist"], "summary": "Thêm sản phẩm vào wishlist (cần đăng nhập)",
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "201": { "description": "Đã thêm" }, "409": { "description": "Đã có rồi" } }
+      },
+      "delete": {
+        "tags": ["Wishlist"], "summary": "Xóa sản phẩm khỏi wishlist (cần đăng nhập)",
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Đã xóa" } }
+      }
+    },
+    "/api/shipping/options": {
+      "get": {
+        "tags": ["Shipping"], "summary": "Danh sách dịch vụ giao hàng và phí",
+        "parameters": [
+          { "name": "provinceCode",  "in": "query", "required": true, "schema": { "type": "integer" }, "example": 79 },
+          { "name": "shippingClass", "in": "query", "schema": { "type": "string", "enum": ["Nho","Vua","CongKenh"], "default": "Nho" } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/shipping/regions": {
+      "get": {
+        "tags": ["Shipping"], "summary": "Danh sách vùng giao hàng và mã tỉnh",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/discounts/validate": {
+      "post": {
+        "tags": ["Discounts"], "summary": "Kiểm tra và tính giá trị mã giảm giá",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ValidateDiscountRequest" } } } },
+        "responses": { "200": { "description": "OK (success=true/false)" } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LoginRequest": {
+        "type": "object", "required": ["email","password"],
+        "properties": {
+          "email":      { "type": "string", "example": "user@example.com" },
+          "password":   { "type": "string", "example": "password123" },
+          "rememberMe": { "type": "boolean", "default": false }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object", "required": ["fullName","email","phoneNumber","password"],
+        "properties": {
+          "fullName":    { "type": "string",  "example": "Nguyễn Văn A" },
+          "email":       { "type": "string",  "example": "user@example.com" },
+          "phoneNumber": { "type": "string",  "example": "0912345678" },
+          "password":    { "type": "string",  "example": "password123" }
+        }
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "fullName":    { "type": "string" },
+          "phoneNumber": { "type": "string" },
+          "address":     { "type": "string" }
+        }
+      },
+      "AddReviewRequest": {
+        "type": "object", "required": ["rating"],
+        "properties": {
+          "rating":  { "type": "integer", "minimum": 1, "maximum": 5 },
+          "comment": { "type": "string" }
+        }
+      },
+      "AddToCartRequest": {
+        "type": "object", "required": ["productId"],
+        "properties": {
+          "productId": { "type": "integer" },
+          "quantity":  { "type": "integer", "default": 1 }
+        }
+      },
+      "UpdateCartItemRequest": {
+        "type": "object", "required": ["quantity"],
+        "properties": { "quantity": { "type": "integer", "minimum": 0 } }
+      },
+      "PlaceOrderApiRequest": {
+        "type": "object", "required": ["fullName","phone","shippingAddress","provinceCode","shippingService","paymentMethod"],
+        "properties": {
+          "fullName":           { "type": "string",  "example": "Nguyễn Văn A" },
+          "phone":              { "type": "string",  "example": "0912345678" },
+          "shippingAddress":    { "type": "string",  "example": "123 Lê Lợi, Bến Nghé, TP.HCM" },
+          "notes":              { "type": "string" },
+          "provinceCode":       { "type": "integer", "example": 79 },
+          "shippingService":    { "type": "string",  "enum": ["TietKiem","Nhanh","HoaToc"] },
+          "paymentMethod":      { "type": "string",  "enum": ["COD","VNPay"] },
+          "discountCode":       { "type": "string" },
+          "selectedCartItemIds":{ "type": "array", "items": { "type": "integer" } }
+        }
+      },
+      "ValidateDiscountRequest": {
+        "type": "object", "required": ["code","orderSubtotal"],
+        "properties": {
+          "code":          { "type": "string",  "example": "NEWUSERFREE" },
+          "orderSubtotal": { "type": "number",  "example": 500000 }
+        }
+      }
+    }
+  }
+}
