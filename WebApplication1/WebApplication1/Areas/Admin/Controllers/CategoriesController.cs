@@ -6,7 +6,7 @@ using WebApplication1.Repositories;
 namespace WebApplication1.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin,Manager")]
+[Authorize(Policy = "QuanLyDanhMuc")]
 public class CategoriesController : Controller
 {
     private readonly ICategoryRepository _categories;

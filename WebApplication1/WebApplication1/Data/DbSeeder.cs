@@ -17,6 +17,7 @@ public static class DbSeeder
 
         await SeedRolesAsync(roleManager);
         await SeedAdminAsync(userManager);
+        await SeedPermissionsAsync(roleManager);
 
         // Seed initial discounts/vouchers if they don't exist
         if (!await context.Discounts.AnyAsync(d => d.Code == "NEWUSER200K"))
@@ -460,6 +461,82 @@ public static class DbSeeder
         await EnsureUser(userManager, "admin@nexusgear.local", "Store Administrator", "Admin@123", "Admin");
         await EnsureUser(userManager, "manager@nexusgear.local", "Nguyễn Quản Lý", "Manager@123", "Manager");
         await EnsureUser(userManager, "staff@nexusgear.local", "Trần Nhân Viên", "Staff@123", "Staff");
+    }
+
+    private static async Task SeedPermissionsAsync(RoleManager<IdentityRole> roleManager)
+    {
+        var adminRole = await roleManager.FindByNameAsync("Admin");
+        if (adminRole != null)
+        {
+            var claims = await roleManager.GetClaimsAsync(adminRole);
+            if (!claims.Any())
+            {
+                foreach (var perm in AppPermissions.DisplayNames.Keys)
+                {
+                    await roleManager.AddClaimAsync(adminRole, new System.Security.Claims.Claim("Permission", perm));
+                }
+            }
+        }
+
+        var managerRole = await roleManager.FindByNameAsync("Manager");
+        if (managerRole != null)
+        {
+            var claims = await roleManager.GetClaimsAsync(managerRole);
+            if (!claims.Any())
+            {
+                var managerPerms = new[]
+                {
+                    AppPermissions.XemDashboard,
+                    AppPermissions.QuanLySanPham,
+                    AppPermissions.QuanLyDanhMuc,
+                    AppPermissions.QuanLyThuongHieu,
+                    AppPermissions.XemDonHang,
+                    AppPermissions.CapNhatTrangThaiDon,
+                    AppPermissions.QuanLyKhuyenMai,
+                    AppPermissions.XemBaoCaoDoanhThu
+                };
+                foreach (var perm in managerPerms)
+                {
+                    await roleManager.AddClaimAsync(managerRole, new System.Security.Claims.Claim("Permission", perm));
+                }
+            }
+        }
+
+        var staffRole = await roleManager.FindByNameAsync("Staff");
+        if (staffRole != null)
+        {
+            var claims = await roleManager.GetClaimsAsync(staffRole);
+            if (!claims.Any())
+            {
+                var staffPerms = new[]
+                {
+                    AppPermissions.XemDonHang,
+                    AppPermissions.CapNhatTrangThaiDon
+                };
+                foreach (var perm in staffPerms)
+                {
+                    await roleManager.AddClaimAsync(staffRole, new System.Security.Claims.Claim("Permission", perm));
+                }
+            }
+        }
+
+        var customerRole = await roleManager.FindByNameAsync("Customer");
+        if (customerRole != null)
+        {
+            var claims = await roleManager.GetClaimsAsync(customerRole);
+            if (!claims.Any())
+            {
+                var customerPerms = new[]
+                {
+                    AppPermissions.DatHang,
+                    AppPermissions.XemDonHangCuaMinh
+                };
+                foreach (var perm in customerPerms)
+                {
+                    await roleManager.AddClaimAsync(customerRole, new System.Security.Claims.Claim("Permission", perm));
+                }
+            }
+        }
     }
 
     private static async Task EnsureUser(UserManager<ApplicationUser> userManager,

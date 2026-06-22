@@ -150,15 +150,17 @@ public class RoleManagementViewModel
 
 public class PermissionRow
 {
-    public PermissionRow(string name, bool admin, bool manager, bool staff, bool customer)
+    public PermissionRow(string name, string systemKey, bool admin, bool manager, bool staff, bool customer)
     {
         Name = name;
+        SystemKey = systemKey;
         Admin = admin;
         Manager = manager;
         Staff = staff;
         Customer = customer;
     }
     public string Name { get; set; }
+    public string SystemKey { get; set; }
     public bool Admin { get; set; }
     public bool Manager { get; set; }
     public bool Staff { get; set; }

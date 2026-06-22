@@ -33,54 +33,80 @@
                     }
                 </span>
             </div>
-
             <nav class="admin-nav">
                 @{
                     var ctrl = ViewContext.RouteData.Values["controller"]?.ToString();
                     var isAdmin = User.IsInRole("Admin");
                     var isManager = User.IsInRole("Manager");
                     var isStaff = User.IsInRole("Staff");
+                    var hasDashboard = User.HasClaim("Permission", "XemDashboard") || isAdmin;
+                    var hasProducts = User.HasClaim("Permission", "QuanLySanPham") || isAdmin;
+                    var hasCategories = User.HasClaim("Permission", "QuanLyDanhMuc") || isAdmin;
+                    var hasBrands = User.HasClaim("Permission", "QuanLyThuongHieu") || isAdmin;
+                    var hasOrders = User.HasClaim("Permission", "XemDonHang") || isAdmin;
+                    var hasUsers = User.HasClaim("Permission", "QuanLyNguoiDung") || isAdmin;
+                    var hasDiscounts = User.HasClaim("Permission", "QuanLyKhuyenMai") || isAdmin;
+                    var hasReports = User.HasClaim("Permission", "XemBaoCaoDoanhThu") || isAdmin;
+                    var hasRoles = User.HasClaim("Permission", "PhanQuyenVaiTro") || isAdmin;
                 }
 
-                @if (isAdmin || isManager)
+                @if (hasDashboard || hasProducts || hasCategories || hasBrands)
                 {
                     <div class="nav-section">
                         <span class="nav-section-label">CỬA HÀNG</span>
-                        <a asp-area="Admin" asp-controller="Home" asp-action="Index"
-                           class="@(ctrl == "Home" ? "active" : "")">
-                            <span class="nav-icon">📊</span> Tổng quan
-                        </a>
-                        <a asp-area="Admin" asp-controller="Products" asp-action="Index"
-                           class="@(ctrl == "Products" ? "active" : "")">
-                            <span class="nav-icon">📦</span> Sản phẩm
-                        </a>
-                        <a asp-area="Admin" asp-controller="Categories" asp-action="Index"
-                           class="@(ctrl == "Categories" ? "active" : "")">
-                            <span class="nav-icon">🏷️</span> Danh mục
-                        </a>
-                        <a asp-area="Admin" asp-controller="Brands" asp-action="Index"
-                           class="@(ctrl == "Brands" ? "active" : "")">
-                            <span class="nav-icon">🏭</span> Thương hiệu
-                        </a>
+                        @if (hasDashboard)
+                        {
+                            <a asp-area="Admin" asp-controller="Home" asp-action="Index"
+                               class="@(ctrl == "Home" ? "active" : "")">
+                                <span class="nav-icon">📊</span> Tổng quan
+                            </a>
+                        }
+                        @if (hasProducts)
+                        {
+                            <a asp-area="Admin" asp-controller="Products" asp-action="Index"
+                               class="@(ctrl == "Products" ? "active" : "")">
+                                <span class="nav-icon">📦</span> Sản phẩm
+                            </a>
+                        }
+                        @if (hasCategories)
+                        {
+                            <a asp-area="Admin" asp-controller="Categories" asp-action="Index"
+                               class="@(ctrl == "Categories" ? "active" : "")">
+                                <span class="nav-icon">🏷️</span> Danh mục
+                            </a>
+                        }
+                        @if (hasBrands)
+                        {
+                            <a asp-area="Admin" asp-controller="Brands" asp-action="Index"
+                               class="@(ctrl == "Brands" ? "active" : "")">
+                                <span class="nav-icon">🏭</span> Thương hiệu
+                            </a>
+                        }
                     </div>
                 }
 
-                <div class="nav-section">
-                    <span class="nav-section-label">BÁN HÀNG</span>
-                    <a asp-area="Admin" asp-controller="Orders" asp-action="Index"
-                       class="@(ctrl == "Orders" ? "active" : "")">
-                        <span class="nav-icon">🛒</span> Đơn hàng
-                    </a>
-                    @if (isAdmin)
-                    {
-                        <a asp-area="Admin" asp-controller="Users" asp-action="Index"
-                           class="@(ctrl == "Users" ? "active" : "")">
-                            <span class="nav-icon">👥</span> Khách hàng
-                        </a>
-                    }
-                </div>
+                @if (hasOrders || hasUsers)
+                {
+                    <div class="nav-section">
+                        <span class="nav-section-label">BÁN HÀNG</span>
+                        @if (hasOrders)
+                        {
+                            <a asp-area="Admin" asp-controller="Orders" asp-action="Index"
+                               class="@(ctrl == "Orders" ? "active" : "")">
+                                <span class="nav-icon">🛒</span> Đơn hàng
+                            </a>
+                        }
+                        @if (hasUsers)
+                        {
+                            <a asp-area="Admin" asp-controller="Users" asp-action="Index"
+                               class="@(ctrl == "Users" ? "active" : "")">
+                                <span class="nav-icon">👥</span> Khách hàng
+                            </a>
+                        }
+                    </div>
+                }
 
-                @if (isAdmin || isManager)
+                @if (hasDiscounts)
                 {
                     <div class="nav-section">
                         <span class="nav-section-label">TIẾP THỊ</span>
@@ -89,7 +115,10 @@
                             <span class="nav-icon">🎁</span> Khuyến mãi
                         </a>
                     </div>
+                }
 
+                @if (hasReports)
+                {
                     <div class="nav-section">
                         <span class="nav-section-label">PHÂN TÍCH</span>
                         <a asp-area="Admin" asp-controller="Reports" asp-action="Index"
@@ -99,7 +128,7 @@
                     </div>
                 }
 
-                @if (isAdmin)
+                @if (hasRoles)
                 {
                     <div class="nav-section">
                         <span class="nav-section-label">HỆ THỐNG</span>

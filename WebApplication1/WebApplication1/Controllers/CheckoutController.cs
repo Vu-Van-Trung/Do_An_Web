@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.SignalR; // BỔ SUNG: Thư viện SignalR
 
 namespace WebApplication1.Controllers;
 
-[Authorize(Roles = "Customer,Admin")]
+[Authorize(Policy = "DatHang")]
 public class CheckoutController : Controller
 {
     private const decimal ShippingFee = 50000m;

@@ -69,7 +69,7 @@
                                 <a asp-controller="Account" asp-action="ChangePassword" class="dropdown-item">
                                     🔑 Đổi mật khẩu
                                 </a>
-                                @if (User.IsInRole("Admin"))
+                                @if (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff") || User.HasClaim("Permission", "XemDashboard"))
                                 {
                                     <div class="dropdown-divider"></div>
                                     <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="dropdown-item dropdown-item-admin">
