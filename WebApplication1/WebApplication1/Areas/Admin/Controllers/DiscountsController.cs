@@ -7,7 +7,7 @@ using WebApplication1.ViewModels;
 namespace WebApplication1.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin,Manager")]
+[Authorize(Policy = "QuanLyKhuyenMai")]
 public class DiscountsController : Controller
 {
     private readonly IDiscountRepository _discounts;

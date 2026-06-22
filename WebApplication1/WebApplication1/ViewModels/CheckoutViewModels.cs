@@ -155,15 +155,17 @@ public class RoleManagementViewModel
 
 public class PermissionRow
 {
-    public PermissionRow(string name, bool admin, bool manager, bool staff, bool customer)
+    public PermissionRow(string name, string systemKey, bool admin, bool manager, bool staff, bool customer)
     {
         Name = name;
+        SystemKey = systemKey;
         Admin = admin;
         Manager = manager;
         Staff = staff;
         Customer = customer;
     }
     public string Name { get; set; }
+    public string SystemKey { get; set; }
     public bool Admin { get; set; }
     public bool Manager { get; set; }
     public bool Staff { get; set; }
@@ -195,8 +197,16 @@ public class ProductFormViewModel
     public IFormFile? ImageFile { get; set; }
     public string? SecondaryImageUrls { get; set; }
     public List<IFormFile>? SecondaryImageFiles { get; set; }
+    public List<SecondaryImageEditItem> SecondaryImages { get; set; } = new();
     public bool IsActive { get; set; } = true;
     public List<SpecInput> Specifications { get; set; } = new();
+}
+
+public class SecondaryImageEditItem
+{
+    public string Url { get; set; } = string.Empty;
+    public bool Remove { get; set; }
+    public IFormFile? ReplacementFile { get; set; }
 }
 
 public class SpecInput

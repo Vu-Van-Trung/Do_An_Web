@@ -1,4 +1,4 @@
-﻿using MailKit.Net.Smtp;
+using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -95,6 +95,72 @@ namespace WebApplication1.Services
             finally
             {
                 // Ngắt kết nối an toàn
+                await smtp.DisconnectAsync(true);
+            }
+        }
+
+        public async Task SendPasswordResetEmailAsync(string emailAddress, string callbackUrl)
+        {
+            var smtpServer = _configuration["EmailSettings:SmtpServer"] ?? "smtp.gmail.com";
+            var port = int.Parse(_configuration["EmailSettings:Port"] ?? "587");
+            var senderName = _configuration["EmailSettings:SenderName"] ?? "NexusGear";
+            var senderEmail = _configuration["EmailSettings:SenderEmail"] ?? "";
+            var username = _configuration["EmailSettings:Username"] ?? "";
+            var password = _configuration["EmailSettings:Password"] ?? "";
+
+            var email = new MimeMessage();
+            email.From.Add(new MailboxAddress(senderName, senderEmail));
+            email.To.Add(MailboxAddress.Parse(emailAddress));
+            email.Subject = $"[NexusGear] Yêu cầu khôi phục mật khẩu tài khoản";
+
+            var bodyBuilder = new BodyBuilder();
+            bodyBuilder.HtmlBody = $@"
+                <div style='font-family: ""Segoe UI"", Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #e2e8f0; background-color: #0f172a; padding: 2rem; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid #1e293b;'>
+                    <div style='text-align: center; margin-bottom: 2rem;'>
+                        <h1 style='color: #8b5cf6; font-size: 24px; margin: 0; font-weight: 700; letter-spacing: 0.5px;'>NEXUS GEAR</h1>
+                        <p style='color: #94a3b8; font-size: 14px; margin: 5px 0 0 0;'>Your Ultimate Gaming Gear Hub</p>
+                    </div>
+                    
+                    <div style='background-color: #1e293b; padding: 1.5rem; border-radius: 12px; border: 1px solid #334155;'>
+                        <h2 style='color: #f1f5f9; font-size: 18px; margin-top: 0; margin-bottom: 1rem;'>Yêu cầu đặt lại mật khẩu</h2>
+                        <p style='color: #cbd5e1; font-size: 15px;'>Xin chào,</p>
+                        <p style='color: #cbd5e1; font-size: 15px;'>Chúng tôi nhận được yêu cầu khôi phục mật khẩu cho tài khoản liên kết với địa chỉ email này. Để tiến hành đặt lại mật khẩu mới, vui lòng nhấn vào nút bên dưới:</p>
+                        
+                        <div style='text-align: center; margin: 2rem 0;'>
+                            <a href='{callbackUrl}' style='display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); font-size: 15px;'>Đặt lại mật khẩu</a>
+                        </div>
+                        
+                        <p style='color: #94a3b8; font-size: 13px; line-height: 1.5;'>Liên kết khôi phục mật khẩu này sẽ hết hạn sau một khoảng thời gian nhất định vì lý do bảo mật.</p>
+                        <p style='color: #94a3b8; font-size: 13px; margin-bottom: 0;'>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này hoặc liên hệ bộ phận hỗ trợ nếu nghi ngờ tài khoản bị xâm nhập.</p>
+                    </div>
+                    
+                    <div style='margin-top: 2rem; border-top: 1px solid #1e293b; padding-top: 1.5rem; text-align: center;'>
+                        <p style='color: #64748b; font-size: 13px; margin: 0;'>Nếu nút trên không hoạt động, bạn có thể sao chép liên kết dưới đây vào trình duyệt:</p>
+                        <p style='color: #cbd5e1; font-size: 12px; word-break: break-all; margin: 8px 0 0 0;'>
+                            <a href='{callbackUrl}' style='color: #8b5cf6; text-decoration: underline;'>{callbackUrl}</a>
+                        </p>
+                    </div>
+                    
+                    <hr style='border: none; border-top: 1px solid #1e293b; margin: 2rem 0;' />
+                    <p style='font-size: 11px; color: #64748b; text-align: center; margin: 0;'>Đây là email tự động từ hệ thống NexusGear. Vui lòng không trả lời thư này.</p>
+                </div>";
+
+            email.Body = bodyBuilder.ToMessageBody();
+
+            using var smtp = new SmtpClient();
+            try
+            {
+                await smtp.ConnectAsync(smtpServer, port, SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(username, password);
+                await smtp.SendAsync(email);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi gửi email reset: {ex.Message}");
+                throw;
+            }
+            finally
+            {
                 await smtp.DisconnectAsync(true);
             }
         }

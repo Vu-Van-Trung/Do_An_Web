@@ -10,7 +10,7 @@ using WebApplication1.Repositories;
 namespace WebApplication1.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin,Manager,Staff")]
+[Authorize(Policy = "XemDonHang")]
 public class OrdersController : Controller
 {
     private readonly IOrderRepository _orders;
@@ -32,6 +32,7 @@ public class OrdersController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = "CapNhatTrangThaiDon")]
     public async Task<IActionResult> UpdateStatus(int id, OrderStatus status)
     {
         var order = await _orders.GetByIdAsync(id);

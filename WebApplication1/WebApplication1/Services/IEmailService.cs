@@ -1,9 +1,10 @@
-﻿using WebApplication1.Models;
+using WebApplication1.Models;
 
 namespace WebApplication1.Services
 {
     public interface IEmailService
     {
         Task SendOrderEmailAsync(string customerEmail, Order order);
+        Task SendPasswordResetEmailAsync(string email, string callbackUrl);
     }
 }

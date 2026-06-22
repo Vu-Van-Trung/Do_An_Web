@@ -14,7 +14,7 @@ using WebApplication1.ViewModels;
 namespace WebApplication1.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin,Manager")]
+[Authorize(Policy = "XemBaoCaoDoanhThu")]
 public class ReportsController : Controller
 {
     private readonly ApplicationDbContext _context;

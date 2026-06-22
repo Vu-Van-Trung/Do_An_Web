@@ -9,7 +9,7 @@ using WebApplication1.ViewModels;
 namespace WebApplication1.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = "QuanLyNguoiDung")]
 public class UsersController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;

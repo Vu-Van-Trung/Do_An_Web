@@ -6,7 +6,7 @@ using WebApplication1.Repositories;
 namespace WebApplication1.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin,Manager")]
+[Authorize(Policy = "QuanLyThuongHieu")]
 public class BrandsController : Controller
 {
     private readonly IBrandRepository _brands;
@@ -114,16 +114,40 @@ public class BrandsController : Controller
     private async Task<string> SaveLogoAsync(IFormFile file)
     {
         var uploads = Path.Combine(_env.WebRootPath, "images", "brands");
-        if (!Directory.Exists(uploads))
-        {
-            Directory.CreateDirectory(uploads);
-        }
+        var isDev = false;
 
+        #if DEBUG
+        // Trong chế độ debug, lưu trực tiếp vào thư mục nguồn để tránh mất file khi rebuild
+        var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "brands");
+        if (Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")))
+        {
+            uploads = sourcePath;
+            isDev = true;
+        }
+        #endif
+
+        Directory.CreateDirectory(uploads);
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var path = Path.Combine(uploads, fileName);
 
-        await using var stream = System.IO.File.Create(path);
-        await file.CopyToAsync(stream);
+        await using (var stream = System.IO.File.Create(path))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        #if DEBUG
+        // Copy thêm sang thư mục chạy bin để ảnh hiển thị được ngay lập tức
+        if (isDev)
+        {
+            var binUploads = Path.Combine(_env.WebRootPath, "images", "brands");
+            var binPath = Path.Combine(binUploads, fileName);
+            if (!string.Equals(path, binPath, StringComparison.OrdinalIgnoreCase))
+            {
+                Directory.CreateDirectory(binUploads);
+                System.IO.File.Copy(path, binPath, true);
+            }
+        }
+        #endif
 
         return $"/images/brands/{fileName}";
     }

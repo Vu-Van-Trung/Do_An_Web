@@ -40,7 +40,19 @@ public class ProductsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(search))
             q = q.Where(p => p.Name.Contains(search) ||
                              (p.Description != null && p.Description.Contains(search)));
-        if (categoryId.HasValue) q = q.Where(p => p.CategoryId == categoryId.Value);
+        if (categoryId.HasValue)
+        {
+            var catId = categoryId.Value;
+            var subCategoryIds = await _db.Categories
+                .Where(c => c.ParentCategoryId == catId)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            var categoryIds = new List<int> { catId };
+            categoryIds.AddRange(subCategoryIds);
+
+            q = q.Where(p => categoryIds.Contains(p.CategoryId));
+        }
         if (brandId.HasValue)    q = q.Where(p => p.BrandId    == brandId.Value);
         if (minPrice.HasValue)   q = q.Where(p => p.Price >= minPrice.Value);
         if (maxPrice.HasValue)   q = q.Where(p => p.Price <= maxPrice.Value);

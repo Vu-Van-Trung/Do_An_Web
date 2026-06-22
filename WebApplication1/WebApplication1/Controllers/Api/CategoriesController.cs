@@ -53,10 +53,15 @@ public class CategoriesController : ControllerBase
         pageSize = Math.Clamp(pageSize, 1, 100);
         page     = Math.Max(1, page);
 
+        var categoryIds = await _db.Categories
+            .Where(c => c.Id == id || c.ParentCategoryId == id)
+            .Select(c => c.Id)
+            .ToListAsync();
+
         var q = _db.Products
             .Include(p => p.Brand)
             .Include(p => p.Reviews)
-            .Where(p => p.CategoryId == id && p.IsActive);
+            .Where(p => categoryIds.Contains(p.CategoryId) && p.IsActive);
 
         var total = await q.CountAsync();
         var items = await q

@@ -70,6 +70,16 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+builder.Services.AddAuthorization(options =>
+{
+    foreach (var permission in WebApplication1.Models.AppPermissions.DisplayNames.Keys)
+    {
+        options.AddPolicy(permission, policy =>
+            policy.RequireAssertion(context =>
+                context.User.IsInRole("Admin") ||
+                context.User.HasClaim(c => c.Type == "Permission" && c.Value == permission)));
+    }
+});
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
