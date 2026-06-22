@@ -17,19 +17,22 @@ public class AccountController : Controller
     private readonly ICartService _cartService;
     private readonly Repositories.IOrderRepository _orders;
     private readonly ApplicationDbContext _context;
+    private readonly IEmailService _emailService;
 
     public AccountController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         ICartService cartService,
         Repositories.IOrderRepository orders,
-        ApplicationDbContext context)
+        ApplicationDbContext context,
+        IEmailService emailService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _cartService = cartService;
         _orders = orders;
         _context = context;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -307,8 +310,20 @@ public class AccountController : Controller
         }
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var callbackUrl = Url.Action("ResetPassword", "Account", new { token, email = model.Email }, Request.Scheme);
+        var callbackUrl = Url.Action("ResetPassword", "Account", new { token, email = model.Email }, Request.Scheme) ?? "";
         
+        try
+        {
+            // Gửi email khôi phục mật khẩu chứa callback link
+            await _emailService.SendPasswordResetEmailAsync(model.Email, callbackUrl);
+        }
+        catch (Exception ex)
+        {
+            // Log lỗi nhưng không làm gián đoạn luồng người dùng
+            Console.WriteLine($"[AccountController] Không gửi được mail khôi phục: {ex.Message}");
+            TempData["EmailError"] = "Không thể gửi email do cấu hình máy chủ SMTP chưa chính xác hoặc thiếu kết nối. Bạn có thể sử dụng link trực tiếp bên dưới để test.";
+        }
+
         // Save the direct reset link to TempData so it can be displayed on the screen for local testing!
         TempData["DirectResetLink"] = callbackUrl;
 

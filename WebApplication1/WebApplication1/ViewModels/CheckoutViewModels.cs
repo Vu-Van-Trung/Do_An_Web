@@ -195,8 +195,16 @@ public class ProductFormViewModel
     public IFormFile? ImageFile { get; set; }
     public string? SecondaryImageUrls { get; set; }
     public List<IFormFile>? SecondaryImageFiles { get; set; }
+    public List<SecondaryImageEditItem> SecondaryImages { get; set; } = new();
     public bool IsActive { get; set; } = true;
     public List<SpecInput> Specifications { get; set; } = new();
+}
+
+public class SecondaryImageEditItem
+{
+    public string Url { get; set; } = string.Empty;
+    public bool Remove { get; set; }
+    public IFormFile? ReplacementFile { get; set; }
 }
 
 public class SpecInput

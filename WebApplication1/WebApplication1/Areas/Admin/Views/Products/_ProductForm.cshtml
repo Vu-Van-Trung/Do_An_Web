@@ -34,22 +34,36 @@
     </div>
 
     <div style="margin-bottom:0.75rem;">
-        <label asp-for="SecondaryImageFiles">Tải các ảnh phụ lên (chọn nhiều ảnh)</label>
-        <input asp-for="SecondaryImageFiles" type="file" class="form-control" accept="image/*" multiple />
-        <input type="hidden" asp-for="SecondaryImageUrls" />
+        <label>Ảnh phụ sản phẩm</label>
 
-        @if (Model.Id != 0 && !string.IsNullOrEmpty(Model.SecondaryImageUrls))
+        @if (Model.Id != 0 && Model.SecondaryImages.Count > 0)
         {
-            <div style="margin-top:0.5rem; padding:0.5rem; border:1px solid #ddd; background-color: rgba(255,255,255,0.1); display:block; border-radius:4px;">
-                <span style="font-size:0.85rem; display:block; margin-bottom:0.25rem; color:#777;">Các ảnh phụ hiện tại:</span>
-                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    @foreach (var url in Model.SecondaryImageUrls.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        <img src="@url" alt="Secondary Image" style="max-height: 80px; object-fit: contain; border-radius: 4px; border:1px solid rgba(255,255,255,0.2); padding:2px;" />
-                    }
-                </div>
+            <div style="margin-top:0.5rem; padding:0.75rem; border:1px solid #ddd; background-color: rgba(255,255,255,0.05); border-radius:4px;">
+                <span style="font-size:0.85rem; display:block; margin-bottom:0.5rem; color:#aaa;">Quản lý ảnh phụ hiện tại (xóa hoặc thay thế từng ảnh):</span>
+                @for (var i = 0; i < Model.SecondaryImages.Count; i++)
+                {
+                    <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:0.75rem; padding:0.5rem; border:1px solid rgba(255,255,255,0.15); border-radius:4px; background:rgba(0,0,0,0.15);">
+                        <input type="hidden" asp-for="SecondaryImages[i].Url" />
+                        <img src="@Model.SecondaryImages[i].Url" alt="Ảnh phụ" style="max-height:80px; max-width:120px; object-fit:contain; border-radius:4px; border:1px solid rgba(255,255,255,0.2); padding:2px; flex-shrink:0;" />
+                        <div style="flex:1; display:flex; flex-direction:column; gap:0.4rem;">
+                            <label style="margin:0; font-size:0.9rem; cursor:pointer;">
+                                <input asp-for="SecondaryImages[i].Remove" />
+                                Xóa ảnh này
+                            </label>
+                            <div>
+                                <label asp-for="SecondaryImages[i].ReplacementFile" style="font-size:0.85rem; color:#aaa;">Thay thế bằng ảnh mới:</label>
+                                <input asp-for="SecondaryImages[i].ReplacementFile" type="file" class="form-control" accept="image/*" style="font-size:0.85rem; margin-top:0.25rem;" />
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
         }
+
+        <div style="margin-top:0.75rem;">
+            <label asp-for="SecondaryImageFiles">@(Model.Id == 0 ? "Tải ảnh phụ lên (chọn nhiều ảnh)" : "Thêm ảnh phụ mới (chọn nhiều ảnh)")</label>
+            <input asp-for="SecondaryImageFiles" type="file" class="form-control" accept="image/*" multiple />
+        </div>
     </div>
 
     <div style="margin-bottom:0.75rem;"><label><input asp-for="IsActive" /> Hiển thị</label></div>
