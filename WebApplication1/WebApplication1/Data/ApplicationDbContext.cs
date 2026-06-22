@@ -30,6 +30,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .Property(p => p.Price)
             .HasPrecision(18, 2);
 
+        builder.Entity<Product>()
+            .HasIndex(p => p.Slug)
+            .IsUnique();
+
         builder.Entity<Order>()
             .Property(o => o.Subtotal)
             .HasPrecision(18, 2);

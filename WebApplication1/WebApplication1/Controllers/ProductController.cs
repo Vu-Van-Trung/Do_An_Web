@@ -69,9 +69,9 @@ public class ProductController : Controller
         return View(vm);
     }
 
-    public async Task<IActionResult> Details(int id)
+    public async Task<IActionResult> Details(string slug)
     {
-        var product = await _products.GetWithDetailsAsync(id);
+        var product = await _products.GetBySlugAsync(slug);
         if (product == null)
             return NotFound();
 
@@ -83,7 +83,7 @@ public class ProductController : Controller
 
         var reviews = await _context.ProductReviews
             .Include(r => r.User)
-            .Where(r => r.ProductId == id)
+            .Where(r => r.ProductId == product.Id)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
         ViewBag.Reviews = reviews;
@@ -118,7 +118,7 @@ public class ProductController : Controller
                 bool hasPurchased = await _context.Orders
                     .AnyAsync(o => o.UserId == userId && 
                                    o.Status == OrderStatus.Completed && 
-                                   o.Items.Any(i => i.ProductId == id));
+                                   o.Items.Any(i => i.ProductId == product.Id));
                 ViewBag.HasPurchased = hasPurchased;
             }
         }
@@ -139,7 +139,7 @@ public class ProductController : Controller
         if (rating < 1 || rating > 5)
         {
             TempData["Error"] = "Số sao đánh giá phải từ 1 đến 5!";
-            return RedirectToAction(nameof(Details), new { id = productId });
+            return RedirectToAction(nameof(Details), new { slug = product.Slug });
         }
 
         var userId = _context.Users.Where(u => u.UserName == User.Identity!.Name).Select(u => u.Id).FirstOrDefault();
@@ -153,7 +153,7 @@ public class ProductController : Controller
         if (!hasPurchased)
         {
             TempData["Error"] = "Bạn chỉ có thể đánh giá sản phẩm này sau khi đã mua hàng thành công!";
-            return RedirectToAction(nameof(Details), new { id = productId });
+            return RedirectToAction(nameof(Details), new { slug = product.Slug });
         }
 
         var review = new ProductReview
@@ -169,7 +169,7 @@ public class ProductController : Controller
         await _context.SaveChangesAsync();
 
         TempData["Success"] = "Cảm ơn bạn đã đánh giá sản phẩm!";
-        return RedirectToAction(nameof(Details), new { id = productId });
+        return RedirectToAction(nameof(Details), new { slug = product.Slug });
     }
 
     /// <summary>Trang Khuyến mãi công khai — hiển thị tất cả deal đang hoạt động</summary>

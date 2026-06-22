@@ -168,6 +168,7 @@ public class ProductsController : Controller
     private async Task<Product> MapProductAsync(Product product, ProductFormViewModel model)
     {
         product.Name = model.Name;
+        product.Slug = Product.GenerateSlug(model.Name);
         product.Description = model.Description;
         product.Price = model.Price;
         product.Stock = model.Stock;

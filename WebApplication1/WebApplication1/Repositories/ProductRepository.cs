@@ -18,6 +18,13 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .Include(p => p.Specifications)
             .FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
 
+    public async Task<Product?> GetBySlugAsync(string slug) =>
+        await Context.Products
+            .Include(p => p.Brand)
+            .Include(p => p.Category)
+            .Include(p => p.Specifications)
+            .FirstOrDefaultAsync(p => p.Slug == slug && p.IsActive);
+
     public async Task<PagedResult<Product>> GetFilteredAsync(ProductFilter filter)
     {
         var query = Context.Products

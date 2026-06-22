@@ -141,7 +141,7 @@
                     </button>
                 </form>
             </div>
-            <a asp-action="Details" asp-route-id="@product.Id">
+            <a asp-action="Details" asp-route-slug="@product.Slug">
                 <span class="product-card-brand-chip brand-chip-@brandSlug">@product.Brand.Name</span>
                 <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
                 <div class="body">

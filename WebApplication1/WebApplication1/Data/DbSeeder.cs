@@ -739,7 +739,8 @@ public static class DbSeeder
             CategoryId = categoryId,
             BrandId = brandId,
             ImageUrl = imageUrl,
-            SecondaryImageUrls = secondaryImageUrls
+            SecondaryImageUrls = secondaryImageUrls,
+            Slug = Product.GenerateSlug(name)
         };
         foreach (var (key, value) in specs)
         {
