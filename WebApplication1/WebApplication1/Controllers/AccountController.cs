@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebApplication1.Data;
 using WebApplication1.Models;
 using WebApplication1.Services;
 using WebApplication1.ViewModels;
@@ -15,17 +16,23 @@ public class AccountController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ICartService _cartService;
     private readonly Repositories.IOrderRepository _orders;
+    private readonly ApplicationDbContext _context;
+    private readonly IEmailService _emailService;
 
     public AccountController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         ICartService cartService,
-        Repositories.IOrderRepository orders)
+        Repositories.IOrderRepository orders,
+        ApplicationDbContext context,
+        IEmailService emailService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _cartService = cartService;
         _orders = orders;
+        _context = context;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -303,8 +310,20 @@ public class AccountController : Controller
         }
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var callbackUrl = Url.Action("ResetPassword", "Account", new { token, email = model.Email }, Request.Scheme);
+        var callbackUrl = Url.Action("ResetPassword", "Account", new { token, email = model.Email }, Request.Scheme) ?? "";
         
+        try
+        {
+            // Gửi email khôi phục mật khẩu chứa callback link
+            await _emailService.SendPasswordResetEmailAsync(model.Email, callbackUrl);
+        }
+        catch (Exception ex)
+        {
+            // Log lỗi nhưng không làm gián đoạn luồng người dùng
+            Console.WriteLine($"[AccountController] Không gửi được mail khôi phục: {ex.Message}");
+            TempData["EmailError"] = "Không thể gửi email do cấu hình máy chủ SMTP chưa chính xác hoặc thiếu kết nối. Bạn có thể sử dụng link trực tiếp bên dưới để test.";
+        }
+
         // Save the direct reset link to TempData so it can be displayed on the screen for local testing!
         TempData["DirectResetLink"] = callbackUrl;
 
@@ -376,7 +395,7 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelOrder(int id)
     {
-        var order = await _orders.GetByIdAsync(id);
+        var order = await _orders.GetWithItemsAsync(id);
         if (order == null) return NotFound();
 
         var userId = _userManager.GetUserId(User);
@@ -389,6 +408,14 @@ public class AccountController : Controller
         {
             TempData["Error"] = "Chỉ có thể hủy đơn hàng ở trạng thái Chờ xử lý!";
             return RedirectToAction(nameof(OrderDetails), new { id });
+        }
+
+        // Hoàn kho khi hủy đơn
+        foreach (var item in order.Items)
+        {
+            var product = await _context.Products.FindAsync(item.ProductId);
+            if (product != null)
+                product.Stock += item.Quantity;
         }
 
         order.Status = OrderStatus.Cancelled;

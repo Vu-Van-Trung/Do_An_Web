@@ -30,6 +30,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .Property(p => p.Price)
             .HasPrecision(18, 2);
 
+        builder.Entity<Product>()
+            .HasIndex(p => p.Slug)
+            .IsUnique();
+
         builder.Entity<Order>()
             .Property(o => o.Subtotal)
             .HasPrecision(18, 2);
@@ -83,7 +87,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         // ProductReview configurations
         builder.Entity<ProductReview>()
             .HasOne(r => r.Product)
-            .WithMany()
+            .WithMany(p => p.Reviews)
             .HasForeignKey(r => r.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 

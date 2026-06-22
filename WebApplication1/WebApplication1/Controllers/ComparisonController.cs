@@ -50,8 +50,8 @@ public class ComparisonController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Add(int productId)
     {
-        var productExists = await _context.Products.AnyAsync(p => p.Id == productId);
-        if (!productExists) return NotFound();
+        var product = await _context.Products.FindAsync(productId);
+        if (product == null) return NotFound();
 
         var productIds = GetComparedProductIds();
         if (productIds.Contains(productId))
@@ -61,6 +61,21 @@ public class ComparisonController : Controller
         else if (productIds.Count >= 4)
         {
             TempData["Error"] = "Chỉ có thể so sánh tối đa 4 sản phẩm cùng lúc!";
+        }
+        else if (productIds.Any())
+        {
+            var firstProductId = productIds.First();
+            var firstProduct = await _context.Products.FindAsync(firstProductId);
+            if (firstProduct != null && firstProduct.CategoryId != product.CategoryId)
+            {
+                TempData["Error"] = "Chỉ có thể so sánh các sản phẩm có cùng danh mục!";
+            }
+            else
+            {
+                productIds.Add(productId);
+                SaveComparedProductIds(productIds);
+                TempData["Success"] = "Đã thêm sản phẩm vào danh sách so sánh.";
+            }
         }
         else
         {

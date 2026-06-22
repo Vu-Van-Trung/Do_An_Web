@@ -47,6 +47,7 @@ public class CartService : ICartService
         var items = await CartQuery()
             .Include(c => c.Product)
             .ThenInclude(p => p.Brand)
+            .Include(c => c.Product.Category)
             .ToListAsync();
 
         return new CartViewModel
@@ -59,7 +60,33 @@ public class CartService : ICartService
                 ImageUrl = c.Product.ImageUrl,
                 UnitPrice = c.Product.Price,
                 Quantity = c.Quantity,
-                Stock = c.Product.Stock
+                Stock = c.Product.Stock,
+                ShippingClass = c.Product.ShippingClass
+            }).ToList()
+        };
+    }
+
+    public async Task<CartViewModel> GetSelectedCartAsync(IEnumerable<int> cartItemIds)
+    {
+        var idSet = cartItemIds.ToHashSet();
+        var items = await CartQuery()
+            .Include(c => c.Product).ThenInclude(p => p.Brand)
+            .Include(c => c.Product.Category)
+            .Where(c => idSet.Contains(c.Id))
+            .ToListAsync();
+
+        return new CartViewModel
+        {
+            Items = items.Select(c => new CartLineViewModel
+            {
+                CartItemId = c.Id,
+                ProductId  = c.ProductId,
+                Name       = c.Product.Name,
+                ImageUrl   = c.Product.ImageUrl,
+                UnitPrice  = c.Product.Price,
+                Quantity   = c.Quantity,
+                Stock      = c.Product.Stock,
+                ShippingClass = c.Product.ShippingClass
             }).ToList()
         };
     }

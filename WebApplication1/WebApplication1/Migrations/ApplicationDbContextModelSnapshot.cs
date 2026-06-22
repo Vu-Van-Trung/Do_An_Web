@@ -522,6 +522,16 @@ namespace WebApplication1.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("SecondaryImageUrls")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ShippingClass")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("Stock")
                         .HasColumnType("int");
 
@@ -530,6 +540,9 @@ namespace WebApplication1.Migrations
                     b.HasIndex("BrandId");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
 
                     b.ToTable("Products");
                 });
@@ -754,7 +767,7 @@ namespace WebApplication1.Migrations
             modelBuilder.Entity("WebApplication1.Models.ProductReview", b =>
                 {
                     b.HasOne("WebApplication1.Models.Product", "Product")
-                        .WithMany()
+                        .WithMany("Reviews")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -829,6 +842,8 @@ namespace WebApplication1.Migrations
                     b.Navigation("CartItems");
 
                     b.Navigation("OrderItems");
+
+                    b.Navigation("Reviews");
 
                     b.Navigation("Specifications");
                 });

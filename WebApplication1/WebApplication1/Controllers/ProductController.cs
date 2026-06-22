@@ -23,16 +23,36 @@ public class ProductController : Controller
 
     public async Task<IActionResult> Index(ProductFilter filter)
     {
+        var allCats = await _context.Categories.ToListAsync();
+        var orderedCats = new List<Category>();
+        var parents = allCats.Where(c => c.ParentCategoryId == null).OrderBy(c => c.SortOrder).ThenBy(c => c.Name);
+        foreach (var parent in parents)
+        {
+            orderedCats.Add(parent);
+            var children = allCats.Where(c => c.ParentCategoryId == parent.Id).OrderBy(c => c.SortOrder).ThenBy(c => c.Name);
+            orderedCats.AddRange(children);
+        }
+
         var vm = new CatalogViewModel
         {
             Filter      = filter,
             Products    = await _products.GetFilteredAsync(filter),
-            Categories  = await _context.Categories.OrderBy(c => c.Name).ToListAsync(),
+            Categories  = orderedCats,
             Brands      = await _context.Brands.OrderBy(b => b.Name).ToListAsync(),
             Connections = await _products.GetSpecValuesAsync("Connection"),
             SwitchTypes = await _products.GetSpecValuesAsync("Switch Type"),
             DpiOptions  = await _products.GetSpecValuesAsync("DPI")
         };
+
+        // Calculate rating per product
+        var productIds = vm.Products.Items.Select(p => p.Id).ToList();
+        var productRatings = await _context.ProductReviews
+            .Where(r => productIds.Contains(r.ProductId))
+            .GroupBy(r => r.ProductId)
+            .Select(g => new { ProductId = g.Key, AverageRating = g.Average(r => r.Rating), Count = g.Count() })
+            .ToDictionaryAsync(x => x.ProductId, x => (AverageRating: x.AverageRating, Count: x.Count));
+        ViewBag.ProductRatings = productRatings;
+
         var now = DateTime.UtcNow;
         List<Discount> activeDiscounts = new();
 
@@ -59,15 +79,21 @@ public class ProductController : Controller
         return View(vm);
     }
 
-    public async Task<IActionResult> Details(int id)
+    public async Task<IActionResult> Details(string slug)
     {
-        var product = await _products.GetWithDetailsAsync(id);
+        var product = await _products.GetBySlugAsync(slug);
         if (product == null)
             return NotFound();
 
+        // Fallback for secondary images if database is not re-seeded
+        if (string.IsNullOrEmpty(product.SecondaryImageUrls) && !string.IsNullOrEmpty(product.ImageUrl))
+        {
+            product.SecondaryImageUrls = $"{product.ImageUrl}?v=1,{product.ImageUrl}?v=2,{product.ImageUrl}?v=3";
+        }
+
         var reviews = await _context.ProductReviews
             .Include(r => r.User)
-            .Where(r => r.ProductId == id)
+            .Where(r => r.ProductId == product.Id)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
         ViewBag.Reviews = reviews;
@@ -97,6 +123,13 @@ public class ProductController : Controller
                     discountsQuery = discountsQuery.Where(d => d.PromotionType != PromotionType.FirstOrder);
                 }
                 activeDiscounts = await discountsQuery.ToListAsync();
+
+                // Check if user has purchased this product
+                bool hasPurchased = await _context.Orders
+                    .AnyAsync(o => o.UserId == userId && 
+                                   o.Status == OrderStatus.Completed && 
+                                   o.Items.Any(i => i.ProductId == product.Id));
+                ViewBag.HasPurchased = hasPurchased;
             }
         }
 
@@ -116,11 +149,22 @@ public class ProductController : Controller
         if (rating < 1 || rating > 5)
         {
             TempData["Error"] = "Số sao đánh giá phải từ 1 đến 5!";
-            return RedirectToAction(nameof(Details), new { id = productId });
+            return RedirectToAction(nameof(Details), new { slug = product.Slug });
         }
 
         var userId = _context.Users.Where(u => u.UserName == User.Identity!.Name).Select(u => u.Id).FirstOrDefault();
         if (string.IsNullOrEmpty(userId)) return Challenge();
+
+        // RÀNG BUỘC: chỉ khách hàng đã mua sản phẩm nào mới có thể đánh giá sản phẩm đó
+        bool hasPurchased = await _context.Orders
+            .AnyAsync(o => o.UserId == userId && 
+                           o.Status == OrderStatus.Completed && 
+                           o.Items.Any(i => i.ProductId == productId));
+        if (!hasPurchased)
+        {
+            TempData["Error"] = "Bạn chỉ có thể đánh giá sản phẩm này sau khi đã mua hàng thành công!";
+            return RedirectToAction(nameof(Details), new { slug = product.Slug });
+        }
 
         var review = new ProductReview
         {
@@ -135,7 +179,7 @@ public class ProductController : Controller
         await _context.SaveChangesAsync();
 
         TempData["Success"] = "Cảm ơn bạn đã đánh giá sản phẩm!";
-        return RedirectToAction(nameof(Details), new { id = productId });
+        return RedirectToAction(nameof(Details), new { slug = product.Slug });
     }
 
     /// <summary>Trang Khuyến mãi công khai — hiển thị tất cả deal đang hoạt động</summary>

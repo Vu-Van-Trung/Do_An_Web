@@ -6,6 +6,7 @@ namespace WebApplication1.Repositories;
 public interface IProductRepository : IRepository<Product>
 {
     Task<Product?> GetWithDetailsAsync(int id);
+    Task<Product?> GetBySlugAsync(string slug);
     Task<PagedResult<Product>> GetFilteredAsync(ProductFilter filter);
     Task<IEnumerable<string>> GetSpecValuesAsync(string key);
 }

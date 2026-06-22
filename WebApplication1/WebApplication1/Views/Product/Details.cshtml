@@ -47,8 +47,27 @@
 }
 
 <div class="detail-layout">
-    <div class="glass-panel" style="padding:1.5rem;">
-        <img src="@Model.ImageUrl" alt="@Model.Name" style="width:100%; max-height:400px; object-fit:contain;" />
+    <div class="glass-panel" style="padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+        <div style="width:100%; max-height:400px; display:flex; justify-content:center; align-items:center; background:rgba(0,0,0,0.01); border-radius:10px;">
+            <img id="mainProductImage" src="@Model.ImageUrl" alt="@Model.Name" style="max-width:100%; max-height:400px; object-fit:contain; transition: opacity 0.2s;" />
+        </div>
+        
+        @if (!string.IsNullOrEmpty(Model.SecondaryImageUrls))
+        {
+            var images = new List<string>();
+            if (!string.IsNullOrEmpty(Model.ImageUrl)) images.Add(Model.ImageUrl);
+            images.AddRange(Model.SecondaryImageUrls.Split(',').Select(img => img.Trim()).Where(img => !string.IsNullOrEmpty(img)));
+            images = images.Distinct().ToList();
+            
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+                @for (var i = 0; i < images.Count; i++)
+                {
+                    <div class="thumbnail-wrapper" style="width:70px; height:70px; border:2px solid @(i == 0 ? "var(--accent)" : "var(--border)"); border-radius:8px; cursor:pointer; overflow:hidden; display:flex; justify-content:center; align-items:center; background:#fff; transition: border-color 0.2s;" onclick="changeProductImage('@images[i]', this)">
+                        <img src="@images[i]" alt="Thumbnail @i" style="max-width:100%; max-height:100%; object-fit:contain;" />
+                    </div>
+                }
+            </div>
+        }
     </div>
     <div>
         <p class="meta">@Model.Brand.Name · @Model.Category.Name</p>
@@ -124,16 +143,34 @@
 
         <!-- Bộ nút hành động -->
         <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
-            @if (Model.Stock > 0)
+            @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
             {
-                <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
+                <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 20px rgba(234,179,8,0.3); background-color:#eab308; color:#000; border:none; padding:0.75rem 2rem; display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;" title="Sửa sản phẩm">
+                    <i class="bi bi-pencil-square"></i> Sửa sản phẩm
+                </a>
+                <form asp-area="Admin" asp-controller="Products" asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');" class="inline-form" style="margin:0;">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="productId" value="@Model.Id" />
-                    <input type="hidden" name="quantity" value="1" />
-                    <button type="submit" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 20px rgba(139,92,246,0.3); padding:0.75rem 2rem;">
-                        &#x1F6D2; Thêm vào giỏ hàng
+                    <button type="submit" class="btn btn-danger btn-lg" style="box-shadow: 0 4px 20px rgba(239,68,68,0.3); background-color:#ef4444; color:#fff; border:none; padding:0.75rem 2rem; display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                        <i class="bi bi-trash-fill"></i> Xóa sản phẩm
                     </button>
                 </form>
+                <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="btn btn-ghost" style="padding:0.75rem 1.5rem; display:inline-flex; align-items:center; gap:0.4rem; text-decoration:none;">
+                    <i class="bi bi-plus-circle-fill"></i> Thêm sản phẩm mới
+                </a>
+            }
+            else
+            {
+                @if (Model.Stock > 0)
+                {
+                    <form asp-controller="Cart" asp-action="Add" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@Model.Id" />
+                        <input type="hidden" name="quantity" value="1" />
+                        <button type="submit" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 20px rgba(139,92,246,0.3); padding:0.75rem 2rem;">
+                            &#x1F6D2; Thêm vào giỏ hàng
+                        </button>
+                    </form>
+                }
             }
             @* Wishlist form removed *@
             <form asp-controller="Comparison" asp-action="Add" method="post" class="inline-form">
@@ -157,29 +194,40 @@
     <div class="glass-panel" style="padding:1.5rem; margin-bottom:2.5rem;">
         @if (User.Identity?.IsAuthenticated == true)
         {
-            <h3 style="font-size:1.05rem; font-family:var(--font-display); font-weight:600; margin-top:0; margin-bottom:1rem;">Để lại ý kiến của bạn</h3>
-            <form asp-action="AddReview" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="productId" value="@Model.Id" />
-                
-                <div style="margin-bottom:1rem;">
-                    <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Điểm số đánh giá</label>
-                    <select name="rating" class="form-control" style="width:160px; border-radius:8px;" required>
-                        <option value="5">5 ★ (Rất tốt)</option>
-                        <option value="4">4 ★ (Tốt)</option>
-                        <option value="3">3 ★ (Bình thường)</option>
-                        <option value="2">2 ★ (Tạm ổn)</option>
-                        <option value="1">1 ★ (Tệ)</option>
-                    </select>
-                </div>
-                
-                <div style="margin-bottom:1.25rem;">
-                    <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Nội dung nhận xét</label>
-                    <textarea name="comment" class="form-control" rows="3" placeholder="Hãy viết cảm nghĩ thực tế của bạn về chất lượng hoàn thiện, cảm giác bấm/nghe..." style="border-radius:10px;" required></textarea>
-                </div>
-                
-                <button type="submit" class="btn btn-primary btn-sm" style="padding:0.6rem 1.5rem;">Gửi nhận xét</button>
-            </form>
+            if (ViewBag.HasPurchased == true)
+            {
+                <h3 style="font-size:1.05rem; font-family:var(--font-display); font-weight:600; margin-top:0; margin-bottom:1rem;">Để lại ý kiến của bạn</h3>
+                <form asp-action="AddReview" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    
+                    <div style="margin-bottom:1rem;">
+                        <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Điểm số đánh giá *</label>
+                        <div class="interactive-stars" style="display:flex; gap:0.5rem; font-size:1.65rem; color:#e5e7eb; cursor:pointer;">
+                            <span class="star-item" data-value="1" style="transition: color 0.15s; user-select: none;">★</span>
+                            <span class="star-item" data-value="2" style="transition: color 0.15s; user-select: none;">★</span>
+                            <span class="star-item" data-value="3" style="transition: color 0.15s; user-select: none;">★</span>
+                            <span class="star-item" data-value="4" style="transition: color 0.15s; user-select: none;">★</span>
+                            <span class="star-item" data-value="5" style="transition: color 0.15s; user-select: none;">★</span>
+                        </div>
+                        <input type="hidden" name="rating" id="rating-value-input" value="5" />
+                        <span id="rating-label" style="display:inline-block; font-size:0.82rem; font-weight:600; color:var(--accent); margin-top:0.25rem;">Rất tốt (5/5 sao)</span>
+                    </div>
+                    
+                    <div style="margin-bottom:1.25rem;">
+                        <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.35rem;">Nội dung nhận xét *</label>
+                        <textarea name="comment" class="form-control" rows="3" placeholder="Hãy viết cảm nghĩ thực tế của bạn về chất lượng hoàn thiện, cảm giác bấm/nghe..." style="border-radius:10px;" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-sm" style="padding:0.6rem 1.5rem;">Gửi nhận xét</button>
+                </form>
+            }
+            else
+            {
+                <p class="meta" style="margin:0; font-size:0.88rem; color:#ef4444; font-weight:500; display:flex; align-items:center; gap:0.35rem;">
+                    <span>⚠️ Bạn chỉ có thể đánh giá sản phẩm này sau khi đã mua hàng thành công.</span>
+                </p>
+            }
         }
         else
         {
@@ -225,3 +273,75 @@
         }
     </div>
 </section>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const stars = document.querySelectorAll(".interactive-stars .star-item");
+        const ratingInput = document.getElementById("rating-value-input");
+        const label = document.getElementById("rating-label");
+        const ratingTexts = {
+            1: "Tệ (1/5 sao)",
+            2: "Tạm ổn (2/5 sao)",
+            3: "Bình thường (3/5 sao)",
+            4: "Tốt (4/5 sao)",
+            5: "Rất tốt (5/5 sao)"
+        };
+
+        function setStars(val) {
+            stars.forEach(s => {
+                const sVal = parseInt(s.dataset.value);
+                if (sVal <= val) {
+                    s.style.color = "#f59e0b";
+                } else {
+                    s.style.color = "#e5e7eb";
+                }
+            });
+            if (ratingInput) ratingInput.value = val;
+            if (label) label.textContent = ratingTexts[val];
+        }
+
+        // Initialize at 5 stars
+        setStars(5);
+
+        stars.forEach(s => {
+            s.addEventListener("mouseenter", function() {
+                const hoverVal = parseInt(this.dataset.value);
+                stars.forEach(star => {
+                    const starVal = parseInt(star.dataset.value);
+                    star.style.color = starVal <= hoverVal ? "#fbbf24" : "#e5e7eb";
+                });
+            });
+
+            s.addEventListener("mouseleave", function() {
+                const currentVal = parseInt(ratingInput.value || "5");
+                setStars(currentVal);
+            });
+
+            s.addEventListener("click", function() {
+                const val = parseInt(this.dataset.value);
+                setStars(val);
+            });
+        });
+    });
+
+    function changeProductImage(src, element) {
+        const mainImg = document.getElementById("mainProductImage");
+        if (mainImg) {
+            mainImg.style.opacity = 0.3;
+            setTimeout(() => {
+                mainImg.src = src;
+                mainImg.style.opacity = 1;
+            }, 150);
+        }
+        
+        // Update active thumbnail border
+        document.querySelectorAll(".thumbnail-wrapper").forEach(wrapper => {
+            wrapper.style.borderColor = "var(--border)";
+        });
+        if (element) {
+            element.style.borderColor = "var(--accent)";
+        }
+    }
+</script>
+}

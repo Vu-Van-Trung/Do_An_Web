@@ -8,6 +8,7 @@ using WebApplication1.Repositories;
 using WebApplication1.Services;
 using WebApplication1.ViewModels;
 using System.Text.Json;
+using System.Net.Http;
 using Microsoft.AspNetCore.SignalR; // BỔ SUNG: Thư viện SignalR
 
 namespace WebApplication1.Controllers;
@@ -16,6 +17,7 @@ namespace WebApplication1.Controllers;
 public class CheckoutController : Controller
 {
     private const decimal ShippingFee = 50000m;
+    private const string SelectedItemsKey = "SelectedCartItems";
     private readonly ICartService _cartService;
     private readonly IOrderRepository _orders;
     private readonly IDiscountRepository _discounts;
@@ -46,26 +48,31 @@ public class CheckoutController : Controller
         _hubContext = hubContext;
     }
 
-    private decimal CalculateShippingFee(string address)
+    private static ShippingClass GetDominantShippingClass(CartViewModel cart) =>
+        cart.Items.Count == 0
+            ? ShippingClass.Nho
+            : cart.Items.Select(i => i.ShippingClass).OrderByDescending(s => (int)s).First();
+
+    private async Task<CartViewModel> GetCheckoutCartAsync()
     {
-        if (string.IsNullOrWhiteSpace(address)) return 30000m;
-        bool isHCM = address.Contains("Hồ Chí Minh", StringComparison.OrdinalIgnoreCase) || 
-                     address.Contains("HCM", StringComparison.OrdinalIgnoreCase);
-        
-        var random = new Random();
-        if (isHCM)
+        var json = HttpContext.Session.GetString(SelectedItemsKey);
+        if (!string.IsNullOrEmpty(json))
         {
-            return random.Next(20, 31) * 1000m;
+            var ids = JsonSerializer.Deserialize<int[]>(json);
+            if (ids != null && ids.Length > 0)
+                return await _cartService.GetSelectedCartAsync(ids);
         }
-        else
-        {
-            return random.Next(50, 81) * 1000m;
-        }
+        return await _cartService.GetCartAsync();
+    }
+
+    private void ClearSelectedItemsSession()
+    {
+        HttpContext.Session.Remove(SelectedItemsKey);
     }
 
     public async Task<IActionResult> Index(int step = 1)
     {
-        var cart = await _cartService.GetCartAsync();
+        var cart = await GetCheckoutCartAsync();
         if (!cart.Items.Any())
             return RedirectToAction("Index", "Cart");
 
@@ -89,6 +96,9 @@ public class CheckoutController : Controller
         }
         ViewBag.UserVouchers = userVouchers;
 
+        var dominantClass = GetDominantShippingClass(cart);
+        ViewBag.CartShippingClassIndex = (int)dominantClass; // 0=Nho,1=Vua,2=CongKenh
+
         if (step == 1)
         {
             if (userId != null)
@@ -101,62 +111,37 @@ public class CheckoutController : Controller
                     vm.Shipping.ShippingAddress = user.Address ?? string.Empty;
                 }
             }
-
-            // Calculate shipping fee for Step 1 if default address is available
-            if (!string.IsNullOrEmpty(vm.Shipping.ShippingAddress))
-            {
-                if (TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee))
-                {
-                    vm.ShippingFee = fee;
-                }
-                else
-                {
-                    vm.ShippingFee = CalculateShippingFee(vm.Shipping.ShippingAddress);
-                    TempData["ShippingFee"] = vm.ShippingFee.ToString();
-                }
-            }
-            else
-            {
-                vm.ShippingFee = 50000m;
-            }
-
-            var originalShippingFee1 = !string.IsNullOrEmpty(vm.Shipping.ShippingAddress)
-                ? (TempData["ShippingFee"] is string originalFeeStr && decimal.TryParse(originalFeeStr, out var originalFee) ? originalFee : CalculateShippingFee(vm.Shipping.ShippingAddress))
-                : 50000m;
-            ViewBag.OriginalShippingFee = originalShippingFee1;
-
-            // Apply free shipping discount in Step 1 if voucher is applied
-            var appliedCode1 = TempData["DiscountCode"]?.ToString() ?? HttpContext.Session.GetString("AppliedCouponCode");
-            if (!string.IsNullOrEmpty(appliedCode1))
-            {
-                var discount = await _discounts.GetActiveByCodeAsync(appliedCode1, cart.Subtotal);
-                if (discount != null && discount.PromotionType == PromotionType.FreeShipping)
-                {
-                    vm.ShippingFee = 0m;
-                }
-            }
-
             TempData.Keep();
         }
         else
         {
-            vm.Shipping.FullName = TempData["ShippingFullName"]?.ToString() ?? string.Empty;
-            vm.Shipping.Phone = TempData["ShippingPhone"]?.ToString() ?? string.Empty;
+            vm.Shipping.FullName    = TempData["ShippingFullName"]?.ToString() ?? string.Empty;
+            vm.Shipping.Phone       = TempData["ShippingPhone"]?.ToString() ?? string.Empty;
             vm.Shipping.ShippingAddress = TempData["ShippingAddress"]?.ToString() ?? string.Empty;
-            vm.Shipping.Notes = TempData["ShippingNotes"]?.ToString();
-            
+            vm.Shipping.Notes       = TempData["ShippingNotes"]?.ToString();
+
+            if (TempData["ProvinceCode"] is string pcStr && int.TryParse(pcStr, out var pc))
+                vm.Shipping.ProvinceCode = pc;
+            if (TempData["SelectedService"] is string svcStr && Enum.TryParse<ShippingService>(svcStr, out var svc))
+                vm.Shipping.SelectedService = svc;
+
             if (TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee))
             {
                 vm.ShippingFee = fee;
             }
             else
             {
-                vm.ShippingFee = CalculateShippingFee(vm.Shipping.ShippingAddress);
+                var sc = GetDominantShippingClass(cart);
+                vm.ShippingFee = ShippingCalculator.GetFee(vm.Shipping.ProvinceCode, sc, vm.Shipping.SelectedService);
                 TempData["ShippingFee"] = vm.ShippingFee.ToString();
             }
 
-            var originalShippingFee = vm.ShippingFee;
-            ViewBag.OriginalShippingFee = originalShippingFee;
+            ViewBag.OriginalShippingFee = vm.ShippingFee;
+            if (dominantClass == ShippingClass.CongKenh)
+            {
+                var region = ShippingCalculator.GetRegion(vm.Shipping.ProvinceCode);
+                ViewBag.CongKenhIsFree = region == ShippingRegion.NoiThanhHCM;
+            }
 
             var appliedCode = TempData["DiscountCode"]?.ToString();
             if (string.IsNullOrEmpty(appliedCode))
@@ -172,21 +157,17 @@ public class CheckoutController : Controller
                         {
                             appliedCode = autoCode;
                             TempData["DiscountCode"] = autoCode;
-
                             var discountAmount = discount.DiscountType == DiscountType.Percent
                                 ? Math.Round(cart.Subtotal * discount.Value / 100, 0)
                                 : discount.Value;
-
                             if (discount.PromotionType == PromotionType.FreeShipping)
                             {
-                                discountAmount = 0m;
                                 vm.ShippingFee = 0m;
                             }
                             else
                             {
                                 discountAmount = Math.Min(discountAmount, cart.Subtotal);
                             }
-
                             HttpContext.Session.SetString("AppliedCouponCode", autoCode);
                             HttpContext.Session.SetString("DiscountAmount", discountAmount.ToString());
                         }
@@ -198,9 +179,7 @@ public class CheckoutController : Controller
             {
                 var discount = await _discounts.GetActiveByCodeAsync(appliedCode, cart.Subtotal);
                 if (discount != null && discount.PromotionType == PromotionType.FreeShipping)
-                {
                     vm.ShippingFee = 0m;
-                }
             }
 
             TempData.Keep();
@@ -219,21 +198,28 @@ public class CheckoutController : Controller
         foreach (var key in shippingKeys)
             ModelState.Remove(key);
 
+        var cart = await GetCheckoutCartAsync();
         if (!ModelState.IsValid)
             return View("Index", new CheckoutViewModel
             {
                 Step = 1,
                 Shipping = vm.Shipping,
-                Cart = await _cartService.GetCartAsync()
+                Cart = cart
             });
 
-        var shippingFee = CalculateShippingFee(vm.Shipping.ShippingAddress);
-        TempData["ShippingFee"] = shippingFee.ToString();
+        var shippingClass = GetDominantShippingClass(cart);
+        var options       = ShippingCalculator.CalculateShippingFee(vm.Shipping.ProvinceCode, shippingClass);
+        var chosen        = options.FirstOrDefault(o => o.Service == vm.Shipping.SelectedService && !o.IsContactOnly)
+                         ?? options.FirstOrDefault(o => !o.IsContactOnly);
+        var shippingFee   = chosen?.Fee ?? 0m;
 
+        TempData["ShippingFee"]      = shippingFee.ToString();
+        TempData["ProvinceCode"]     = vm.Shipping.ProvinceCode.ToString();
+        TempData["SelectedService"]  = vm.Shipping.SelectedService.ToString();
         TempData["ShippingFullName"] = vm.Shipping.FullName;
-        TempData["ShippingPhone"] = vm.Shipping.Phone;
-        TempData["ShippingAddress"] = vm.Shipping.ShippingAddress;
-        TempData["ShippingNotes"] = vm.Shipping.Notes;
+        TempData["ShippingPhone"]    = vm.Shipping.Phone;
+        TempData["ShippingAddress"]  = vm.Shipping.ShippingAddress;
+        TempData["ShippingNotes"]    = vm.Shipping.Notes;
         TempData.Keep();
         return RedirectToAction(nameof(Index), new { step = 2 });
     }
@@ -242,7 +228,7 @@ public class CheckoutController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> PlaceOrder(PaymentViewModel model)
     {
-        var cart = await _cartService.GetCartAsync();
+        var cart = await GetCheckoutCartAsync();
         if (!cart.Items.Any())
             return RedirectToAction("Index", "Cart");
 
@@ -252,7 +238,19 @@ public class CheckoutController : Controller
         // Apply discount
         var discountCode = TempData["DiscountCode"]?.ToString();
         var discountAmount = 0m;
-        var shippingFee = TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee) ? fee : 50000m;
+
+        decimal shippingFee;
+        if (TempData["ShippingFee"] is string feeStr && decimal.TryParse(feeStr, out var fee))
+        {
+            shippingFee = fee;
+        }
+        else
+        {
+            var pc  = TempData["ProvinceCode"] is string pcStr && int.TryParse(pcStr, out var p) ? p : 0;
+            var svc = TempData["SelectedService"] is string svcStr && Enum.TryParse<ShippingService>(svcStr, out var s) ? s : ShippingService.Nhanh;
+            var sc  = GetDominantShippingClass(cart);
+            shippingFee = ShippingCalculator.GetFee(pc, sc, svc);
+        }
 
         if (!string.IsNullOrEmpty(discountCode))
         {
@@ -342,6 +340,7 @@ public class CheckoutController : Controller
         if (model.PaymentMethod != "VNPay")
         {
             await _cartService.ClearCartAsync();
+            ClearSelectedItemsSession();
             HttpContext.Session.Remove("AppliedCouponCode");
             HttpContext.Session.Remove("DiscountAmount");
 
@@ -402,6 +401,7 @@ public class CheckoutController : Controller
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
             await _cartService.ClearCartAsync();
+            ClearSelectedItemsSession();
             HttpContext.Session.Remove("AppliedCouponCode");
             HttpContext.Session.Remove("DiscountAmount");
 
@@ -453,7 +453,7 @@ public class CheckoutController : Controller
             return Json(new { success = true, code = "", discountAmount = 0m, message = "Đã bỏ áp dụng mã giảm giá." });
         }
 
-        var cart = await _cartService.GetCartAsync();
+        var cart = await GetCheckoutCartAsync();
         var discount = await _discounts.GetActiveByCodeAsync(req.Code, cart.Subtotal);
 
         if (discount == null)

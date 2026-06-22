@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using WebApplication1.Models;
+using WebApplication1.Services;
 using Microsoft.AspNetCore.Identity;
 
 
@@ -17,6 +18,10 @@ public class ShippingViewModel
     public string ShippingAddress { get; set; } = string.Empty;
 
     public string? Notes { get; set; }
+
+    public int ProvinceCode { get; set; } = 0;
+
+    public ShippingService SelectedService { get; set; } = ShippingService.Nhanh;
 }
 
 public class PaymentViewModel
@@ -190,8 +195,18 @@ public class ProductFormViewModel
 
     public string? ImageUrl { get; set; }
     public IFormFile? ImageFile { get; set; }
+    public string? SecondaryImageUrls { get; set; }
+    public List<IFormFile>? SecondaryImageFiles { get; set; }
+    public List<SecondaryImageEditItem> SecondaryImages { get; set; } = new();
     public bool IsActive { get; set; } = true;
     public List<SpecInput> Specifications { get; set; } = new();
+}
+
+public class SecondaryImageEditItem
+{
+    public string Url { get; set; } = string.Empty;
+    public bool Remove { get; set; }
+    public IFormFile? ReplacementFile { get; set; }
 }
 
 public class SpecInput

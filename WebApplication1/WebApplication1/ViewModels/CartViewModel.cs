@@ -1,3 +1,5 @@
+using WebApplication1.Services;
+
 namespace WebApplication1.ViewModels;
 
 public class CartLineViewModel
@@ -9,6 +11,8 @@ public class CartLineViewModel
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public int Stock { get; set; }
+    public ShippingClass ShippingClass { get; set; } = ShippingClass.Nho;
+    public bool IsBulky => ShippingClass == ShippingClass.CongKenh;
     public decimal LineTotal => UnitPrice * Quantity;
 }
 

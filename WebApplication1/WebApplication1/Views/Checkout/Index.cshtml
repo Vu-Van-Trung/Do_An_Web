@@ -269,12 +269,6 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Quận / Huyện *</label>
-                                    <select id="districtSelect" class="form-control" disabled>
-                                        <option value="">-- Chọn Quận/Huyện --</option>
-                                    </select>
-                                </div>
-                                <div>
                                     <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Phường / Xã *</label>
                                     <select id="wardSelect" class="form-control" disabled>
                                         <option value="">-- Chọn Phường/Xã --</option>
@@ -288,6 +282,8 @@
                         </div>
 
                         <input type="hidden" asp-for="Shipping.ShippingAddress" id="shippingAddressCombined" />
+                        <input type="hidden" asp-for="Shipping.ProvinceCode"    id="provinceCodeInput" />
+                        <input type="hidden" asp-for="Shipping.SelectedService" id="selectedServiceInput" value="Nhanh" />
                         <span asp-validation-for="Shipping.ShippingAddress" class="text-danger"></span>
                     </div>
 
@@ -297,24 +293,21 @@
                         const newRadio = document.getElementById("addressTypeNew");
                         const newAddressWrapper = document.getElementById("newAddressWrapper");
                         const provinceSelect = document.getElementById("provinceSelect");
-                        const districtSelect = document.getElementById("districtSelect");
                         const wardSelect = document.getElementById("wardSelect");
                         const specificAddressInput = document.getElementById("specificAddress");
                         const shippingAddressCombined = document.getElementById("shippingAddressCombined");
                         const form = shippingAddressCombined.closest("form");
 
                         function toggleAddressFields() {
-                            const isNew = newRadio && newRadio.checked || !defaultRadio;
+                            const isNew = (newRadio && newRadio.checked) || !defaultRadio;
                             if (isNew) {
                                 newAddressWrapper.style.display = "block";
                                 provinceSelect.required = true;
-                                districtSelect.required = true;
                                 wardSelect.required = true;
                                 specificAddressInput.required = true;
                             } else {
                                 newAddressWrapper.style.display = "none";
                                 provinceSelect.required = false;
-                                districtSelect.required = false;
                                 wardSelect.required = false;
                                 specificAddressInput.required = false;
                             }
@@ -327,77 +320,215 @@
 
                         toggleAddressFields();
 
-                        // Load provinces
-                        fetch("https://provinces.open-api.vn/api/p/")
+                        const provinceCodeInput   = document.getElementById("provinceCodeInput");
+                        const selectedServiceInput = document.getElementById("selectedServiceInput");
+
+                        // ── Bảng giá (mirror ShippingCalculator.BaseRates) ──────────────────
+                        const HCM_CODES   = new Set([79]);
+                        const NAM_CODES   = new Set([75,80,82,86,91,92,96]);
+                        const TRUNG_CODES = new Set([38,40,42,44,46,48,51,52,56,66,68]);
+                        const RATES = [
+                            { label:"Nội thành HCM",  r:{ TietKiem:[25000,"2–3 ngày"],    Nhanh:[35000,"Hôm nay – ngày mai"], HoaToc:[60000,"2–4 giờ"] } },
+                            { label:"Miền Nam",        r:{ TietKiem:[35000,"3–5 ngày"],    Nhanh:[50000,"1–2 ngày"],           HoaToc:[90000,"Trong ngày"] } },
+                            { label:"Miền Trung",      r:{ TietKiem:[50000,"4–6 ngày"],    Nhanh:[70000,"2–3 ngày"],           HoaToc:[120000,"1–2 ngày"] } },
+                            { label:"Miền Bắc",        r:{ TietKiem:[70000,"5–7 ngày"],    Nhanh:[95000,"2–4 ngày"],           HoaToc:[150000,"2–3 ngày"] } },
+                        ];
+                        const MULTIPLIERS = [1.0, 1.5, 3.0];
+                        const cartClassIdx = @(ViewBag.CartShippingClassIndex ?? 0);
+                        const multiplier   = MULTIPLIERS[cartClassIdx];
+                        const isCongKenh   = cartClassIdx === 2;
+
+                        function getRegionIdx(code) {
+                            if (HCM_CODES.has(code))   return 0;
+                            if (NAM_CODES.has(code))   return 1;
+                            if (TRUNG_CODES.has(code)) return 2;
+                            return 3;
+                        }
+
+                        function renderShippingOptions(code) {
+                            const box = document.getElementById("shippingOptionsBox");
+                            const list = document.getElementById("shippingOptionsList");
+                            if (!code) { box.style.display = "none"; return; }
+
+                            const regionIdx = getRegionIdx(code);
+                            const isHCM     = regionIdx === 0;
+                            const rates     = RATES[regionIdx].r;
+                            const services  = ["TietKiem","Nhanh","HoaToc"];
+                            const labels    = { TietKiem:"Tiết kiệm", Nhanh:"Nhanh", HoaToc:"Hỏa tốc" };
+                            list.innerHTML  = "";
+
+                            let initialFeeData = null; // data of the currently selected service
+
+                            services.forEach(svc => {
+                                if (isCongKenh && svc === "HoaToc") return;
+                                const [base, eta] = rates[svc];
+                                const isSelected  = (selectedServiceInput.value || "Nhanh") === svc;
+
+                                // ── Tính phí ──
+                                let feeText, subText;
+                                let baseFeeNum = 0, surchargeNum = 0;
+                                let isContactOnly = false, isFreeShip = false;
+
+                                if (isCongKenh && !isHCM) {
+                                    feeText = "Liên hệ báo phí";
+                                    subText = eta;
+                                    isContactOnly = true;
+                                } else if (isCongKenh && isHCM) {
+                                    feeText = "Miễn phí";
+                                    subText = eta + " (shop tự giao)";
+                                    isFreeShip = true;
+                                } else {
+                                    baseFeeNum   = Math.round(base / 1000) * 1000;          // ×1.0
+                                    const total  = Math.round(base * multiplier / 1000) * 1000;
+                                    surchargeNum = total - baseFeeNum;
+                                    feeText = new Intl.NumberFormat("vi-VN").format(total) + " ₫";
+                                    subText = eta;
+                                }
+
+                                if (isSelected) {
+                                    initialFeeData = { baseFeeNum, surchargeNum, isContactOnly, isFreeShip };
+                                }
+
+                                const div = document.createElement("div");
+                                div.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:0.45rem;transition:border-color .15s";
+                                if (isSelected) div.style.borderColor = "var(--accent)";
+                                div.innerHTML = `
+                                    <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;flex:1;">
+                                        <input type="radio" name="__svcPick" value="${svc}" ${isSelected?"checked":""} style="accent-color:var(--accent);">
+                                        <span>
+                                            <strong style="font-size:0.88rem;">${labels[svc]}</strong>
+                                            <small style="display:block;color:var(--text-muted);font-size:0.75rem;">${subText}</small>
+                                        </span>
+                                    </label>
+                                    <span style="font-weight:700;color:var(--accent);font-size:0.9rem;white-space:nowrap;">${feeText}</span>`;
+                                div.querySelector("input").addEventListener("change", function() {
+                                    selectedServiceInput.value = svc;
+                                    list.querySelectorAll("div").forEach(d => d.style.borderColor = "var(--border)");
+                                    div.style.borderColor = "var(--accent)";
+                                    // ── Cập nhật tóm tắt động ──
+                                    window.updateSummaryFee?.(baseFeeNum, surchargeNum, isContactOnly, isFreeShip);
+                                });
+                                list.appendChild(div);
+                            });
+
+                            box.style.display = "block";
+
+                            // Cập nhật summary cho dịch vụ đang được chọn
+                            if (initialFeeData) {
+                                window.updateSummaryFee?.(
+                                    initialFeeData.baseFeeNum,
+                                    initialFeeData.surchargeNum,
+                                    initialFeeData.isContactOnly,
+                                    initialFeeData.isFreeShip
+                                );
+                            }
+                        }
+
+                        let loadedProvinces = [];
+
+                        fetch("https://provinces.open-api.vn/api/v2/p/")
                             .then(res => res.json())
                             .then(provinces => {
+                                loadedProvinces = provinces;
                                 provinces.forEach(p => {
                                     const opt = document.createElement("option");
                                     opt.value = p.code;
                                     opt.textContent = p.name;
                                     provinceSelect.appendChild(opt);
                                 });
+
+                                // Nếu đang dùng địa chỉ mặc định → tìm province code từ tên tỉnh
+                                const isNew = (newRadio && newRadio.checked) || !defaultRadio;
+                                if (!isNew) {
+                                    const defAddr = document.getElementById("defaultAddressValue")?.value || "";
+                                    const parts = defAddr.split(",").map(s => s.trim());
+                                    const provinceName = parts[parts.length - 1]?.toLowerCase() || "";
+                                    const found = provinces.find(p => p.name.toLowerCase().includes(provinceName) || provinceName.includes(p.name.toLowerCase().replace(/^tỉnh |^thành phố /, "")));
+                                    if (found) {
+                                        provinceCodeInput.value = found.code;
+                                        renderShippingOptions(parseInt(found.code));
+                                    }
+                                }
                             })
                             .catch(err => console.error("Error loading provinces:", err));
 
                         provinceSelect.addEventListener("change", function () {
-                            districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
-                            districtSelect.disabled = true;
                             wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
                             wardSelect.disabled = true;
 
                             const pCode = this.value;
-                            if (!pCode) return;
+                            provinceCodeInput.value = pCode || "";
+                            renderShippingOptions(pCode ? parseInt(pCode) : null);
 
-                            fetch(`https://provinces.open-api.vn/api/p/${pCode}?depth=2`)
+                            if (!pCode) {
+                                updateCombinedAddress();
+                                return;
+                            }
+
+                            fetch(`https://provinces.open-api.vn/api/v2/p/${pCode}?depth=2`)
                                 .then(res => res.json())
                                 .then(data => {
-                                    data.districts.forEach(d => {
-                                        const opt = document.createElement("option");
-                                        opt.value = d.code;
-                                        opt.textContent = d.name;
-                                        districtSelect.appendChild(opt);
-                                    });
-                                    districtSelect.disabled = false;
-                                })
-                                .catch(err => console.error("Error loading districts:", err));
-                        });
-
-                        districtSelect.addEventListener("change", function () {
-                            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
-                            wardSelect.disabled = true;
-
-                            const dCode = this.value;
-                            if (!dCode) return;
-
-                            fetch(`https://provinces.open-api.vn/api/d/${dCode}?depth=2`)
-                                .then(res => res.json())
-                                .then(data => {
-                                    data.wards.forEach(w => {
+                                    const wards = data.wards || [];
+                                    wards.forEach(w => {
                                         const opt = document.createElement("option");
                                         opt.value = w.code;
                                         opt.textContent = w.name;
                                         wardSelect.appendChild(opt);
                                     });
                                     wardSelect.disabled = false;
+                                    updateCombinedAddress();
                                 })
                                 .catch(err => console.error("Error loading wards:", err));
                         });
 
-                        form.addEventListener("submit", function (e) {
-                            const isNew = newRadio && newRadio.checked || !defaultRadio;
+                        if (defaultRadio) {
+                            defaultRadio.addEventListener("change", function() {
+                                const defAddr = document.getElementById("defaultAddressValue")?.value || "";
+                                const parts = defAddr.split(",").map(s => s.trim());
+                                const provinceName = parts[parts.length - 1]?.toLowerCase() || "";
+                                const found = loadedProvinces.find(p => p.name.toLowerCase().includes(provinceName) || provinceName.includes(p.name.toLowerCase().replace(/^tỉnh |^thành phố /, "")));
+                                if (found) {
+                                    provinceCodeInput.value = found.code;
+                                    renderShippingOptions(parseInt(found.code));
+                                }
+                            });
+                            newRadio?.addEventListener("change", function() {
+                                provinceCodeInput.value = provinceSelect.value || "";
+                                renderShippingOptions(provinceSelect.value ? parseInt(provinceSelect.value) : null);
+                            });
+                        }
+
+                        wardSelect.addEventListener("change", updateCombinedAddress);
+                        specificAddressInput.addEventListener("input", updateCombinedAddress);
+
+                        function updateCombinedAddress() {
+                            const isNew = (newRadio && newRadio.checked) || !defaultRadio;
                             if (isNew) {
-                                const provinceName = provinceSelect.options[provinceSelect.selectedIndex].text;
-                                const districtName = districtSelect.options[districtSelect.selectedIndex].text;
-                                const wardName = wardSelect.options[wardSelect.selectedIndex].text;
+                                const provinceName = provinceSelect.value ? provinceSelect.options[provinceSelect.selectedIndex].text : "";
+                                const wardName = wardSelect.value ? wardSelect.options[wardSelect.selectedIndex].text : "";
                                 const specific = specificAddressInput.value.trim();
-                                shippingAddressCombined.value = `${specific}, ${wardName}, ${districtName}, ${provinceName}`;
+
+                                if (provinceName || wardName || specific) {
+                                    const parts = [specific, wardName, provinceName].filter(Boolean);
+                                    shippingAddressCombined.value = parts.join(", ");
+                                } else {
+                                    shippingAddressCombined.value = "";
+                                }
                             } else {
-                                shippingAddressCombined.value = document.getElementById("defaultAddressValue").value;
+                                shippingAddressCombined.value = document.getElementById("defaultAddressValue") ? document.getElementById("defaultAddressValue").value : "";
                             }
+                        }
+
+                        form.addEventListener("submit", function (e) {
+                            updateCombinedAddress();
                         });
                     });
                     </script>
+                    <div id="shippingOptionsBox" style="display:none; margin-top:1rem;">
+                        <label style="display:block; font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem;">Dịch vụ giao hàng</label>
+                        <div id="shippingOptionsList"></div>
+                    </div>
+
                     <div class="form-group">
                         <label asp-for="Shipping.Notes">Ghi chú đơn hàng</label>
                         <input asp-for="Shipping.Notes" class="form-control" placeholder="Giao giờ hành chính, gọi trước..." />
@@ -492,6 +623,7 @@
                                     var originalShipping = @((decimal?)ViewBag.OriginalShippingFee ?? Model.ShippingFee);
                                     var shipping = @Model.ShippingFee;
                                     var appliedDiscount = @serverDiscountAmount;
+                                    var isCongKenhStep2 = @(((int)(ViewBag.CartShippingClassIndex ?? 0)) == 2 ? "true" : "false");
 
                                     function formatVND(n) {
                                         return new Intl.NumberFormat('vi-VN').format(n) + ' ₫';
@@ -556,6 +688,26 @@
                     </div>
                 }
 
+                @{
+                    var ckIdx  = (int)(ViewBag.CartShippingClassIndex ?? 0);
+                    var isCkCart = ckIdx == 2;
+                    var ckFree   = ViewBag.CongKenhIsFree is bool ckb && ckb;
+                    // For step 2 determine text to display
+                    string shipFeeText, bulkyFeeText, totalText;
+                    if (Model.Step == 1) {
+                        shipFeeText = ""; bulkyFeeText = ""; totalText = "";
+                    } else if (isCkCart) {
+                        shipFeeText  = ckFree ? "Miễn phí" : "Liên hệ";
+                        bulkyFeeText = ckFree ? "Miễn phí" : "Liên hệ";
+                        totalText    = ckFree
+                            ? (Model.Cart.Subtotal - serverDiscountAmount).ToString("N0") + " ₫"
+                            : (Model.Cart.Subtotal - serverDiscountAmount).ToString("N0") + " ₫ + phí ship";
+                    } else {
+                        shipFeeText = Model.ShippingFee.ToString("N0") + " ₫";
+                        bulkyFeeText = "";
+                        totalText   = (Model.Cart.Subtotal - serverDiscountAmount + Model.ShippingFee).ToString("N0") + " ₫";
+                    }
+                }
                 <div style="margin-top:.75rem;">
                     <div class="summary-item">
                         <span>Tạm tính</span>
@@ -569,11 +721,68 @@
 
                     <div class="summary-item">
                         <span>Phí vận chuyển</span>
-                        <span id="shipping-fee-display">@Model.ShippingFee.ToString("N0") ₫</span>
+                        <span id="shipping-fee-display">
+                            @if (Model.Step == 1)
+                            {
+                                <span style="color:var(--text-muted);font-style:italic;">Chưa chọn</span>
+                            }
+                            else if (isCkCart && ckFree)
+                            {
+                                <span style="color:#16a34a;">Miễn phí</span>
+                            }
+                            else if (isCkCart)
+                            {
+                                <span style="color:var(--text-muted);">Liên hệ</span>
+                            }
+                            else
+                            {
+                                @Model.ShippingFee.ToString("N0")
+                                <text> ₫</text>
+                            }
+                        </span>
                     </div>
+
+                    @if (isCkCart)
+                    {
+                        <div class="summary-item" id="bulky-row"
+                             style="@(Model.Step == 1 ? "display:none;" : "") color:#f59e0b; font-size:0.82rem;">
+                            <span>📦 Phụ phí hàng cồng kềnh</span>
+                            <span id="bulky-fee-display">
+                                @if (Model.Step == 1)
+                                {
+                                    <span>—</span>
+                                }
+                                else if (ckFree)
+                                {
+                                    <span style="color:#16a34a;">Miễn phí</span>
+                                }
+                                else
+                                {
+                                    <span style="color:var(--text-muted);">Liên hệ</span>
+                                }
+                            </span>
+                        </div>
+                    }
+
                     <div class="summary-item total">
                         <span>Tổng cộng</span>
-                        <span class="price" id="total-price">@((Model.Cart.Subtotal - serverDiscountAmount + Model.ShippingFee).ToString("N0")) ₫</span>
+                        <span class="price" id="total-price">
+                            @if (Model.Step == 1)
+                            {
+                                <span style="color:var(--text-muted);font-size:.85rem;font-weight:500;">Chờ chọn dịch vụ</span>
+                            }
+                            else if (isCkCart && !ckFree)
+                            {
+                                @((Model.Cart.Subtotal - serverDiscountAmount).ToString("N0"))
+                                <text> ₫ </text>
+                                <small style="font-size:.7rem;color:var(--text-muted);">+ phí ship</small>
+                            }
+                            else
+                            {
+                                @((Model.Cart.Subtotal - serverDiscountAmount + Model.ShippingFee).ToString("N0"))
+                                <text> ₫</text>
+                            }
+                        </span>
                     </div>
                 </div>
             </div>
@@ -629,6 +838,52 @@
         </div>
 
         <script>
+        // ── Cập nhật tóm tắt phí ship động (được gọi từ step 1) ──────────────────
+        (function () {
+            var subtotal      = @Model.Cart.Subtotal;
+            var isCongKenhJs  = @(((int)(ViewBag.CartShippingClassIndex ?? 0)) == 2 ? "true" : "false");
+
+            function fmt(n) {
+                return new Intl.NumberFormat('vi-VN').format(n) + ' ₫';
+            }
+            function getDiscount() {
+                var el = document.getElementById('discount-value');
+                if (!el) return 0;
+                return parseInt(el.textContent.replace(/[^0-9]/g, '')) || 0;
+            }
+
+            window.updateSummaryFee = function (baseFee, surcharge, isContactOnly, isFree) {
+                var shipEl   = document.getElementById('shipping-fee-display');
+                var bulkyRow = document.getElementById('bulky-row');
+                var bulkyEl  = document.getElementById('bulky-fee-display');
+                var totalEl  = document.getElementById('total-price');
+                var discount = getDiscount();
+
+                if (isContactOnly) {
+                    if (shipEl)   shipEl.innerHTML  = '<span style="color:var(--text-muted);font-style:italic;">Liên hệ</span>';
+                    if (bulkyRow) bulkyRow.style.display = 'flex';
+                    if (bulkyEl)  bulkyEl.innerHTML = '<span style="color:var(--text-muted);font-style:italic;">Liên hệ</span>';
+                    if (totalEl)  totalEl.innerHTML =
+                        '<span>' + fmt(subtotal - discount) + '</span>' +
+                        '<small style="color:var(--text-muted);font-size:.7rem;"> + phí ship</small>';
+                } else if (isFree) {
+                    if (shipEl)   shipEl.innerHTML  = '<span style="color:#16a34a;">Miễn phí</span>';
+                    if (bulkyRow && isCongKenhJs) { bulkyRow.style.display = 'flex'; }
+                    if (bulkyEl)  bulkyEl.innerHTML = '<span style="color:#16a34a;">Miễn phí (shop tự giao)</span>';
+                    if (totalEl)  totalEl.textContent = fmt(subtotal - discount);
+                } else {
+                    if (shipEl)  shipEl.textContent = fmt(baseFee);
+                    if (surcharge > 0) {
+                        if (bulkyRow) bulkyRow.style.display = 'flex';
+                        if (bulkyEl)  bulkyEl.textContent    = '+' + fmt(surcharge);
+                    } else if (bulkyRow) {
+                        bulkyRow.style.display = 'none';
+                    }
+                    if (totalEl) totalEl.textContent = fmt(subtotal - discount + baseFee + surcharge);
+                }
+            };
+        })();
+
         function selectVoucherCode(code) {
             var currentCode = '@sessionDiscountCode';
             var targetCode = (currentCode === code) ? '' : code;

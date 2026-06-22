@@ -1,20 +1,38 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using WebApplication1.Data;
 using WebApplication1.Services;
 
 namespace WebApplication1.Controllers;
 
 public class CartController : Controller
 {
+    private const string SelectedItemsKey = "SelectedCartItems";
     private readonly ICartService _cartService;
+    private readonly ApplicationDbContext _context;
 
-    public CartController(ICartService cartService)
+    public CartController(ICartService cartService, ApplicationDbContext context)
     {
         _cartService = cartService;
+        _context = context;
     }
 
     public async Task<IActionResult> Index()
     {
         return View(await _cartService.GetCartAsync());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult CheckoutSelected([FromForm] int[] selectedItems)
+    {
+        if (selectedItems == null || selectedItems.Length == 0)
+        {
+            TempData["Error"] = "Vui lòng chọn ít nhất một sản phẩm để thanh toán.";
+            return RedirectToAction(nameof(Index));
+        }
+        HttpContext.Session.SetString(SelectedItemsKey, JsonSerializer.Serialize(selectedItems));
+        return RedirectToAction("Index", "Checkout");
     }
 
     [HttpPost]
@@ -36,7 +54,8 @@ public class CartController : Controller
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Json(new { success = false, message = ex.Message });
             TempData["Error"] = ex.Message;
-            return RedirectToAction("Details", "Product", new { id = productId });
+            var product = await _context.Products.FindAsync(productId);
+            return RedirectToAction("Details", "Product", new { slug = product?.Slug ?? productId.ToString() });
         }
     }
 

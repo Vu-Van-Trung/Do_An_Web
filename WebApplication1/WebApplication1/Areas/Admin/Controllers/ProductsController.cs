@@ -43,7 +43,7 @@ public class ProductsController : Controller
             return View(model);
         }
 
-        var product = await MapProductAsync(new Product(), model);
+        var product = await MapProductAsync(new Product(), model, isEdit: false);
         await _products.AddAsync(product);
         await _products.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -64,6 +64,10 @@ public class ProductsController : Controller
             CategoryId = product.CategoryId,
             BrandId = product.BrandId,
             ImageUrl = product.ImageUrl, // Giữ lại ImageUrl cũ để truyền sang Form hiển thị và nhận lại khi Post
+            SecondaryImageUrls = product.SecondaryImageUrls,
+            SecondaryImages = ParseSecondaryUrls(product.SecondaryImageUrls)
+                .Select(url => new SecondaryImageEditItem { Url = url })
+                .ToList(),
             IsActive = product.IsActive,
             Specifications = product.Specifications.Select(s => new SpecInput { Key = s.Key, Value = s.Value }).ToList()
         };
@@ -78,6 +82,16 @@ public class ProductsController : Controller
         if (id != model.Id) return NotFound();
         if (!ModelState.IsValid)
         {
+            if (model.SecondaryImages.Count == 0)
+            {
+                var existingUrls = await _context.Products.AsNoTracking()
+                    .Where(p => p.Id == id)
+                    .Select(p => p.SecondaryImageUrls)
+                    .FirstOrDefaultAsync();
+                model.SecondaryImages = ParseSecondaryUrls(existingUrls)
+                    .Select(url => new SecondaryImageEditItem { Url = url })
+                    .ToList();
+            }
             await PopulateLookupsAsync(model);
             return View(model);
         }
@@ -89,19 +103,10 @@ public class ProductsController : Controller
         // Tối ưu hóa: Nếu admin chọn upload file ảnh mới VÀ sản phẩm hiện tại đang có ảnh thực tế (không phải placeholder)
         // tiến hành xóa file ảnh cũ trên ổ đĩa Server để tiết kiệm dung lượng bộ nhớ.
         if (model.ImageFile != null && model.ImageFile.Length > 0 && !string.IsNullOrEmpty(product.ImageUrl))
-        {
-            if (!product.ImageUrl.Contains("placeholder.svg"))
-            {
-                var oldFilePath = Path.Combine(_env.WebRootPath, product.ImageUrl.TrimStart('/'));
-                if (System.IO.File.Exists(oldFilePath))
-                {
-                    System.IO.File.Delete(oldFilePath);
-                }
-            }
-        }
+            DeleteImageFile(product.ImageUrl, null, ParseSecondaryUrls(product.SecondaryImageUrls));
 
         _context.ProductSpecifications.RemoveRange(product.Specifications);
-        await MapProductAsync(product, model);
+        await MapProductAsync(product, model, isEdit: true);
         _products.Update(product);
         await _products.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -115,23 +120,19 @@ public class ProductsController : Controller
         if (product == null) return NotFound();
 
         // Tối ưu hóa: Xóa tệp ảnh vật lý trong thư mục uploads khi sản phẩm bị xóa hoàn toàn khỏi hệ thống
-        if (!string.IsNullOrEmpty(product.ImageUrl) && !product.ImageUrl.Contains("placeholder.svg"))
-        {
-            var filePath = Path.Combine(_env.WebRootPath, product.ImageUrl.TrimStart('/'));
-            if (System.IO.File.Exists(filePath))
-            {
-                System.IO.File.Delete(filePath);
-            }
-        }
+        DeleteImageFile(product.ImageUrl ?? "", null);
+        foreach (var url in ParseSecondaryUrls(product.SecondaryImageUrls))
+            DeleteImageFile(url, product.ImageUrl);
 
         _products.Remove(product);
         await _products.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task<Product> MapProductAsync(Product product, ProductFormViewModel model)
+    private async Task<Product> MapProductAsync(Product product, ProductFormViewModel model, bool isEdit)
     {
         product.Name = model.Name;
+        product.Slug = Product.GenerateSlug(model.Name);
         product.Description = model.Description;
         product.Price = model.Price;
         product.Stock = model.Stock;
@@ -139,8 +140,7 @@ public class ProductsController : Controller
         product.BrandId = model.BrandId;
         product.IsActive = model.IsActive;
 
-        // Cập nhật đường dẫn ảnh: Ưu tiên ảnh mới upload -> Tiếp đến là đường dẫn ảnh cũ từ Model -> Cuối cùng mới dùng placeholder
-        var newImagePath = await SaveImageAsync(model);
+        var newImagePath = await SaveImageAsync(model.ImageFile);
         if (newImagePath != null)
         {
             product.ImageUrl = newImagePath;
@@ -149,10 +149,12 @@ public class ProductsController : Controller
         {
             product.ImageUrl = model.ImageUrl;
         }
-        else
+        else if (!isEdit)
         {
             product.ImageUrl = "/images/products/placeholder.svg";
         }
+
+        await ApplySecondaryImagesAsync(product, model, isEdit);
 
         product.Specifications = model.Specifications
             .Where(s => !string.IsNullOrWhiteSpace(s.Key) && !string.IsNullOrWhiteSpace(s.Value))
@@ -161,18 +163,126 @@ public class ProductsController : Controller
         return product;
     }
 
-    private async Task<string?> SaveImageAsync(ProductFormViewModel model)
+    private async Task ApplySecondaryImagesAsync(Product product, ProductFormViewModel model, bool isEdit)
     {
-        if (model.ImageFile == null || model.ImageFile.Length == 0)
+        if (!isEdit)
+        {
+            var newPaths = await SaveSecondaryImagesAsync(model.SecondaryImageFiles);
+            product.SecondaryImageUrls = newPaths.Count > 0 ? string.Join(",", newPaths) : null;
+            return;
+        }
+
+        var currentUrls = ParseSecondaryUrls(product.SecondaryImageUrls);
+        var result = new List<string>();
+
+        foreach (var item in model.SecondaryImages)
+        {
+            var url = item.Url.Trim();
+            if (string.IsNullOrEmpty(url) || !currentUrls.Contains(url))
+                continue;
+
+            if (item.ReplacementFile != null && item.ReplacementFile.Length > 0)
+            {
+                DeleteImageFile(url, product.ImageUrl, result);
+                var newUrl = await SaveImageAsync(item.ReplacementFile);
+                if (newUrl != null)
+                    result.Add(newUrl);
+            }
+            else if (item.Remove)
+            {
+                DeleteImageFile(url, product.ImageUrl, result);
+            }
+            else
+            {
+                result.Add(url);
+            }
+        }
+
+        var additional = await SaveSecondaryImagesAsync(model.SecondaryImageFiles);
+        result.AddRange(additional);
+
+        product.SecondaryImageUrls = result.Count > 0
+            ? string.Join(",", result.Distinct(StringComparer.OrdinalIgnoreCase))
+            : null;
+    }
+
+    private static List<string> ParseSecondaryUrls(string? urls) =>
+        (urls ?? "")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(u => u.Trim())
+            .Where(u => !string.IsNullOrEmpty(u))
+            .ToList();
+
+    private void DeleteImageFile(string url, string? primaryUrl, IEnumerable<string>? keepUrls = null)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
+        if (url.Contains("placeholder.svg", StringComparison.OrdinalIgnoreCase)) return;
+        if (url.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return;
+        if (string.Equals(url, primaryUrl, StringComparison.OrdinalIgnoreCase)) return;
+        if (keepUrls != null && keepUrls.Any(u => string.Equals(u, url, StringComparison.OrdinalIgnoreCase))) return;
+
+        var filePath = Path.Combine(_env.WebRootPath, url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        if (System.IO.File.Exists(filePath))
+            System.IO.File.Delete(filePath);
+    }
+
+    private async Task<string?> SaveImageAsync(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
             return null;
 
         var uploads = Path.Combine(_env.WebRootPath, "images", "uploads");
+        var isDev = false;
+
+        #if DEBUG
+        // Trong chế độ debug, nếu thư mục nguồn tồn tại, ưu tiên lưu vào thư mục nguồn để tránh mất file khi rebuild
+        var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "uploads");
+        if (Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")))
+        {
+            uploads = sourcePath;
+            isDev = true;
+        }
+        #endif
+
         Directory.CreateDirectory(uploads);
-        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(model.ImageFile.FileName)}";
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var path = Path.Combine(uploads, fileName);
-        await using var stream = System.IO.File.Create(path);
-        await model.ImageFile.CopyToAsync(stream);
+        
+        await using (var stream = System.IO.File.Create(path))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        #if DEBUG
+        // Copy thêm sang thư mục chạy bin để ảnh hiển thị được ngay lập tức
+        if (isDev)
+        {
+            var binUploads = Path.Combine(_env.WebRootPath, "images", "uploads");
+            var binPath = Path.Combine(binUploads, fileName);
+            if (!string.Equals(path, binPath, StringComparison.OrdinalIgnoreCase))
+            {
+                Directory.CreateDirectory(binUploads);
+                System.IO.File.Copy(path, binPath, true);
+            }
+        }
+        #endif
+
         return $"/images/uploads/{fileName}";
+    }
+
+    private async Task<List<string>> SaveSecondaryImagesAsync(List<IFormFile>? files)
+    {
+        if (files == null || files.Count == 0)
+            return new List<string>();
+
+        var list = new List<string>();
+        foreach (var file in files)
+        {
+            var saved = await SaveImageAsync(file);
+            if (saved != null)
+                list.Add(saved);
+        }
+        return list;
     }
 
     private async Task PopulateLookupsAsync(ProductFormViewModel? model = null)

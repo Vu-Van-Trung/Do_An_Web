@@ -18,6 +18,13 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .Include(p => p.Specifications)
             .FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
 
+    public async Task<Product?> GetBySlugAsync(string slug) =>
+        await Context.Products
+            .Include(p => p.Brand)
+            .Include(p => p.Category)
+            .Include(p => p.Specifications)
+            .FirstOrDefaultAsync(p => p.Slug == slug && p.IsActive);
+
     public async Task<PagedResult<Product>> GetFilteredAsync(ProductFilter filter)
     {
         var query = Context.Products
@@ -37,7 +44,18 @@ public class ProductRepository : Repository<Product>, IProductRepository
         }
 
         if (filter.CategoryId.HasValue)
-            query = query.Where(p => p.CategoryId == filter.CategoryId);
+        {
+            var catId = filter.CategoryId.Value;
+            var subCategoryIds = await Context.Categories
+                .Where(c => c.ParentCategoryId == catId)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            var categoryIds = new List<int> { catId };
+            categoryIds.AddRange(subCategoryIds);
+
+            query = query.Where(p => categoryIds.Contains(p.CategoryId));
+        }
 
         if (filter.BrandId.HasValue)
             query = query.Where(p => p.BrandId == filter.BrandId);
