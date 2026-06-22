@@ -242,6 +242,9 @@ public static class DbSeeder
             ["Razer Kiyo Pro Streaming Webcam"]       = "/images/uploads/razer-kiyo-pro.webp",
             ["DXRacer Formula Series F11"]            = "/images/uploads/dxracer-formula-gaming-chair.png",
             ["Ducky One 3 Mini"]                      = "/images/uploads/ducky-one3-mini.jpg",
+            ["Eureka Ergonomic Z1-S Gaming Desk"]     = "/images/uploads/eureka-z1s-desk.jpg",
+            ["HyperX Pulsefire Haste 2 Mini Wireless"]= "/images/uploads/hyperx-pulsefire-haste2-mini.jpg",
+            ["Govee Neon LED Rope Light Gaming Backlighting 3m"] = "/images/uploads/govee-neon-rope.png",
         };
 
         var products = await context.Products.Where(p => imageMap.Keys.Contains(p.Name)).ToListAsync();
@@ -260,7 +263,8 @@ public static class DbSeeder
     private static async Task SeedAdditionalDataAsync(ApplicationDbContext context)
     {
         // Thêm brands mới nếu chưa có
-        var brandNames = new[] { "SteelSeries", "HyperX", "Sony", "Secretlab", "ASUS ROG", "Microsoft", "Blue", "DXRacer", "Ducky", "Eureka" };
+        var brandNames = new[] { "SteelSeries", "HyperX", "Sony", "Secretlab", "ASUS ROG", "Microsoft", "Blue", "DXRacer", "Ducky", "Eureka",
+            "Elgato", "AVerMedia", "Govee", "Nanoleaf", "Backbone", "Glorious", "Akko", "CyberClean", "UGREEN" };
         foreach (var name in brandNames)
         {
             if (!await context.Brands.AnyAsync(b => b.Name == name))
@@ -342,6 +346,106 @@ public static class DbSeeder
             // Webcam mới
             ("Razer Kiyo Pro Streaming Webcam", "Webcam stream 1080p 60fps với cảm biến CMOS lớn 1/2.8\", góc nhìn rộng 103° điều chỉnh, tương thích OBS/XSplit.", 3190000, 15, "webcam-den", "Razer", "/images/uploads/razer-kiyo-pro.webp", ShippingClass.Nho,
              [("Độ phân giải","1080p/60fps"),("Cảm biến","SONY IMX415 1/2.8\""),("Góc nhìn","103° điều chỉnh"),("Kết nối","USB-C")]),
+
+            // ── Giá đỡ & Arm ──
+            ("Elgato Wave Mic Arm LP", "Arm treo mic streaming gấp gọn thấp profile, giấu cáp bên trong ống, kẹp bàn 2.5–7cm, tải trọng tối đa 1kg. Lý tưởng cho setup gọn.", 890000, 20, "gia-do-arm", "Elgato", "/images/uploads/elgato-wave-arm-lp.jpg", ShippingClass.Nho,
+             [("Chiều dài tối đa","90cm"),("Tải trọng","1kg"),("Kẹp bàn","2.5–7cm"),("Tương thích","Wave:3 / Wave:1 / Blue Yeti")]),
+            ("Blue Compass Premium Boom Arm", "Arm treo mic chuyên nghiệp với cơ chế thao lưu bên trong giấu hoàn toàn dây cáp, khớp nối 360°. Phù hợp hầu hết micro có ren 5/8\".", 1390000, 15, "gia-do-arm", "Blue", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Chiều dài tối đa","80cm"),("Tải trọng","0.9kg"),("Kẹp bàn","Đến 6cm"),("Ren","5/8\" & 3/8\" adapter")]),
+
+            // ── Ánh sáng & Trang trí ──
+            ("Elgato Key Light Air", "Đèn LED panel cho stream/video call 40W, điều chỉnh độ sáng 0–100% và màu sắc 2900–7000K qua app. Thiết kế mỏng kẹp bàn.", 2290000, 12, "anh-sang-trang-tri", "Elgato", "/images/uploads/elgato-key-light-air.jpg", ShippingClass.Nho,
+             [("Công suất","40W"),("Màu sắc","2900–7000K"),("Độ sáng","0–100%"),("Kết nối","Wi-Fi / App")]),
+            ("Govee RGBIC LED Strip Light 5m", "Đèn LED dây thông minh RGBIC 5m, đồng bộ âm nhạc, điều khiển qua app Govee Home / Alexa / Google. Mỗi đoạn sáng màu độc lập.", 490000, 40, "anh-sang-trang-tri", "Govee", "/images/uploads/govee-rgbic-strip.jpg", ShippingClass.Nho,
+             [("Chiều dài","5m"),("Màu sắc","RGBIC (mỗi đoạn độc lập)"),("Điều khiển","App / Voice / Music Sync"),("Tương thích","Alexa / Google Home")]),
+            ("Nanoleaf Shapes Hexagons Starter Kit 7 Panels", "Bộ đèn tam giác lục giác thông minh 7 tấm, kết nối Thread/Matter, âm thanh phản ứng theo nhạc, 16 triệu màu. Gắn tường không để lại vết.", 2990000, 8, "anh-sang-trang-tri", "Nanoleaf", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Số tấm","7 Hexagons"),("Màu sắc","16 triệu màu"),("Kết nối","Thread / Matter / Wi-Fi"),("Tính năng","Rhythm / Screen Mirror")]),
+
+            // ── Thiết bị Capture ──
+            ("Elgato HD60 X External Capture Card", "Capture card ngoài 4K60 HDR10 cho console, phát 4K30 hoặc 1080p60 lên PC. Hỗ trợ PS5, Xbox Series X|S, kết nối USB-C.", 4490000, 10, "thiet-bi-capture", "Elgato", "/images/uploads/elgato-hd60-x.jpg", ShippingClass.Nho,
+             [("Độ phân giải","4K60 HDR10 passthrough"),("Phát stream","4K30 / 1080p60"),("Tương thích","PS5 / Xbox Series X|S / Nintendo Switch"),("Kết nối","USB-C 3.1")]),
+            ("AVerMedia Live Gamer Portable 2 Plus", "Capture card 2-trong-1 (Standalone + PC Mode) 4K passthrough, stream Full HD. Khe thẻ SD để quay độc lập không cần PC.", 2490000, 15, "thiet-bi-capture", "AVerMedia", "/images/uploads/avermedia-lgp2-plus.jpg", ShippingClass.Nho,
+             [("Passthrough","4K / 1080p60"),("Stream","1080p60"),("Standalone Mode","Có (khe thẻ SD)"),("Kết nối","USB 3.0")]),
+            ("Elgato Stream Deck MK.2", "Bộ điều khiển stream 15 nút LCD cảm ứng tùy chỉnh, tích hợp Stream Deck Studio, kết nối với OBS/Twitch/YouTube. Phím có thể hoán đổi.", 3290000, 12, "thiet-bi-capture", "Elgato", "/images/uploads/elgato-stream-deck-mk2.jpg", ShippingClass.Nho,
+             [("Số phím","15 phím LCD"),("Kết nối","USB-C"),("Tương thích","OBS / Twitch / YouTube / Spotify"),("Tính năng","Folder / Multi-action / Hotkey")]),
+
+            // ── PC Gaming ──
+            ("Keychron K8 Pro QMK Wireless TKL", "Bàn phím TKL 80% không dây hotswap, hỗ trợ QMK/VIA lập trình tùy chỉnh hoàn toàn. Gasket mount, RGB per-key, kết nối 2.4GHz + Bluetooth 5.1 + USB-C.", 2890000, 18, "pc-gaming", "Keychron", "/images/uploads/keychron-q1-pro.jpg", ShippingClass.Nho,
+             [("Layout","TKL 80% (87 phím)"),("Kết nối","2.4GHz / Bluetooth 5.1 / USB-C"),("Switch","Gateron G Pro Red (hotswap)"),("Tương thích","QMK / VIA")]),
+            ("Logitech G Pro X Superlight 2 DEX", "Phiên bản nâng cấp của G Pro X Superlight 2, thêm scroll ngang tilt wheel và trọng lượng 60g. Cảm biến HERO 2 32K, LIGHTSPEED 2.4GHz.", 3990000, 10, "pc-gaming", "Logitech", "/images/uploads/logitech-gpx-superlight2-2.png", ShippingClass.Nho,
+             [("DPI","32000"),("Kết nối","LIGHTSPEED 2.4GHz"),("Trọng lượng","60g"),("Tính năng","Tilt scroll wheel")]),
+
+            // ── Console ──
+            ("Xbox Elite Wireless Controller Series 2", "Tay cầm Xbox cao cấp với 30 cách tùy chỉnh: thumbstick thay thế, trigger lock, rung vi động, pin 40 giờ. Tương thích Xbox Series X|S + PC.", 4490000, 8, "console", "Microsoft", "/images/uploads/xbox-elite-s2.jpg", ShippingClass.Nho,
+             [("Kết nối","Xbox Wireless / Bluetooth"),("Pin","Sạc 40 giờ"),("Tương thích","Xbox Series X|S / One / PC"),("Tính năng","30 tùy chỉnh / Trigger lock / Thumbstick thay thế")]),
+            ("Sony DualSense Edge Wireless Controller", "Tay cầm PS5 cao cấp với nút phụ tùy chỉnh, module stick thay thế, profile lưu theo game, trigger deadzone điều chỉnh. Cho PS5 và PC.", 3290000, 10, "console", "Sony", "/images/uploads/sony-dualsense.png", ShippingClass.Nho,
+             [("Kết nối","Wireless / USB-C"),("Pin","Tầm 6 giờ"),("Tương thích","PS5 / PC"),("Tính năng","Trigger deadzone / Back button / Profile")]),
+
+            // ── Mobile Gaming ──
+            ("Razer Kishi V2 Pro USB-C Gaming Controller", "Tay cầm điện thoại siêu bấm thấp + micro-switch click, kết nối USB-C trực tiếp không Bluetooth, hỗ trợ passthrough sạc. Tương thích Android.", 1990000, 20, "mobile-gaming", "Razer", "/images/uploads/razer-kishi-v2.webp", ShippingClass.Nho,
+             [("Kết nối","USB-C trực tiếp"),("Tương thích","Android (USB-C)"),("Sạc passthrough","Có"),("Tính năng","Micro-switch click / App Razer Nexus")]),
+            ("Backbone One PlayStation Edition", "Tay cầm điện thoại thiết kế theo style PlayStation, kết nối Lightning/USB-C không Bluetooth, Backbone app dễ dùng. Tương thích iOS và Android.", 1490000, 25, "mobile-gaming", "Backbone", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Kết nối","Lightning / USB-C trực tiếp"),("Tương thích","iOS / Android"),("Tính năng","Backbone app / Cloud gaming"),("Màu","Midnight Black / Playstation White")]),
+
+            // ── Dụng cụ vệ sinh bàn phím ──
+            ("Bộ 7 Món Vệ Sinh Bàn Phím Pro Gaming Kit", "Bộ dụng cụ vệ sinh chuyên dụng gồm: cọ mềm, móc keycap, móc switch, bóng thổi bụi, kéo, nhíp và khăn microfiber. Hộp đựng tiện lợi.", 399000, 50, "dung-cu-ve-sinh", "Keychron", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Số món","7 dụng cụ"),("Chất liệu cọ","Long mềm chống tĩnh điện"),("Bao gồm","Cọ + keycap puller + switch puller + bóng thổi"),("Phù hợp","Bàn phím cơ / Laptop")]),
+            ("Bình Khí Nén Compressed Air Duster 400ml", "Bình xịt khí nén chuyên dụng vệ sinh bàn phím, tản nhiệt, linh kiện điện tử. Khí sạch không dầu, không ẩm, van an toàn.", 149000, 80, "dung-cu-ve-sinh", "CyberClean", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Dung tích","400ml"),("Áp suất","Tối đa 6 bar"),("Đầu phun","Ống dài linh hoạt"),("Ứng dụng","Bàn phím / PCB / Tản nhiệt / Camera")]),
+
+            // ── Gel vệ sinh & Dung dịch ──
+            ("CyberClean Home & Office Compound 145g", "Gel vệ sinh silicon dẻo hút bụi và vi khuẩn hiệu quả cao, không để lại cặn. Dùng cho bàn phím, chuột, điện thoại và các bề mặt khó tiếp cận.", 249000, 60, "gel-ve-sinh", "CyberClean", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Trọng lượng","145g"),("Diệt khuẩn","99.9% vi khuẩn"),("Dùng được cho","Bàn phím / Chuột / Điện thoại / Remote"),("Số lần dùng","Hơn 500 lần")]),
+            ("Dung Dịch Vệ Sinh Màn Hình Screen Cleaner 100ml", "Dung dịch vệ sinh màn hình LCD/LED/OLED không chứa cồn, an toàn tuyệt đối. Kèm khăn microfiber siêu mịn 30x30cm.", 179000, 70, "gel-ve-sinh", "SteelSeries", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Dung tích","100ml"),("Thành phần","Không cồn, không amoniac"),("Kèm theo","Khăn microfiber 30x30cm"),("Dùng cho","Màn hình LCD / OLED / Kính cường lực")]),
+
+            // ── Bộ lube switch ──
+            ("Krytox GPL 205g0 Switch Lube 3ml + Cọ Lube Set", "Mỡ Krytox GPL 205g0 nguyên bản 3ml dành cho linear switch, kèm bộ cọ lube size 0/00. Cho cảm giác gõ mượt mà, giảm scratchiness hoàn toàn.", 299000, 45, "bo-lube-switch", "Glorious", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Dung tích","3ml"),("Loại mỡ","Krytox GPL 205g0 (linear)"),("Kèm theo","Cọ lube #0 và #00"),("Phù hợp","Linear switch (không dùng cho clicky)")]),
+            ("Switch Opener + Lube Station + Film Kit Combo", "Bộ combo đầy đủ cho modder: switch opener tương thích MX/Alps, lube station 65 vị trí, 120 film Deskeys. Trải nghiệm gõ như mới hoàn toàn.", 349000, 30, "bo-lube-switch", "Glorious", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Bao gồm","Switch opener + Lube station + 120 films"),("Tương thích","MX / Alps / Kailh"),("Lube station","65 vị trí"),("Film","Deskeys 120 miếng")]),
+
+            // ── Pink Cyber ──
+            ("Akko 3068B Plus Blue on White 65% Wireless", "Bàn phím 65% không dây 3-mode với hotswap PCB, RGB per-key, keycap PBT double-shot. Màu xanh-trắng pastel trendy phù hợp setup Pink Cyber.", 2290000, 15, "pink-cyber", "Akko", "/images/uploads/ducky-one3-mini.jpg", ShippingClass.Nho,
+             [("Layout","65% (68 phím)"),("Kết nối","2.4GHz / Bluetooth 5.0 / USB-C"),("Switch","Akko CS Jelly Pink (hotswap)"),("Keycap","PBT Double-Shot")]),
+            ("HyperX Pulsefire Haste 2 Mini Wireless", "Chuột gaming mini không dây siêu nhẹ 53g, cảm biến Pixart 3395 26K DPI, thiết kế lưới thoáng cầm thoải mái. Phiên bản trắng/hồng trendy.", 1290000, 20, "pink-cyber", "HyperX", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("DPI","26000"),("Trọng lượng","53g"),("Kết nối","2.4GHz / Bluetooth"),("Pin","100 giờ (2.4GHz)")]),
+
+            // ── Total Black ──
+            ("Glorious Model O2 Wireless Matte Black", "Chuột gaming không dây matte black siêu nhẹ 68g, cảm biến Pixart 3370 19K, 6 nút có thể lập trình, pin 70 giờ 2.4GHz.", 1890000, 18, "total-black", "Glorious", "/images/uploads/razer-deathadder-v3-pro.webp", ShippingClass.Nho,
+             [("DPI","19000"),("Trọng lượng","68g"),("Kết nối","2.4GHz Wireless"),("Pin","70 giờ")]),
+            ("Keychron K10 Pro QMK Wireless Full-size Black", "Bàn phím cơ full-size 108 phím không dây hotswap QMK/VIA, gasket mount, aluminum frame màu đen. Kết nối 2.4GHz + Bluetooth 5.1 + USB-C.", 3490000, 12, "total-black", "Keychron", "/images/uploads/corsair-k70-rgb-pro.webp", ShippingClass.Nho,
+             [("Layout","Full-size 108 phím"),("Kết nối","2.4GHz / Bluetooth 5.1 / USB-C"),("Switch","Gateron G Pro (hotswap)"),("Frame","Nhôm nguyên khối")]),
+
+            // ── Snow White ──
+            ("Ducky One 3 Pure White Full-size", "Bàn phím cơ full-size màu trắng thuần, gasket mount 3-layer foam giảm rung xuất sắc, hotswap PCB, RGB per-key, PBT dye-sub keycap.", 3190000, 15, "snow-white", "Ducky", "/images/uploads/ducky-one3-mini.jpg", ShippingClass.Nho,
+             [("Layout","Full-size 104 phím"),("Màu","Pure White"),("Switch","Cherry MX Red (hotswap)"),("Keycap","PBT Dye-sub")]),
+            ("SteelSeries Arctis Nova 3 White Edition", "Tai nghe gaming có dây màu trắng tinh khôi, driver neodymium 40mm Hi-Fi, micro ClearCast Gen 2, nhẹ 239g. Thiết kế tối giản sang trọng.", 2190000, 20, "snow-white", "SteelSeries", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Kết nối","USB-C có dây"),("Driver","Neodymium 40mm Hi-Fi"),("Micro","ClearCast Gen 2 khử noise AI"),("Trọng lượng","239g")]),
+
+            // ── RGB Minimalist ──
+            ("Corsair K70 RGB Pro Mini 60% Wireless", "Bàn phím 60% không dây ba kết nối với RGB per-key axial SMD. Hotswap socket Cherry MX, aluminum frame tối giản mà đẹp.", 2990000, 12, "rgb-minimalist", "Corsair", "/images/uploads/corsair-k70-rgb-pro.webp", ShippingClass.Nho,
+             [("Layout","60% (61 phím)"),("Kết nối","2.4GHz / Bluetooth / USB-C"),("Switch","Cherry MX Red (hotswap)"),("RGB","Per-key Axial SMD")]),
+            ("SteelSeries Aerox 3 Wireless RGB 2022", "Chuột gaming không dây lưới siêu nhẹ 68g RGB 3 zone. Cảm biến Quantum 2.0 8500 DPI, pin 200 giờ 2.4GHz, IP54 chống bụi nước.", 2390000, 18, "rgb-minimalist", "SteelSeries", "/images/uploads/razer-viper-v3-hyperspeed.webp", ShippingClass.Nho,
+             [("DPI","8500"),("Trọng lượng","68g (lưới)"),("Kết nối","2.4GHz / Bluetooth"),("Pin","200 giờ / Chống nước IP54")]),
+
+            // ── Gợi ý góc máy ──
+            ("UGREEN Adjustable Monitor Riser Stand", "Giá đỡ màn hình có thể điều chỉnh chiều cao 10–15cm, bề mặt carbon fiber, đế rộng 60cm tích hợp khay đựng đồ. Chịu tải 10kg.", 399000, 40, "build-your-setup", "UGREEN", "/images/uploads/placeholder.svg", ShippingClass.Nho,
+             [("Tải trọng","10kg"),("Chiều cao","10–15cm điều chỉnh"),("Bề mặt","Carbon Fiber"),("Đế","60cm tích hợp khay đựng")]),
+            ("Govee Neon LED Rope Light Gaming Backlighting 3m", "Đèn neon dây mềm dẻo 3m RGBIC cho góc máy, 60 hiệu ứng sáng, đồng bộ nhạc, app Govee Home. Cắt tùy ý, tự dán.", 890000, 30, "build-your-setup", "Govee", "/images/uploads/govee-rgbic-strip-2.jpg", ShippingClass.Nho,
+             [("Chiều dài","3m"),("Màu sắc","RGBIC neon mềm dẻo"),("Điều khiển","App / Voice / Music sync"),("Cắt","Mỗi 5cm")]),
+
+            // ── Hàng mới về ──
+            ("Elgato Facecam Neo 1080p60 Webcam", "Webcam streaming 1080p60 đầu tiên của Elgato dành cho cả người dùng mới, AI Auto-Frame, tự động chỉnh sáng. USB-C compact.", 2890000, 10, "new-arrivals", "Elgato", "/images/uploads/elgato-hd60-x.jpg", ShippingClass.Nho,
+             [("Độ phân giải","1080p60"),("AI","Auto-Frame & Smart Light Correction"),("Kết nối","USB-C"),("FOV","82° mặc định")]),
+            ("Govee AI Gaming Sync Box HDMI 2.0 4K", "Hộp đồng bộ LED TV HDMI 2.0 4K60, bắt màu video thực và chiếu ra đèn LED dây phía sau TV. Kết hợp với Govee LED Strip.", 1890000, 15, "new-arrivals", "Govee", "/images/uploads/govee-rgbic-strip-3.jpg", ShippingClass.Nho,
+             [("Đầu vào","HDMI 2.0 4K60"),("Kết hợp","Govee LED Strip T2"),("Điều khiển","App / Alexa / Google"),("Độ trễ","< 16ms")]),
+
+            // ── Săn Deal hot ──
+            ("SteelSeries QcK Heavy Large 450x400mm", "Lót chuột gaming dày 6mm phiên bản Large 450x400mm, bề mặt micro-woven tối ưu cả tốc độ lẫn kiểm soát, đế cao su chống trượt.", 690000, 50, "hot-deals", "SteelSeries", "/images/uploads/steelseries-qck-heavy-xxl.png", ShippingClass.Vua,
+             [("Kích thước","450x400x6mm"),("Chất liệu","Micro-woven cloth"),("Đế","Cao su chống trượt"),("Tối ưu cho","Chuột quang & laser")]),
+            ("Logitech G435 LIGHTSPEED Wireless Gaming Headset", "Tai nghe gaming không dây nhẹ nhất của Logitech 165g, kết nối LIGHTSPEED 2.4GHz + Bluetooth, pin 18 giờ, vi kính 2 mic tích hợp.", 1490000, 30, "hot-deals", "Logitech", "/images/uploads/hyperx-cloud2-wireless.jpg", ShippingClass.Nho,
+             [("Kết nối","LIGHTSPEED 2.4GHz + Bluetooth"),("Trọng lượng","165g"),("Pin","18 giờ"),("Micro","2 mic tích hợp bi-directional")]),
         };
 
         foreach (var (name, desc, price, stock, catSlug, brandName, img, ship, specs) in newProducts)
@@ -356,6 +460,30 @@ public static class DbSeeder
             context.Products.Add(p);
         }
         await context.SaveChangesAsync();
+
+        // Cập nhật SecondaryImageUrls cho sản phẩm có nhiều ảnh góc chụp
+        var multiImgMap = new Dictionary<string, string>
+        {
+            ["Govee RGBIC LED Strip Light 5m"]          = "/images/uploads/govee-rgbic-strip.jpg,/images/uploads/govee-rgbic-strip-2.jpg,/images/uploads/govee-rgbic-strip-3.jpg",
+            ["Xbox Elite Wireless Controller Series 2"]  = "/images/uploads/xbox-elite-s2.jpg,/images/uploads/xbox-elite-s2-2.jpg,/images/uploads/xbox-elite-s2-3.jpg",
+            ["Elgato Key Light Air"]                     = "/images/uploads/elgato-key-light-air.jpg",
+            ["Elgato HD60 X External Capture Card"]      = "/images/uploads/elgato-hd60-x.jpg",
+            ["AVerMedia Live Gamer Portable 2 Plus"]     = "/images/uploads/avermedia-lgp2-plus.jpg",
+            ["Razer Kishi V2 Pro USB-C Gaming Controller"]    = "/images/uploads/razer-kishi-v2.webp",
+            ["Eureka Ergonomic Z1-S Gaming Desk"]             = "/images/uploads/eureka-z1s-desk.jpg,/images/uploads/eureka-z1s-desk-2.jpg,/images/uploads/eureka-z1s-desk-3.jpg",
+            ["HyperX Pulsefire Haste 2 Mini Wireless"]        = "/images/uploads/hyperx-pulsefire-haste2-mini.jpg,/images/uploads/hyperx-pulsefire-haste2-mini-2.jpg,/images/uploads/hyperx-pulsefire-haste2-mini-3.jpg",
+            ["Govee Neon LED Rope Light Gaming Backlighting 3m"]= "/images/uploads/govee-neon-rope.png,/images/uploads/govee-neon-rope-2.png,/images/uploads/govee-neon-rope-3.png",
+        };
+        var prodsToUpdateImgs = await context.Products
+            .Where(p => multiImgMap.Keys.Contains(p.Name) && !p.SecondaryImageUrls!.Contains(","))
+            .ToListAsync();
+        foreach (var prod in prodsToUpdateImgs)
+        {
+            if (multiImgMap.TryGetValue(prod.Name, out var secImgs))
+                prod.SecondaryImageUrls = secImgs;
+        }
+        if (prodsToUpdateImgs.Count > 0)
+            await context.SaveChangesAsync();
     }
 
     private static async Task<(Category banPhim, Category chuot, Category taiNghe, Category gheGaming)>

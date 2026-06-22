@@ -17,13 +17,22 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var featured = await _context.Products
+        var allActive = await _context.Products
             .Include(p => p.Brand)
             .Include(p => p.Category)
             .Where(p => p.IsActive)
             .OrderByDescending(p => p.CreatedAt)
-            .Take(8)
             .ToListAsync();
+
+        // Ensure main categories are represented in featured list
+        var featured = new List<Product>();
+        string[] mainCats = { "Bàn phím", "Tai nghe", "Ghế", "Chuột" };
+        foreach (var cat in mainCats)
+        {
+            featured.AddRange(allActive.Where(p => p.Category.Name.Contains(cat)).Take(2));
+        }
+        // Fill remaining slots with other products
+        featured.AddRange(allActive.Where(p => !featured.Contains(p)).Take(12 - featured.Count));
 
         ViewBag.Brands = await _context.Brands.OrderBy(b => b.Name).ToListAsync();
 

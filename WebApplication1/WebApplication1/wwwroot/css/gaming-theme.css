@@ -946,6 +946,20 @@ html[data-theme="dark"] .card-action-btn {
     padding: 0.18rem 0.55rem;
     border-radius: 6px;
     margin: 0.75rem 0.75rem 0;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+}
+.product-card-brand-chip:hover {
+    background: var(--accent);
+    color: #fff;
+}
+.filter-meta-link {
+    cursor: pointer;
+    transition: color 0.18s;
+}
+.filter-meta-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
 }
 .product-card img {
     width: 100%;

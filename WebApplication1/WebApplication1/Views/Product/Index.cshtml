@@ -130,6 +130,8 @@
     {
         var brandSlug = product.Brand.Name.ToLower().Replace(" ", "");
         var (bestPrice, bestVoucher) = GetBestPrice(product, ViewBag.ActiveDiscounts as IEnumerable<Discount>);
+        var brandUrl = Url.Action("Index", "Product", new { BrandId = product.BrandId });
+        var catUrl   = Url.Action("Index", "Product", new { CategoryId = product.CategoryId });
         <article class="product-card" data-category="@product.Category.Name">
             <!-- Nút So sánh nhanh -->
             <div class="card-actions-overlay">
@@ -142,11 +144,19 @@
                 </form>
             </div>
             <a asp-action="Details" asp-route-slug="@product.Slug">
-                <span class="product-card-brand-chip brand-chip-@brandSlug">@product.Brand.Name</span>
+                <span class="product-card-brand-chip brand-chip-@brandSlug"
+                      title="Lọc theo @product.Brand.Name"
+                      onclick="event.stopPropagation(); window.location.href='@brandUrl'">@product.Brand.Name</span>
                 <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
                 <div class="body">
                     <h3>@product.Name</h3>
-                    <p class="meta" style="margin-bottom:0;">@product.Brand.Name &middot; @product.Category.Name</p>
+                    <p class="meta" style="margin-bottom:0;">
+                        <span class="filter-meta-link" title="Lọc theo @product.Brand.Name"
+                              onclick="event.stopPropagation(); window.location.href='@brandUrl'">@product.Brand.Name</span>
+                        &middot;
+                        <span class="filter-meta-link" title="Lọc theo @product.Category.Name"
+                              onclick="event.stopPropagation(); window.location.href='@catUrl'">@product.Category.Name</span>
+                    </p>
                     @{
                         var ratings = ViewBag.ProductRatings as Dictionary<int, (double average, int count)>;
                         double avg = 0;

@@ -224,10 +224,10 @@
         </div>
         <div class="category-pills">
             <button class="category-pill active" data-filter="all">Tất cả</button>
-            <button class="category-pill" data-filter="Bàn phím gaming">Bàn phím</button>
-            <button class="category-pill" data-filter="Tai nghe gaming">Tai nghe</button>
-            <button class="category-pill" data-filter="Ghế gaming">Ghế</button>
-            <button class="category-pill" data-filter="Chuột gaming">Chuột</button>
+            <button class="category-pill" data-filter="Bàn phím">Bàn phím</button>
+            <button class="category-pill" data-filter="Tai nghe">Tai nghe</button>
+            <button class="category-pill" data-filter="Ghế">Ghế</button>
+            <button class="category-pill" data-filter="Chuột">Chuột</button>
         </div>
         <div class="product-grid" id="featured-grid">
             @foreach (var product in Model)
@@ -362,7 +362,7 @@ document.querySelectorAll('.category-pill').forEach(pill => {
         pill.classList.add('active');
         const filter = pill.dataset.filter;
         document.querySelectorAll('#featured-grid .product-card').forEach(card => {
-            card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
+            card.style.display = (filter === 'all' || card.dataset.category.includes(filter)) ? '' : 'none';
         });
     });
 });
