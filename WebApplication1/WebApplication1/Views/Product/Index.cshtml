@@ -57,7 +57,9 @@
                 <option value="">Tất cả</option>
                 @foreach (var c in Model.Categories)
                 {
-                    <option value="@c.Id" selected="@(f.CategoryId == c.Id)">@c.Name</option>
+                    <option value="@c.Id" selected="@(f.CategoryId == c.Id)">
+                        @(c.ParentCategoryId.HasValue ? "\u00a0\u00a0-- " + c.Name : c.Name)
+                    </option>
                 }
             </select>
         </div>

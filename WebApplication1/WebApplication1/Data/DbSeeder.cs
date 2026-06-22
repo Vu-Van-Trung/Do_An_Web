@@ -438,37 +438,82 @@ public static class DbSeeder
 
         var imageMap = new Dictionary<string, (string Primary, string[] Secondary)>
         {
-            ["Razer DeathAdder V3 Pro"]               = ("/images/uploads/razer-deathadder-v3-pro.webp", [imgA, imgB]),
-            ["Logitech G Pro X Superlight 2"]         = ("/images/uploads/logitech-gpx-superlight2.png", [imgC, imgD]),
-            ["Corsair K70 RGB PRO"]                   = ("/images/uploads/corsair-k70-rgb-pro.webp", [imgA, imgD]),
-            ["Keychron Q1 Pro"]                       = ("/images/uploads/keychron-q1-pro.jpg", [imgB, imgC]),
-            ["Razer BlackShark V2 Pro"]               = ("/images/uploads/razer-blackshark-v2-pro.webp", [imgA, imgC]),
-            ["Logitech G733 Lightspeed"]              = ("/images/uploads/logitech-g733.png", [imgB, imgD]),
-            ["Corsair T3 Rush"]                       = ("/images/uploads/corsair-t3-rush.webp", [imgA, imgB]),
-            ["Razer Huntsman V3 Pro"]                 = ("/images/uploads/razer-huntsman-v3-pro.webp", [imgC, imgD]),
-            ["SteelSeries QcK Heavy XXL"]             = ("/images/uploads/steelseries-qck-heavy-xxl.png", [imgA, imgD]),
-            ["HyperX QuadCast S"]                     = ("/images/uploads/hyperx-quadcast-s.jpg", [imgB, imgC]),
-            ["Razer Seiren V3 Chroma"]                = ("/images/uploads/razer-seiren-v3-chroma.webp", [imgA, imgB]),
-            ["Logitech C922 Pro Stream"]              = ("/images/uploads/logitech-c922.png", [imgC, imgD]),
-            ["Corsair MM350 Champion Series XL"]      = ("/images/uploads/corsair-mm350-xl.webp", [imgA, imgB]),
-            ["Razer Gigantus V2 XXL"]                 = ("/images/uploads/razer-gigantus-v2-xxl.webp", [imgC, imgD]),
-            ["Sony DualSense Wireless Controller"]    = ("/images/uploads/sony-dualsense.png", [imgA, imgC]),
-            ["Logitech G923 TRUEFORCE Racing Wheel"]  = ("/images/uploads/logitech-g923.png", [imgB, imgD]),
-            ["Secretlab Titan Evo 2022"]              = ("/images/uploads/secretlab-titan-evo-2022.jpg", [imgA, imgB]),
-            ["ASUS ROG Gladius III Wireless"]         = ("/images/uploads/asus-rog-gladius3-wireless.webp", [imgC, imgD]),
-            ["Xbox Wireless Controller"]              = ("/images/uploads/xbox-wireless-controller.jpg", [imgA, imgD]),
-            ["Corsair Virtuoso RGB Wireless XT"]      = ("/images/uploads/hyperx-cloud2-wireless.jpg", [imgB, imgC]),
-            ["Blue Yeti X USB Microphone"]            = ("/images/uploads/blue-yeti-x.png", [imgA, imgD]),
-            ["Razer Kiyo Pro Streaming Webcam"]       = ("/images/uploads/razer-kiyo-pro.webp", [imgB, imgC]),
-            ["DXRacer Formula Series F11"]            = ("/images/uploads/dxracer-formula-gaming-chair.png", [imgA, imgC]),
-            ["Ducky One 3 Mini"]                      = ("/images/uploads/ducky-one3-mini.jpg", [imgB, imgD]),
-            ["SteelSeries Arctis Nova Pro Wireless"]  = ("/images/uploads/hyperx-cloud2-wireless.jpg", [imgA, imgB]),
-            ["SteelSeries Apex Pro TKL Wireless"]     = ("/images/uploads/corsair-k70-rgb-pro.webp", [imgC, imgD]),
-            ["Eureka Ergonomic Z1-S Gaming Desk"]     = ("/images/uploads/dxracer-formula-gaming-chair.png", [imgA, imgD]),
-            ["HyperX Fury Ultra XL RGB"]              = ("/images/uploads/steelseries-qck-heavy-xxl.png", [imgB, imgC]),
-            ["Logitech G502 X Plus Wireless"]         = ("/images/uploads/logitech-g502x-plus.png", [imgA, imgC]),
-            ["Razer Viper V3 HyperSpeed"]             = ("/images/uploads/razer-viper-v3-hyperspeed.webp", [imgB, imgD]),
-            ["HyperX Cloud II Wireless"]              = ("/images/uploads/hyperx-cloud2-wireless.jpg", [imgA, imgD]),
+            ["Razer DeathAdder V3 Pro"] = ("/images/uploads/razer-deathadder-v3-pro.webp", ["/images/uploads/razer-viper-v3-hyperspeed.webp"]),
+            ["Logitech G Pro X Superlight 2"] = ("/images/uploads/logitech-gpx-superlight2.png", ["/images/uploads/logitech-g502x-plus.png"]),
+            ["Corsair K70 RGB PRO"] = ("/images/uploads/corsair-k70-rgb-pro.webp", ["/images/uploads/razer-huntsman-v3-pro.webp"]),
+            ["Keychron Q1 Pro"] = ("/images/uploads/keychron-q1-pro.jpg", ["/images/uploads/ducky-one3-mini.jpg"]),
+            ["Razer BlackShark V2 Pro"] = ("/images/uploads/razer-blackshark-v2-pro.webp", ["/images/uploads/logitech-g733.png"]),
+            ["Logitech G733 Lightspeed"] = ("/images/uploads/logitech-g733.png", ["/images/uploads/razer-blackshark-v2-pro.webp"]),
+            ["Corsair T3 Rush"] = ("/images/uploads/corsair-t3-rush.webp", ["/images/uploads/secretlab-titan-evo-2022.jpg"]),
+            ["Razer Huntsman V3 Pro"] = ("/images/uploads/razer-huntsman-v3-pro.webp", ["/images/uploads/corsair-k70-rgb-pro.webp"]),
+            ["SteelSeries QcK Heavy XXL"] = ("/images/uploads/steelseries-qck-heavy-xxl.png", ["/images/uploads/razer-gigantus-v2-xxl.webp"]),
+            ["HyperX QuadCast S"] = ("/images/uploads/hyperx-quadcast-s.jpg", ["/images/uploads/razer-seiren-v3-chroma.webp"]),
+            ["Razer Seiren V3 Chroma"] = ("/images/uploads/razer-seiren-v3-chroma.webp", ["/images/uploads/hyperx-quadcast-s.jpg"]),
+            ["Logitech C922 Pro Stream"] = ("/images/uploads/logitech-c922.png", ["/images/uploads/razer-kiyo-pro.webp"]),
+            ["Corsair MM350 Champion Series XL"] = ("/images/uploads/corsair-mm350-xl.webp", ["/images/uploads/steelseries-qck-heavy-xxl.png"]),
+            ["Razer Gigantus V2 XXL"] = ("/images/uploads/razer-gigantus-v2-xxl.webp", ["/images/uploads/steelseries-qck-heavy-xxl.png"]),
+            ["Sony DualSense Wireless Controller"] = ("/images/uploads/sony-dualsense.png", ["/images/uploads/xbox-wireless-controller.jpg"]),
+            ["Logitech G923 TRUEFORCE Racing Wheel"] = ("/images/uploads/logitech-g923.png", ["/images/uploads/sony-dualsense.png"]),
+            ["Secretlab Titan Evo 2022"] = ("/images/uploads/secretlab-titan-evo-2022.jpg", ["/images/uploads/corsair-t3-rush.webp"]),
+            ["BenQ ScreenBar Halo"] = (imgB, [imgC]),
+            ["Govee Glide Hexa RGBIC"] = (imgA, [imgB]),
+            ["Razer Chroma Light Strip 2m"] = (imgA, [imgB]),
+            ["Arozzi Arena Gaming Desk"] = (imgC, [imgB]),
+            ["Thermaltake Level 20 GT Battlestation"] = (imgC, [imgB]),
+            ["Ergotron LX Desk Monitor Arm"] = (imgC, [imgD]),
+            ["Razer Base Station V2 Chroma"] = ("/images/uploads/razer-blackshark-v2-pro.webp", ["/images/uploads/logitech-g733.png"]),
+            ["Elgato Wave Mic Arm LP"] = ("/images/uploads/hyperx-quadcast-s.jpg", ["/images/uploads/razer-seiren-v3-chroma.webp"]),
+            ["Elgato Game Capture HD60 X"] = (imgD, [imgB]),
+            ["AVerMedia Live Gamer ULTRA GC553"] = (imgA, [imgD]),
+            ["Elgato Cam Link 4K"] = ("/images/uploads/razer-kiyo-pro.webp", ["/images/uploads/logitech-c922.png"]),
+            ["Glorious GMMK Keycap Puller Set"] = (imgB, [imgC]),
+            ["HAGiBiS Keyboard Cleaning Kit"] = (imgC, [imgD]),
+            ["OXO Good Grips Electronics Brush"] = (imgA, [imgC]),
+            ["ColorCoral Cleaning Gel 160g"] = (imgD, [imgA]),
+            ["Whoosh Screen Cleaner Kit"] = (imgA, [imgC]),
+            ["Gel vệ sinh bàn phím NexusGear 100g"] = (imgB, [imgD]),
+            ["Krytox 205g0 Lube Kit 5ml"] = (imgC, [imgA]),
+            ["Glorious Switch Opener + Lube Station"] = (imgA, [imgD]),
+            ["Krytox GPL 105 Oil 2ml"] = (imgB, [imgC]),
+            ["SteelSeries Rival 3 Wireless"] = ("/images/uploads/razer-viper-v3-hyperspeed.webp", ["/images/uploads/logitech-gpx-superlight2.png"]),
+            ["HyperX Alloy Origins Core TKL"] = ("/images/uploads/corsair-k70-rgb-pro.webp", ["/images/uploads/razer-huntsman-v3-pro.webp"]),
+            ["Creative Pebble V3 USB Speakers"] = ("/images/uploads/logitech-g733.png", ["/images/uploads/razer-blackshark-v2-pro.webp"]),
+            ["Nintendo Switch Pro Controller"] = ("/images/uploads/sony-dualsense.png", ["/images/uploads/xbox-wireless-controller.jpg"]),
+            ["Razer Wolverine V2 Chroma"] = ("/images/uploads/xbox-wireless-controller.jpg", ["/images/uploads/sony-dualsense.png"]),
+            ["8BitDo Ultimate 2C Wireless"] = ("/images/uploads/sony-dualsense.png", ["/images/uploads/xbox-wireless-controller.jpg"]),
+            ["Razer Kishi V2 Pro"] = ("/images/uploads/xbox-wireless-controller.jpg", ["/images/uploads/sony-dualsense.png"]),
+            ["GameSir X2 Pro Type-C"] = ("/images/uploads/sony-dualsense.png", ["/images/uploads/xbox-wireless-controller.jpg"]),
+            ["Razer Raiju Mobile"] = ("/images/uploads/xbox-wireless-controller.jpg", ["/images/uploads/sony-dualsense.png"]),
+            ["Razer BlackWidow V3 Mini Quartz"] = ("/images/uploads/keychron-q1-pro.jpg", ["/images/uploads/ducky-one3-mini.jpg"]),
+            ["HyperX Cloud II Pink Edition"] = ("/images/uploads/hyperx-cloud2-wireless.jpg", ["/images/uploads/logitech-g733.png"]),
+            ["Logitech G733 Lilac"] = ("/images/uploads/logitech-g733.png", ["/images/uploads/razer-blackshark-v2-pro.webp"]),
+            ["Logitech G915 TKL Lightspeed Black"] = ("/images/uploads/razer-huntsman-v3-pro.webp", ["/images/uploads/corsair-k70-rgb-pro.webp"]),
+            ["Razer Kraken V3 Pro Black"] = ("/images/uploads/razer-blackshark-v2-pro.webp", ["/images/uploads/logitech-g733.png"]),
+            ["SteelSeries Aerox 3 Wireless Onyx"] = ("/images/uploads/logitech-gpx-superlight2.png", ["/images/uploads/razer-viper-v3-hyperspeed.webp"]),
+            ["Keychron K3 Pro White"] = ("/images/uploads/keychron-q1-pro.jpg", ["/images/uploads/ducky-one3-mini.jpg"]),
+            ["SteelSeries Arctis Nova 1 White"] = ("/images/uploads/logitech-g733.png", ["/images/uploads/razer-blackshark-v2-pro.webp"]),
+            ["Razer DeathAdder V3 Pro White"] = ("/images/uploads/razer-deathadder-v3-pro.webp", ["/images/uploads/logitech-gpx-superlight2.png"]),
+            ["NZXT Lift RGB Compact Mouse"] = ("/images/uploads/logitech-g502x-plus.png", ["/images/uploads/logitech-gpx-superlight2.png"]),
+            ["Cooler Master CK721 RGB TKL"] = ("/images/uploads/ducky-one3-mini.jpg", ["/images/uploads/keychron-q1-pro.jpg"]),
+            ["Razer Base Station Chroma Mercury"] = ("/images/uploads/razer-seiren-v3-chroma.webp", ["/images/uploads/hyperx-quadcast-s.jpg"]),
+            ["Combo Esport Pro: Chuột + Phím + Tai nghe"] = ("/images/uploads/logitech-gpx-superlight2.png", ["/images/uploads/corsair-k70-rgb-pro.webp"]),
+            ["Combo Stream Starter: Mic + Webcam + Đèn"] = ("/images/uploads/hyperx-quadcast-s.jpg", ["/images/uploads/logitech-c922.png"]),
+            ["Combo Desk Complete: Ghế + Bàn + Lót"] = ("/images/uploads/corsair-t3-rush.webp", ["/images/uploads/dxracer-formula-gaming-chair.png"]),
+            ["Keychron V3 Max Wireless"] = ("/images/uploads/keychron-q1-pro.jpg", ["/images/uploads/ducky-one3-mini.jpg"]),
+            ["Corsair M75 Air Wireless"] = ("/images/uploads/logitech-gpx-superlight2.png", ["/images/uploads/razer-viper-v3-hyperspeed.webp"]),
+            ["Razer Basilisk V3 Pro"] = ("/images/uploads/razer-viper-v3-hyperspeed.webp", ["/images/uploads/razer-deathadder-v3-pro.webp"]),
+            ["Logitech G203 Lightsync (Giảm 30%)"] = ("/images/uploads/logitech-gpx-superlight2.png", ["/images/uploads/razer-viper-v3-hyperspeed.webp"]),
+            ["Redragon K552 Kumara (Xả kho)"] = ("/images/uploads/corsair-k70-rgb-pro.webp", ["/images/uploads/razer-huntsman-v3-pro.webp"]),
+            ["HyperX Cloud Stinger 2 (Săn deal)"] = ("/images/uploads/hyperx-cloud2-wireless.jpg", ["/images/uploads/logitech-g733.png"]),
+            ["SteelSeries Arctis Nova Pro Wireless"] = ("/images/uploads/hyperx-cloud2-wireless.jpg", ["/images/uploads/logitech-g733.png"]),
+            ["SteelSeries Apex Pro TKL Wireless"] = ("/images/uploads/corsair-k70-rgb-pro.webp", ["/images/uploads/razer-huntsman-v3-pro.webp"]),
+            ["Eureka Ergonomic Z1-S Gaming Desk"] = (imgC, [imgB]),
+            ["Blue Yeti X USB Microphone"] = ("/images/uploads/blue-yeti-x.png", ["/images/uploads/hyperx-quadcast-s.jpg"]),
+            ["Razer Kiyo Pro Streaming Webcam"] = ("/images/uploads/razer-kiyo-pro.webp", ["/images/uploads/logitech-c922.png"]),
+            ["ASUS ROG Gladius III Wireless"] = ("/images/uploads/asus-rog-gladius3-wireless.webp", ["/images/uploads/logitech-gpx-superlight2.png"]),
+            ["Xbox Wireless Controller"] = ("/images/uploads/xbox-wireless-controller.jpg", ["/images/uploads/sony-dualsense.png"]),
+            ["Corsair Virtuoso RGB Wireless XT"] = ("/images/uploads/hyperx-cloud2-wireless.jpg", ["/images/uploads/razer-blackshark-v2-pro.webp"]),
+            ["DXRacer Formula Series F11"] = ("/images/uploads/dxracer-formula-gaming-chair.png", ["/images/uploads/corsair-t3-rush.webp"])
         };
 
         var products = await context.Products
@@ -480,15 +525,14 @@ public static class DbSeeder
         {
             if (imageMap.TryGetValue(p.Name, out var imgs))
             {
-                if ((p.ImageUrl ?? "").Contains("placeholder") || p.ImageUrl != imgs.Primary)
+                if (string.IsNullOrEmpty(p.ImageUrl) || p.ImageUrl.Contains("placeholder"))
                 {
                     p.ImageUrl = imgs.Primary;
                     changed = true;
                 }
-                var expected = JoinImageUrls(imgs.Primary, imgs.Secondary);
-                if (p.SecondaryImageUrls != expected)
+                if (string.IsNullOrEmpty(p.SecondaryImageUrls) || p.SecondaryImageUrls.Contains("placeholder"))
                 {
-                    p.SecondaryImageUrls = expected;
+                    p.SecondaryImageUrls = JoinImageUrls(imgs.Primary, imgs.Secondary);
                     changed = true;
                 }
             }

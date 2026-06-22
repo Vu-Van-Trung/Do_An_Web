@@ -232,11 +232,41 @@ public class ProductsController : Controller
             return null;
 
         var uploads = Path.Combine(_env.WebRootPath, "images", "uploads");
+        var isDev = false;
+
+        #if DEBUG
+        // Trong chế độ debug, nếu thư mục nguồn tồn tại, ưu tiên lưu vào thư mục nguồn để tránh mất file khi rebuild
+        var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "uploads");
+        if (Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")))
+        {
+            uploads = sourcePath;
+            isDev = true;
+        }
+        #endif
+
         Directory.CreateDirectory(uploads);
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var path = Path.Combine(uploads, fileName);
-        await using var stream = System.IO.File.Create(path);
-        await file.CopyToAsync(stream);
+        
+        await using (var stream = System.IO.File.Create(path))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        #if DEBUG
+        // Copy thêm sang thư mục chạy bin để ảnh hiển thị được ngay lập tức
+        if (isDev)
+        {
+            var binUploads = Path.Combine(_env.WebRootPath, "images", "uploads");
+            var binPath = Path.Combine(binUploads, fileName);
+            if (!string.Equals(path, binPath, StringComparison.OrdinalIgnoreCase))
+            {
+                Directory.CreateDirectory(binUploads);
+                System.IO.File.Copy(path, binPath, true);
+            }
+        }
+        #endif
+
         return $"/images/uploads/{fileName}";
     }
 

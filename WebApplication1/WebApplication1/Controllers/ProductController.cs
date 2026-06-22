@@ -23,11 +23,21 @@ public class ProductController : Controller
 
     public async Task<IActionResult> Index(ProductFilter filter)
     {
+        var allCats = await _context.Categories.ToListAsync();
+        var orderedCats = new List<Category>();
+        var parents = allCats.Where(c => c.ParentCategoryId == null).OrderBy(c => c.SortOrder).ThenBy(c => c.Name);
+        foreach (var parent in parents)
+        {
+            orderedCats.Add(parent);
+            var children = allCats.Where(c => c.ParentCategoryId == parent.Id).OrderBy(c => c.SortOrder).ThenBy(c => c.Name);
+            orderedCats.AddRange(children);
+        }
+
         var vm = new CatalogViewModel
         {
             Filter      = filter,
             Products    = await _products.GetFilteredAsync(filter),
-            Categories  = await _context.Categories.OrderBy(c => c.Name).ToListAsync(),
+            Categories  = orderedCats,
             Brands      = await _context.Brands.OrderBy(b => b.Name).ToListAsync(),
             Connections = await _products.GetSpecValuesAsync("Connection"),
             SwitchTypes = await _products.GetSpecValuesAsync("Switch Type"),

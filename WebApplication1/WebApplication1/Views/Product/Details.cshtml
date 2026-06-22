@@ -54,8 +54,10 @@
         
         @if (!string.IsNullOrEmpty(Model.SecondaryImageUrls))
         {
-            var images = new List<string> { Model.ImageUrl ?? "" };
+            var images = new List<string>();
+            if (!string.IsNullOrEmpty(Model.ImageUrl)) images.Add(Model.ImageUrl);
             images.AddRange(Model.SecondaryImageUrls.Split(',').Select(img => img.Trim()).Where(img => !string.IsNullOrEmpty(img)));
+            images = images.Distinct().ToList();
             
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem;">
                 @for (var i = 0; i < images.Count; i++)
